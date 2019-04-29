@@ -5,9 +5,11 @@ HYDWS resources.
 import logging
 
 from flask_restful import Api, Resource
+from webargs.flaskparser import use_kwargs
 
 from hydws.server import db
 from hydws.server.v1 import blueprint
+from hydws.server.v1.parser import BoreholeHydraulicDataListResourceSchema
 
 
 api_v1 = Api(blueprint)
@@ -51,7 +53,9 @@ class BoreholeSectionResource(ResourceBase):
 
 class BoreholeHydraulicDataListResource(ResourceBase):
 
-    def get(self, borehole_id):
+    @use_kwargs(BoreholeHydraulicDataListResourceSchema(),
+                locations=("query", ))
+    def get(self, borehole_id, **kwargs):
         pass
 
 
