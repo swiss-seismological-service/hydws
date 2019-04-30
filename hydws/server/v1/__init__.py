@@ -10,4 +10,4 @@ API_VERSION = API_VERSION_V1
 blueprint = Blueprint('v1', __name__)
 
 # XXX(damb): Register modules with blueprint.
-from hydws.server.v1 import routes, schema  # noqa
+from hydws.server.v1 import routes, parser  # noqa
