@@ -27,7 +27,7 @@ class FDSNWSDateTime(fields.DateTime):
     DESERIALIZATION_FUNCS['fdsnws'] = from_fdsnws_datetime
 
 
-class BoreholeHydraulicDataListResourceSchema(Schema):
+class TimeConstraintsSchema(Schema):
 
     starttime = FDSNWSDateTime(format='fdsnws')
     start = fields.Str(load_only=True)
@@ -85,3 +85,6 @@ class BoreholeHydraulicDataListResourceSchema(Schema):
     class Meta:
         strict = True
         ordered = True
+
+
+BoreholeHydraulicDataListResourceSchema = TimeConstraintsSchema
