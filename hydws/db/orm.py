@@ -73,9 +73,9 @@ class BoreholeSection(EpochMixin('Epoch', epoch_type='open',
 
 
 class HydraulicSample(TimeQuantityMixin('m_datetime'),
-                      RealQuantityMixin('m_downtemperature'),
-                      RealQuantityMixin('m_downflow'),
-                      RealQuantityMixin('m_downpressure'),
+                      RealQuantityMixin('m_bottomtemperature'),
+                      RealQuantityMixin('m_bottomflow'),
+                      RealQuantityMixin('m_bottompressure'),
                       RealQuantityMixin('m_toptemperature'),
                       RealQuantityMixin('m_topflow'),
                       RealQuantityMixin('m_toppressure'),
