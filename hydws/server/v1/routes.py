@@ -7,7 +7,9 @@ import logging
 from flask_restful import Api, Resource
 from webargs.flaskparser import use_kwargs
 
-from hydws.server import db
+from hydws import __version__
+from hydws.server import db, settings
+from hydws.server.misc import with_fdsnws_exception_handling, decode_publicid
 from hydws.server.v1 import blueprint
 from hydws.server.v1.parser import BoreholeHydraulicDataListResourceSchema
 
@@ -23,7 +25,7 @@ class ResourceBase(Resource):
         super().__init__()
         self.logger = logging.getLogger(logger if logger else self.LOGGER)
 
-    def get(self, **kwargs):
+    def get(self, *args, **kwargs):
         raise NotImplementedError
 
 
@@ -53,10 +55,20 @@ class BoreholeSectionResource(ResourceBase):
 
 class BoreholeHydraulicDataListResource(ResourceBase):
 
+    LOGGER = 'hydws.server.v1.boreholehydraulicdatalistresource'
+
+    @with_fdsnws_exception_handling(__version__)
     @use_kwargs(BoreholeHydraulicDataListResourceSchema(),
                 locations=("query", ))
     def get(self, borehole_id, **kwargs):
-        pass
+        borehole_id = decode_publicid(borehole_id)
+
+        self.logger.debug(
+            f"Received request: borehole_id={borehole_id}, kwargs={kwargs}")
+
+        # TODO TODO TODO
+
+        return {"bh": borehole_id}
 
 
 class SectionHydraulicDataListResource(ResourceBase):
@@ -67,3 +79,6 @@ class SectionHydraulicDataListResource(ResourceBase):
 
 # TODO(damb):
 # Add resources to API
+
+api_v1.add_resource(BoreholeHydraulicDataListResource,
+                    '{}/<borehole_id>'.format(settings.HYDWS_PATH_BOREHOLES))

@@ -10,4 +10,13 @@ HYDWS_DEFAULT_SERVER_PORT = 5000
 
 # ----------------------------------------------------------------------------
 # service specific configuration parameters
-HYDWS_PATH_BOREHOLES = 'boreholes'
+HYDWS_PATH_BOREHOLES = '/boreholes'
+
+FDSN_DEFAULT_NO_CONTENT_ERROR_CODE = 204
+FDSN_NO_CONTENT_CODES = (FDSN_DEFAULT_NO_CONTENT_ERROR_CODE, 404)
+HYDWS_SERVICE_DOCUMENTATION_URI = 'http://URL/to/hydws/docs/'
+
+MIMETYPE_TEXT = 'text/plain'
+ERROR_MIMETYPE = MIMETYPE_TEXT
+
+CHARSET_TEXT = 'charset=utf-8'

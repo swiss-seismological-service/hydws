@@ -2,10 +2,17 @@
 HYDWS server specific general purpose utilities.
 """
 
+import base64
 import datetime
+import functools
 import re
+import sys
+import traceback
 
 import marshmallow as ma
+
+from hydws import __version__
+from hydws.server.errors import FDSNHTTPError
 
 dateutil_available = False
 try:
@@ -68,3 +75,51 @@ def fdsnws_isoformat(dt, localtime=False, *args, **kwargs):
     """
     # ignores localtime parameter
     return dt.isoformat(*args, **kwargs)
+
+
+def with_exception_handling(func, service_version):
+    """
+    Method decorator providing a generic exception handling. A well-formatted
+    FDSN exception is raised. The exception itself is logged.
+    """
+    @functools.wraps(func)
+    def decorator(self, *args, **kwargs):
+        try:
+            return func(self, *args, **kwargs)
+        except FDSNHTTPError as err:
+            raise err
+        except Exception as err:
+            # NOTE(damb): Prevents displaying the full stack trace. Just log
+            # it.
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            self.logger.critical('Local Exception: %s' % type(err))
+            self.logger.critical('Traceback information: ' +
+                                 repr(traceback.format_exception(
+                                     exc_type, exc_value, exc_traceback)))
+            raise FDSNHTTPError.create(500, service_version=service_version)
+
+    return decorator
+
+
+def with_fdsnws_exception_handling(service_version):
+    """
+    Wrapper of :py:func:`with_exception_handling`.
+    """
+    return functools.partial(with_exception_handling,
+                             service_version=service_version)
+
+
+def decode_publicid(s):
+    """
+    Decode a base64 encoded public identifier.
+
+    :param str s: Base64 encoded public identifier
+    :returns: Decoded string
+    :rtype: str
+
+    :raises: :py:class:`hydws.errors.FDSNHTTPError`
+    """
+    try:
+        return base64.b64decode(s).decode("utf-8")
+    except Exception:
+        raise FDSNHTTPError.create(400, service_version=__version__)
