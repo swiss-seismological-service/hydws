@@ -28,6 +28,9 @@ class ResourceBase(Resource):
     def get(self, *args, **kwargs):
         raise NotImplementedError
 
+    def _process(self, **kwargs):
+        raise NotImplementedError
+
 
 class BoreholeListResource(ResourceBase):
 
@@ -66,9 +69,11 @@ class BoreholeHydraulicDataListResource(ResourceBase):
         self.logger.debug(
             f"Received request: borehole_id={borehole_id}, kwargs={kwargs}")
 
-        # TODO TODO TODO
+        return self._process(db.session, **kwargs)
 
-        return {"bh": borehole_id}
+    def _process(self, session, **kwargs):
+        # TODO TODO TODO
+        return {"bh": 'BOREHOLEID'}
 
 
 class SectionHydraulicDataListResource(ResourceBase):
