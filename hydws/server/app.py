@@ -143,6 +143,8 @@ class HydraulicWebserviceTest(HydraulicWebserviceBase):
 
             # run local Flask WSGI server (not for production)
             self.logger.info('Serving with local WSGI server.')
+            self.logger.debug('Registered rules: {}'.format(app.url_map))
+
             app.run(threaded=True, port=self.args.port,
                     debug=(os.environ.get('DEBUG') == 'True'),
                     use_reloader=True, passthrough_errors=True)
