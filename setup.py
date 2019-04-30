@@ -37,7 +37,9 @@ _install_requires = [
 _data_files = [
     ('', ['LICENSE'])]
 
-_entry_points = {}
+_entry_points = {
+    'console_scripts': [
+        'hydws-test = hydws.server.app:main_test', ]}
 
 
 # ----------------------------------------------------------------------------
@@ -67,5 +69,5 @@ setup(
     install_requires=_install_requires,
     entry_points=_entry_points,
     include_package_data=True,
-#    zip_safe=False,
+    zip_safe=False,
 )
