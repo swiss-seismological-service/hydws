@@ -5,9 +5,9 @@ HYDWS datamodel ORM representation.
 from sqlalchemy import Column, String, Boolean, Integer, ForeignKey
 from sqlalchemy.orm import relationship
 
-from hydws.utils.base import (ORMBase, CreationInfoMixin, RealQuantityMixin,
-                              TimeQuantityMixin, EpochMixin,
-                              LiteratureSourceMixin, PublicIDMixin)
+from hydws.db.base import (ORMBase, CreationInfoMixin, RealQuantityMixin,
+                           TimeQuantityMixin, EpochMixin,
+                           LiteratureSourceMixin, PublicIDMixin)
 
 # XXX(damb): The implementation of the entities below is based on the QuakeML
 # and the SC3 DB model naming conventions. As a consequence,
