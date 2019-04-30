@@ -1,28 +1,17 @@
 """
 Launch HYDWS.
 """
-import argparse
 import os
 import sys
 import traceback
 
 from hydws import __version__
 from hydws.server import settings, create_app
+from hydws.utils import url
 from hydws.utils.app import CustomParser, App, AppError
 from hydws.utils.error import Error, ExitCodes
 
 
-def url(url):
-    """
-    Check if SQLite URL is absolute.
-    """
-    if (url.startswith('sqlite:') and not
-            (url.startswith('////', 7) or url.startswith('///C:', 7))):
-        raise argparse.ArgumentTypeError('SQLite URL must be absolute.')
-    return url
-
-
-# -----------------------------------------------------------------------------
 class HydraulicWebserviceBase(App):
     """
     Base production implementation of HYDWS.
@@ -85,9 +74,9 @@ class HydraulicWebserviceBase(App):
         except Exception as err:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             self.logger.critical('Local Exception: %s' % err)
-            self.logger.critical('Traceback information: ' +
-                                 repr(traceback.format_exception(
-                                     exc_type, exc_value, exc_traceback)))
+            self.logger.critical(
+                'Traceback information: ' + repr(traceback.format_exception(
+                    exc_type, exc_value, exc_traceback)))
             exit_code = ExitCodes.EXIT_ERROR
 
         sys.exit(exit_code)
@@ -155,9 +144,9 @@ class HydraulicWebserviceTest(HydraulicWebserviceBase):
         except Exception as err:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             self.logger.critical('Local Exception: %s' % err)
-            self.logger.critical('Traceback information: ' +
-                                 repr(traceback.format_exception(
-                                     exc_type, exc_value, exc_traceback)))
+            self.logger.critical(
+                'Traceback information: ' + repr(traceback.format_exception(
+                    exc_type, exc_value, exc_traceback)))
             exit_code = ExitCodes.EXIT_ERROR
 
         sys.exit(exit_code)

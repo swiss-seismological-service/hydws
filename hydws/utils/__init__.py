@@ -23,3 +23,13 @@ def real_file_path(path):
     if not os.path.isfile(path):
         raise argparse.ArgumentTypeError
     return path
+
+
+def url(url):
+    """
+    check if SQLite URL is absolute.
+    """
+    if (url.startswith('sqlite:') and not
+            (url.startswith('////', 7) or url.startswith('///C:', 7))):
+        raise argparse.ArgumentTypeError('SQLite URL must be absolute.')
+    return url

@@ -39,7 +39,8 @@ _data_files = [
 
 _entry_points = {
     'console_scripts': [
-        'hydws-test = hydws.server.app:main_test', ]}
+        'hydws-test = hydws.server.app:main_test',
+        'hydws-db-init = hydws.db.emerge:emerge', ]}
 
 
 # ----------------------------------------------------------------------------
