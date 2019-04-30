@@ -78,9 +78,6 @@ class HYDWSDBInitApp(App):
                 if not self.args.overwrite and os.path.isfile(p):
                     raise self.DBAlreadyAvailable(p)
 
-                if os.path.isfile(p):
-                    os.remove(p)
-
             if self.args.sql:
                 # dump sql only
                 def dump(sql, *multiparams, **params):
@@ -92,6 +89,9 @@ class HYDWSDBInitApp(App):
                                        strategy='mock', executor=dump)
                 ORMBase.metadata.create_all(engine, checkfirst=False)
             else:
+                if os.path.isfile(p):
+                    os.remove(p)
+
                 # create db tables
                 engine = create_engine(self.args.db_url)
 
