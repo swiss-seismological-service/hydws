@@ -25,7 +25,7 @@ class ResourceBase(Resource):
         super().__init__()
         self.logger = logging.getLogger(logger if logger else self.LOGGER)
 
-    def get(self, *args, **kwargs):
+    def get(self):
         raise NotImplementedError
 
     def _process(self, **kwargs):
