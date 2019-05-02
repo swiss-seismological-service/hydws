@@ -93,9 +93,9 @@ def with_exception_handling(func, service_version):
             # it.
             exc_type, exc_value, exc_traceback = sys.exc_info()
             self.logger.critical('Local Exception: %s' % type(err))
-            self.logger.critical('Traceback information: ' +
-                                 repr(traceback.format_exception(
-                                     exc_type, exc_value, exc_traceback)))
+            self.logger.critical(
+                'Traceback information: ' + repr(traceback.format_exception(
+                    exc_type, exc_value, exc_traceback)))
             raise FDSNHTTPError.create(500, service_version=service_version)
 
     return decorator
