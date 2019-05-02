@@ -36,7 +36,7 @@ class Borehole(CreationInfoMixin('CreationInfo',
         *Quantities* are implemented as `QuakeML
         <https://quake.ethz.ch/quakeml>`_ quantities.
     """
-    sections = relationship("BoreholeSection", back_populates="borehole")
+    _sections = relationship("BoreholeSection", back_populates="_borehole")
 
 
 class BoreholeSection(EpochMixin('Epoch', epoch_type='open',
@@ -67,9 +67,9 @@ class BoreholeSection(EpochMixin('Epoch', epoch_type='open',
     m_description = Column(String)
 
     m_borehole_oid = Column(Integer, ForeignKey('borehole._oid'))
-    borehole = relationship("Borehole", back_populates="sections")
+    _borehole = relationship("Borehole", back_populates="_sections")
 
-    hydraulics = relationship("HydraulicSample", back_populates="")
+    _hydraulics = relationship("HydraulicSample", back_populates="_section")
 
 
 class HydraulicSample(TimeQuantityMixin('m_datetime'),
@@ -96,5 +96,4 @@ class HydraulicSample(TimeQuantityMixin('m_datetime'),
     m_fluidcomposition = Column(String)
 
     m_boreholesection_oid = Column(Integer, ForeignKey('boreholesection._oid'))
-    boreholesection = relationship("BoreholeSection",
-                                   back_populates="hydraulics")
+    _section = relationship("BoreholeSection", back_populates="_hydraulics")

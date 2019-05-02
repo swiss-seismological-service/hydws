@@ -11,6 +11,8 @@ import traceback
 
 import marshmallow as ma
 
+from flask import make_response as _make_response
+
 from hydws import __version__
 from hydws.server.errors import FDSNHTTPError
 
@@ -123,3 +125,18 @@ def decode_publicid(s):
         return base64.b64decode(s).decode("utf-8")
     except Exception:
         raise FDSNHTTPError.create(400, service_version=__version__)
+
+
+def make_response(obj, mimetype):
+    """
+    Return response for :code:`output` and code:`mimetype`.
+
+    :param obj: Object the response is created from
+    :param str mimetype: Response mimetype
+
+    :returns: Flask response
+    :rtype: :py:class:`werkzeug.wrappers.Response`
+    """
+    response = _make_response(obj)
+    response.headers['Content-Type'] = mimetype
+    return response
