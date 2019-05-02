@@ -2,11 +2,32 @@
 HYDWS parser related facilities.
 """
 import datetime
+import functools
 
 from marshmallow import (Schema, fields, pre_load, validates_schema,
-                         ValidationError)
+                         validate, ValidationError)
 
+from hydws.server import settings
 from hydws.server.misc import from_fdsnws_datetime, fdsnws_isoformat
+
+
+Format = functools.partial(
+    fields.String,
+    missing=settings.HYDWS_DEFAULT_OFORMAT,
+    validate=validate.OneOf(settings.HYDWS_OFORMATS))
+
+
+Level = functools.partial(
+    fields.String,
+    missing=settings.HYDWS_DEFAULT_LEVEL,
+    validate=validate.OneOf(settings.HYDWS_LEVELS))
+
+
+NoData = functools.partial(
+    fields.Int,
+    as_string=True,
+    missing=settings.FDSN_DEFAULT_NO_CONTENT_ERROR_CODE,
+    validate=validate.OneOf(settings.FDSN_NO_CONTENT_CODES))
 
 
 class FDSNWSDateTime(fields.DateTime):
@@ -27,7 +48,15 @@ class FDSNWSDateTime(fields.DateTime):
     DESERIALIZATION_FUNCS['fdsnws'] = from_fdsnws_datetime
 
 
-class TimeConstraintsSchema(Schema):
+class GeneralSchema(Schema):
+    """
+    Common HYDWS parser schema
+    """
+    nodata = NoData()
+    format = Format()
+
+
+class TimeConstraintsSchemaMixin(Schema):
 
     starttime = FDSNWSDateTime(format='fdsnws')
     start = fields.Str(load_only=True)
@@ -87,4 +116,6 @@ class TimeConstraintsSchema(Schema):
         ordered = True
 
 
-BoreholeHydraulicDataListResourceSchema = TimeConstraintsSchema
+class BoreholeHydraulicDataListResourceSchema(TimeConstraintsSchemaMixin,
+                                              GeneralSchema):
+    pass
