@@ -4,7 +4,7 @@ HYDWS datamodel ORM entity de-/serialization facilities.
 
 import datetime
 
-from marshmallow import Schema, fields
+from marshmallow import Schema, fields, post_dump
 from marshmallow.utils import get_value
 
 
@@ -56,6 +56,14 @@ class SchemaBase(Schema):
             key = _ATTR_PREFIX + key.lower()
         return get_value(obj, key, default)
 
+    @post_dump
+    def remove_empty(self, data):
+        """
+        Filter out fields with empty (e.g. :code:`None`, :code:`[], etc.)
+        values.
+        """
+        return {k: v for k, v in data.items() if v}
+
 
 class HydraulicSampleSchema(SchemaBase):
     datetime = QuakeMLQuantityField()
@@ -83,7 +91,7 @@ class BoreholeSectionSchema(SchemaBase):
     holediameter = QuakeMLQuantityField()
     casingdiameter = QuakeMLQuantityField()
 
-    topclosed = fields.Boolean(allow_none=True, missing=None)
+    topclosed = fields.Boolean()
     bottomclosed = fields.Boolean()
     sectiontype = fields.String()
     casingtype = fields.String()
