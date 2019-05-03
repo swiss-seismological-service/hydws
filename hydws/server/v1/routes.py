@@ -78,10 +78,7 @@ class BoreholeHydraulicDataListResource(ResourceBase):
 
         # TODO(damb): Serialize according to query_param format=JSON|XML
         # format response
-        try:
-            resp = BoreholeSchema().dumps(resp)
-        except Exception:
-            raise FDSNHTTPError.create(500, service_version=__version__)
+        resp = BoreholeSchema().dumps(resp)
 
         return make_response(resp, settings.MIMETYPE_JSON)
 
@@ -91,19 +88,29 @@ class BoreholeHydraulicDataListResource(ResourceBase):
         if not borehole_id:
             raise ValueError(f"Invalid borehole identifier: {borehole_id!r}")
 
+        query = session.query(orm.Borehole).\
+            join(orm.BoreholeSection).\
+            filter(orm.Borehole.m_publicid==borehole_id)
+
+        # XXX(damb): Emulate QuakeML type Epoch (though on DB level it is
+        # defined as QuakeML type OpenEpoch
+        starttime = query_params.get('starttime')
+        if starttime:
+            query = query.\
+                filter((orm.BoreholeSection.m_starttime >= starttime) &  # noqa
+                       (orm.BoreholeSection.m_starttime != None))  # noqa
+
+        endtime = query_params.get('endtime')
+        if endtime:
+            query = query.\
+                filter((orm.BoreholeSection.m_endtime <= endtime) |  # noqa
+                       (orm.BoreholeSection.m_endtime == None))  # noqa
+
         # TODO(damb): Add additional filter criteria
         try:
-            bh = session.query(orm.Borehole).\
-                join(orm.BoreholeSection).\
-                filter(orm.Borehole.m_publicid==borehole_id).\
-                one()
+            return query.one()
         except NoResultFound:
             return None
-
-        # TODO TODO TODO
-        # A borehole at least must have a single borehole-section
-
-        return bh
 
 
 class SectionHydraulicDataListResource(ResourceBase):
