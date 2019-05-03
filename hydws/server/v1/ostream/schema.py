@@ -12,8 +12,6 @@ _ATTR_PREFIX = 'm_'
 
 # XXX(damb): Currently, there are no validation facilities implemented.
 
-#XXX(damb): Finish off docstrings
-
 
 class QuakeMLQuantityField(fields.Field):
     """
@@ -66,6 +64,9 @@ class SchemaBase(Schema):
 
 
 class HydraulicSampleSchema(SchemaBase):
+    """
+    Schema implementation of an hydraulic data sample.
+    """
     datetime = QuakeMLQuantityField()
     downtemperature = QuakeMLQuantityField()
     downflow = QuakeMLQuantityField()
@@ -80,6 +81,9 @@ class HydraulicSampleSchema(SchemaBase):
 
 
 class BoreholeSectionSchema(SchemaBase):
+    """
+    Schema implementation of a borehole section.
+    """
     starttime = fields.DateTime(format='iso')
     endtime = fields.DateTime(format='iso')
     toplongitude = QuakeMLQuantityField()
@@ -102,6 +106,9 @@ class BoreholeSectionSchema(SchemaBase):
 
 
 class BoreholeSchema(SchemaBase):
+    """
+    Schema implementation of a borehole.
+    """
     # TODO(damb): Provide a hierarchical implementation of sub_types; create
     # them dynamically (see: e.g. QuakeMLQuantityField)
     longitude = QuakeMLQuantityField()

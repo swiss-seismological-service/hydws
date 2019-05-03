@@ -31,16 +31,35 @@ class ResourceBase(Resource):
         self.logger = logging.getLogger(logger if logger else self.LOGGER)
 
     def get(self):
+        """
+        Template method to be implemented by HYDWS resources in order to serve
+        HTTP GET requests.
+        """
         raise NotImplementedError
 
-    def _handle_nodata(self, kwargs):
+    def _handle_nodata(self, query_params):
+        """
+        Handle an empty query result
+
+        :param dict query_params: Dict of query parameters
+
+        :raises: :py:class:`FDSNHTTPError`
+        """
         raise FDSNHTTPError.create(
-            int(kwargs.get(
+            int(query_params.get(
                 'nodata',
                 settings.FDSN_DEFAULT_NO_CONTENT_ERROR_CODE)))
 
     def _process_request(self, borehole_id=None, section_id=None,
                          **query_params):
+        """
+        Template method intended to process a request
+
+        :param borehole_id: Borehole publicid
+        :type borehole_id: str or None
+        :param section_id: Borehole section publicid
+        :type section_id: str or None
+        """
         raise NotImplementedError
 
 
