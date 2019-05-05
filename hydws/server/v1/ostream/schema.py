@@ -109,8 +109,9 @@ class BoreholeSchema(SchemaBase):
     """
     Schema implementation of a borehole.
     """
-    # TODO(damb): Provide a hierarchical implementation of sub_types; create
-    # them dynamically (see: e.g. QuakeMLQuantityField)
+    # TODO(damb): Provide a hierarchical implementation of sub_types (e.g.
+    # CreationInfo, LiteratureSource etc.); create them dynamically (see: e.g.
+    # QuakeMLQuantityField)
     longitude = QuakeMLQuantityField()
     latitude = QuakeMLQuantityField()
     depth = QuakeMLQuantityField()
