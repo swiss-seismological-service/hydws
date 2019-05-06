@@ -109,6 +109,7 @@ class BoreholeHydraulicDataListResource(ResourceBase):
 
         query = session.query(orm.Borehole).\
             join(orm.BoreholeSection).\
+            join(orm.HydraulicSample).\
             filter(orm.Borehole.m_publicid==borehole_id)
 
         # XXX(damb): Emulate QuakeML type Epoch (though on DB level it is
@@ -117,13 +118,15 @@ class BoreholeHydraulicDataListResource(ResourceBase):
         if starttime:
             query = query.\
                 filter((orm.BoreholeSection.m_starttime >= starttime) &  # noqa
-                       (orm.BoreholeSection.m_starttime != None))  # noqa
+                       (orm.BoreholeSection.m_starttime != None)).\
+                filter(orm.HydraulicSample.m_datetime_value >= starttime)
 
         endtime = query_params.get('endtime')
         if endtime:
             query = query.\
                 filter((orm.BoreholeSection.m_endtime <= endtime) |  # noqa
-                       (orm.BoreholeSection.m_endtime == None))  # noqa
+                       (orm.BoreholeSection.m_endtime == None)).\
+                filter(orm.HydraulicSample.m_datetime_value <= endtime)
 
         # TODO(damb): Add additional filter criteria
         try:
