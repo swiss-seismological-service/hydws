@@ -130,7 +130,10 @@ class BoreholeHydraulicDataListResource(ResourceBase):
 
         # TODO(damb): Add additional filter criteria
         try:
-            return query.one()
+            return query.\
+                order_by(orm.BoreholeSection.m_starttime).\
+                order_by(orm.HydraulicSample.m_datetime_value).\
+                one()
         except NoResultFound:
             return None
 
