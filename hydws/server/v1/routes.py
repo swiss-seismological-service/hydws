@@ -74,6 +74,56 @@ class BoreholeResource(ResourceBase):
     def get(self, borehole_id):
         pass
 
+class FilterQuery(object):
+    def __init__(self, query):
+        self.query = query
+
+    def _filter_query(self, query_name, orm_tablename, orm_paramname, filter_op):
+
+        #operator_methods = {'egt': 'egt_query_filter',
+        #        'elt': 'elt_query_filter',
+        #        'eq': 'eq_query_filter',
+        #        'neq': 'neq_query_filter'}     
+        
+        query_param = query_params.get(query_name)
+        if query_param:
+            orm_methodname = getattr(orm, orm_tablename)
+            orm_param = getattr(orm_methodname, prm_paramname)
+
+             try:
+                 #getattr(self, operator_methods[filter_op])(orm_param, query_param)
+                 
+                 getattr(self, filter_op)(orm_param, query_param)
+            except:
+                raise ValueError('No filter method exists for: {}'.format(filter_op))
+            #if filter_op == 'egt':
+            #    self.egt_query_filter(orm_param, query_parameter)
+            #elif filter_op == 'elt':
+            #    self.elt_query_filter(orm_param, query_parameter)
+            #elif filter_op == 'eq':
+            #    self.eq_query_filter(orm_param, query_parameter)
+            #elif filter_op == 'neq':
+            #    self.neq_query_filter(orm_param, query_parameter)
+            #else:
+            #    raise ValueError('No filter method exists for: {}'.format(filter_op))
+
+
+
+    def egt_query_filter(self, orn_param, query_param):
+            query = self.query.filter(orm_param >= query_param)   
+
+
+    def elt_query_filter(self, query_name, orm_tablename, orm_paramname, filter_op):
+            query = self.query.filter(orm_param <= query_param)   
+
+
+    def eq_query_filter(self, query_name, orm_tablename, orm_paramname, filter_op):
+            query = self.query.filter(orm_param == query_param)   
+            
+
+    def neq_query_filter(self, query_name, orm_tablename, orm_paramname, filter_op):
+            query = self.query.filter(orm_param != query_param)   
+
 
 class BoreholeHydraulicDataListResource(ResourceBase):
 
@@ -112,6 +162,8 @@ class BoreholeHydraulicDataListResource(ResourceBase):
             join(orm.HydraulicSample).\
             filter(orm.Borehole.m_publicid==borehole_id)
 
+        filter_statement = FilterQuery(query)
+
         # XXX(damb): Emulate QuakeML type Epoch (though on DB level it is
         # defined as QuakeML type OpenEpoch
         starttime = query_params.get('starttime')
@@ -129,6 +181,10 @@ class BoreholeHydraulicDataListResource(ResourceBase):
                 filter(orm.HydraulicSample.m_datetime_value <= endtime)
 
         # TODO(damb): Add additional filter criteria
+        
+        
+
+
         try:
             return query.\
                 order_by(orm.BoreholeSection.m_starttime).\
