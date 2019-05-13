@@ -74,55 +74,76 @@ class BoreholeResource(ResourceBase):
     def get(self, borehole_id):
         pass
 
-class FilterQuery(object):
-    def __init__(self, query):
+
+class DynamicFilter(ResourceBase):
+    """
+
+    Dynamic filtering of query.
+
+    Example:
+     dyn_query = DynamicFilter(query, orm.BoreholeSection)
+     dyn_query.filter_query([('m_starttime', 'eq', datetime(...))])
+
+    """
+
+    def __init__(self, query, orm_class):
         self.query = query
+        self.orm_class = orm_class
 
-    def _filter_query(self, query_name, orm_tablename, orm_paramname, filter_op):
+    def operator_attr(self, column, op):
+        """
+        Returns method associated with an comparison operator.
+        If op, op_ or __op__ does not exist, Exception returned.
 
-        #operator_methods = {'egt': 'egt_query_filter',
-        #        'elt': 'elt_query_filter',
-        #        'eq': 'eq_query_filter',
-        #        'neq': 'neq_query_filter'}     
-        
-        query_param = query_params.get(query_name)
-        if query_param:
-            orm_methodname = getattr(orm, orm_tablename)
-            orm_param = getattr(orm_methodname, prm_paramname)
+        :returns type: str.
 
-             try:
-                 #getattr(self, operator_methods[filter_op])(orm_param, query_param)
-                 
-                 getattr(self, filter_op)(orm_param, query_param)
-            except:
-                raise ValueError('No filter method exists for: {}'.format(filter_op))
-            #if filter_op == 'egt':
-            #    self.egt_query_filter(orm_param, query_parameter)
-            #elif filter_op == 'elt':
-            #    self.elt_query_filter(orm_param, query_parameter)
-            #elif filter_op == 'eq':
-            #    self.eq_query_filter(orm_param, query_parameter)
-            #elif filter_op == 'neq':
-            #    self.neq_query_filter(orm_param, query_parameter)
-            #else:
-            #    raise ValueError('No filter method exists for: {}'.format(filter_op))
+        """
+        try:
+            return list(filter(
+                lambda e: hasattr(column, e % op),
+                    ['%s', '%s_', '__%s__']))[0] % op
+        except IndexError:
+            raise Exception('Invalid filter operator: %s' % op)
 
+    def filter_query(self, filter_condition):
+        """
+        Update self.query based on filter_condition.
+        :param filter_condition: list, ie: [(key,operator,value)]
+            operator examples:
+                eq for ==
+                lt for <
+                ge for >=
+                in for in_
+                like for like
 
+            value can be list or a string.
+            key must belong in self.orm_class.
 
-    def egt_query_filter(self, orn_param, query_param):
-            query = self.query.filter(orm_param >= query_param)   
+        """
 
+        for f in filter_condition:
+            try:
+                key, op, value = f
+            except ValueError:
+                raise Exception('Invalid filter input: %s' % f)
+            column = getattr(self.orm_class, key)
+            if not column:
+                raise Exception('Invalid filter column: %s' % key)
+            if op == 'in':
+                if isinstance(value, list):
+                    filt = column.in_(value)
+                else:
+                    filt = column.in_(value.split(','))
+            else:
+                attr = self.operator_attr(self, column, op)
+                if value == 'null':
+                    value = None
+                print(column, attr, value)
+                filt = getattr(column, attr)(value)
+            self.query = self.query.filter(filt)
 
-    def elt_query_filter(self, query_name, orm_tablename, orm_paramname, filter_op):
-            query = self.query.filter(orm_param <= query_param)   
-
-
-    def eq_query_filter(self, query_name, orm_tablename, orm_paramname, filter_op):
-            query = self.query.filter(orm_param == query_param)   
-            
-
-    def neq_query_filter(self, query_name, orm_tablename, orm_paramname, filter_op):
-            query = self.query.filter(orm_param != query_param)   
+    def return_query(self):
+        return self.query
 
 
 class BoreholeHydraulicDataListResource(ResourceBase):
@@ -133,6 +154,7 @@ class BoreholeHydraulicDataListResource(ResourceBase):
     @use_kwargs(BoreholeHydraulicDataListResourceSchema(),
                 locations=("query", ))
     def get(self, borehole_id, **query_params):
+        print('get')
         borehole_id = decode_publicid(borehole_id)
 
         self.logger.debug(
@@ -150,10 +172,12 @@ class BoreholeHydraulicDataListResource(ResourceBase):
         resp = BoreholeSchema().dumps(resp)
 
         return make_response(resp, settings.MIMETYPE_JSON)
+    
 
     def _process_request(self, session, borehole_id=None, section_id=None,
                          **query_params):
 
+        print('_process_request')
         if not borehole_id:
             raise ValueError(f"Invalid borehole identifier: {borehole_id!r}")
 
@@ -162,7 +186,7 @@ class BoreholeHydraulicDataListResource(ResourceBase):
             join(orm.HydraulicSample).\
             filter(orm.Borehole.m_publicid==borehole_id)
 
-        filter_statement = FilterQuery(query)
+        dynamic_query = DynamicFilter(query, orm.BoreholeSection)
 
         # XXX(damb): Emulate QuakeML type Epoch (though on DB level it is
         # defined as QuakeML type OpenEpoch
@@ -180,10 +204,13 @@ class BoreholeHydraulicDataListResource(ResourceBase):
                        (orm.BoreholeSection.m_endtime == None)).\
                 filter(orm.HydraulicSample.m_datetime_value <= endtime)
 
-        # TODO(damb): Add additional filter criteria
-        
-        
+        # XXX(lsarson): Filter None first or query will fail due to type differences.
+        dynamic_query.filter_query([('m_starttime', 'ne', None),
+            ('m_starttime', 'ge', query_params.get('starttime'))])
 
+        # TODO(lsarson): Think about if endtime not defined.
+        dynamic_query.filter_query(['m_endtime', 'le', query_params.get('endtime')])
+        # TODO(lsarson): Add additional filter criteria. Just test out this for now.
 
         try:
             return query.\
