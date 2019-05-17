@@ -13,14 +13,51 @@ from hydws.db import orm
 from hydws.server import db, settings
 from hydws.server.errors import FDSNHTTPError
 from hydws.server.misc import (with_fdsnws_exception_handling, decode_publicid,
-                               make_response)
+                               make_response, DynamicQuery)
 from hydws.server.v1 import blueprint
-from hydws.server.v1.ostream.schema import BoreholeSchema
-from hydws.server.v1.parser import BoreholeHydraulicDataListResourceSchema
-
+from hydws.server.v1.ostream.schema import (BoreholeSchema,
+                                            BoreholeSectionSchema,
+                                            BoreholeSectionHydraulicSampleSchema,
+                                            SectionHydraulicSampleSchema,
+                                            HydraulicSampleSchema)
+from hydws.server.v1.parser import (
+    BoreholeHydraulicSampleListResourceSchema,
+    BoreholeListResourceSchema,
+    SectionHydraulicSampleListResourceSchema)
 
 api_v1 = Api(blueprint)
 
+
+# Mapping of columns to comparison operator and input parameter.
+# [(orm column, operator, input comparison value)]
+# Filter on hydraulics fields:
+filter_hydraulics = [
+    ('m_datetime', 'ge', 'starttime'),
+    ('m_datetime', 'le', 'endtime'),
+    ('m_toptemperature', 'ge', 'mintoptemperature'),
+    ('m_toptemperature', 'le', 'maxtoptemperature'),
+    ('m_bottomtemperature', 'ge', 'minbottomtemperature'),
+    ('m_bottomtemperature', 'le', 'maxbottomtemperature'),
+    ('m_toppressure', 'ge', 'mintoppressure'),
+    ('m_toppressure', 'le', 'maxtoppressure'),
+    ('m_bottompressure', 'ge', 'minbottompressure'),
+    ('m_bottompressure', 'le', 'maxbottompressure'),
+    ('m_topflow', 'ge', 'mintopflow'),
+    ('m_topflow', 'le', 'maxtopflow'),
+    ('m_bottomflow', 'ge', 'minbottomflow'),
+    ('m_bottomflow', 'le', 'maxbottomflow'),
+    ('m_fluiddensity', 'ge', 'minfluiddensity'),
+    ('m_fluiddensity', 'le', 'maxfluiddensity'),
+    ('m_fluidviscosity', 'ge', 'minfluidviscosity'),
+    ('m_fluidviscosity', 'le', 'maxfluidviscosity'),
+    ('m_fluidph', 'ge', 'minfluidph'),
+    ('m_fluidph', 'le', 'maxfluidph')]
+
+filter_boreholes = [
+    ('m_latitude', 'ge', 'minlatitude'),
+    ('m_latitude', 'le', 'maxlatitude'),
+    ('m_longitude', 'ge', 'minlongitude'),
+    ('m_longitude', 'le', 'maxlongitude')]
 
 class ResourceBase(Resource):
 
@@ -65,96 +102,66 @@ class ResourceBase(Resource):
 
 class BoreholeListResource(ResourceBase):
 
-    def get(self):
-        pass
-
-
-class BoreholeResource(ResourceBase):
-
-    def get(self, borehole_id):
-        pass
-
-
-class DynamicFilter(ResourceBase):
-    """
-
-    Dynamic filtering of query.
-
-    Example:
-     dyn_query = DynamicFilter(query, orm.BoreholeSection)
-     dyn_query.filter_query([('m_starttime', 'eq', datetime(...))])
-
-    """
-
-    def __init__(self, query, orm_class):
-        self.query = query
-        self.orm_class = orm_class
-
-    def operator_attr(self, column, op):
-        """
-        Returns method associated with an comparison operator.
-        If op, op_ or __op__ does not exist, Exception returned.
-
-        :returns type: str.
-
-        """
-        try:
-            return list(filter(
-                lambda e: hasattr(column, e % op),
-                    ['%s', '%s_', '__%s__']))[0] % op
-        except IndexError:
-            raise Exception('Invalid filter operator: %s' % op)
-
-    def filter_query(self, filter_condition):
-        """
-        Update self.query based on filter_condition.
-        :param filter_condition: list, ie: [(key,operator,value)]
-            operator examples:
-                eq for ==
-                lt for <
-                ge for >=
-                in for in_
-                like for like
-
-            value can be list or a string.
-            key must belong in self.orm_class.
-
-        """
-
-        for f in filter_condition:
-            try:
-                key, op, value = f
-            except ValueError:
-                raise Exception('Invalid filter input: %s' % f)
-            column = getattr(self.orm_class, key)
-            if not column:
-                raise Exception('Invalid filter column: %s' % key)
-            if op == 'in':
-                if isinstance(value, list):
-                    filt = column.in_(value)
-                else:
-                    filt = column.in_(value.split(','))
-            else:
-                attr = self.operator_attr(self, column, op)
-                if value == 'null':
-                    value = None
-                print(column, attr, value)
-                filt = getattr(column, attr)(value)
-            self.query = self.query.filter(filt)
-
-    def return_query(self):
-        return self.query
-
-
-class BoreholeHydraulicDataListResource(ResourceBase):
-
-    LOGGER = 'hydws.server.v1.boreholehydraulicdatalistresource'
+    LOGGER = 'hydws.server.v1.boreholelistresource'
 
     @with_fdsnws_exception_handling(__version__)
-    @use_kwargs(BoreholeHydraulicDataListResourceSchema(),
+    @use_kwargs(BoreholeListResourceSchema(), locations=("query",))
+    def get(self, **query_params):
+        
+        self.logger.debug(
+            f"Received request: "
+            f"query_params={query_params}")
+
+        resp = self._process_request(db.session,
+                                     **query_params)
+
+        if not resp:
+            self._handle_nodata(query_params)
+
+        # TODO(damb): Serialize according to query_param format=JSON|XML
+        # format response
+        level = query_params.get('level')
+        if level == 'borehole':
+            resp = BoreholeSchema(many=True).dumps(resp)
+        elif level == 'section':
+            resp = BoreholeSectionSchema(many=True).dumps(resp)
+
+        return make_response(resp, settings.MIMETYPE_JSON)
+
+    def _process_request(self, session,
+                         **query_params):
+
+        
+        level = query_params.get('level')
+        
+        query = session.query(orm.Borehole)
+        if level == 'section':
+            query = query.join(orm.BoreholeSection)
+        dynamic_query = DynamicQuery(query)
+
+        # XXX(damb): Emulate QuakeML type Epoch (though on DB level it is
+        # defined as QuakeML type OpenEpoch
+
+        # XXX(lsarson): Should there be functionality to add OR queries?
+        # if so then there should have another method added to DynamicQuery
+
+        # XXX(lsarson): Filter None first or query will fail due to type differences.
+        dynamic_query.filter_query(orm.Borehole, query_params,
+                                   filter_boreholes)
+        try: 
+            return dynamic_query.query.all()
+
+        except NoResultFound:
+            return None
+
+class BoreholeHydraulicSampleListResource(ResourceBase):
+
+    LOGGER = 'hydws.server.v1.boreholehydraulicsamplelistresource'
+
+    @with_fdsnws_exception_handling(__version__)
+    @use_kwargs(BoreholeHydraulicSampleListResourceSchema,
                 locations=("query", ))
     def get(self, borehole_id, **query_params):
-        print('get')
         borehole_id = decode_publicid(borehole_id)
 
         self.logger.debug(
@@ -169,7 +176,129 @@ class BoreholeHydraulicDataListResource(ResourceBase):
 
         # TODO(damb): Serialize according to query_param format=JSON|XML
         # format response
-        resp = BoreholeSchema().dumps(resp)
+        print("#################### level: ", query_params.get('level'))
+        level = query_params.get('level')
+        if level == 'borehole':
+            resp = BoreholeSchema(many=True).dumps(resp)
+        elif level == 'section':
+            resp = BoreholeSectionSchema(many=True).dumps(resp)
+        elif level == 'hydraulics':
+            resp = BoreholeHydraulicSampleSchema(many=True).dumps(resp)
+        return make_response(resp, settings.MIMETYPE_JSON)
+    
+
+    def _process_request(self, session, borehole_id,
+                         **query_params):
+
+        if not borehole_id:
+            raise ValueError(f"Invalid borehole identifier: {borehole_id!r}")
+
+        level = query_params.get('level')
+        query = session.query(orm.Borehole)
+        if level == 'section':
+            query = query.join(orm.BoreholeSection)
+        elif level == 'hydraulics':
+            query = query.join(orm.HydraulicsSample)
+        
+        query = query.filter(orm.Borehole.m_publicid==borehole_id)
+
+        dynamic_query = DynamicQuery(query)
+
+        # XXX(damb): Emulate QuakeML type Epoch (though on DB level it is
+        # defined as QuakeML type OpenEpoch
+
+        # XXX(lsarson): Should there be functionality to add OR queries?
+        # if so then there should have another method added to DynamicQuery
+
+        # XXX(lsarson): Filter None first or query will fail due to type differences.
+        dynamic_query.filter_query(orm.HydraulicSample, query_params,
+                                   filter_hydraulics)
+        try: 
+            return dynamic_query.query.all()
+
+        except NoResultFound:
+            return None
+
+
+#class BoreholeHydraulicSampleListResource(ResourceBase):
+#
+#    LOGGER = 'hydws.server.v1.boreholehydraulicsamplelistresource'
+#
+#    @with_fdsnws_exception_handling(__version__)
+#    @use_kwargs(BoreholeHydraulicSampleListResourceSchema(),
+#                locations=("query", ))
+#    def get(self, borehole_id, **query_params):
+#        borehole_id = decode_publicid(borehole_id)
+#
+#        self.logger.debug(
+#            f"Received request: borehole_id={borehole_id}, "
+#            f"query_params={query_params}")
+#
+#        resp = self._process_request(db.session, borehole_id=borehole_id,
+#                                     **query_params)
+#
+#        if not resp:
+#            self._handle_nodata(query_params)
+#
+#        # TODO(damb): Serialize according to query_param format=JSON|XML
+#        # format response
+#        resp = SectionHydraulicSampleSchema(many=True).dumps(resp)
+#
+#        return make_response(resp, settings.MIMETYPE_JSON)
+#    
+#
+#    def _process_request(self, session, borehole_id=None, section_id=None,
+#                         **query_params):
+#
+#        if not borehole_id:
+#            raise ValueError(f"Invalid borehole identifier: {borehole_id!r}")
+#
+#        query = session.query(orm.Borehole).\
+#                join(orm.BoreholeSection).\
+#                join(orm.HydraulicSample).\
+#            filter(orm.Borehole.m_publicid==borehole_id)
+#
+#        dynamic_query = DynamicQuery(query)
+#
+#        # XXX(damb): Emulate QuakeML type Epoch (though on DB level it is
+#        # defined as QuakeML type OpenEpoch
+#
+#        # XXX(lsarson): Should there be functionality to add or queries?
+#        # if so then there should have another method added to DynamicQuery
+#
+#        # XXX(lsarson): Filter None first or query will fail due to type differences.
+#        dynamic_query.filter_query(orm.HydraulicSample, query_params,
+#                                   filter_hydraulics)
+#
+#        try:
+#            return dynamic_query.query.all()
+#        except NoResultFound:
+#            return None
+
+class SectionHydraulicSampleListResource(ResourceBase):
+
+    LOGGER = 'hydws.server.v1.sectionhydraulicsamplelistresource'
+
+    @with_fdsnws_exception_handling(__version__)
+    @use_kwargs(SectionHydraulicSampleListResourceSchema(),
+                locations=("query", ))
+    def get(self, borehole_id, section_id, **query_params):
+        borehole_id = decode_publicid(borehole_id)
+        section_id = decode_publicid(section_id)
+        self.logger.debug(
+            f"Received request: borehole_id={borehole_id}, "
+            f"section_id={section_id}, "
+            f"query_params={query_params}")
+
+        resp = self._process_request(db.session, borehole_id=borehole_id,
+                                     section_id=section_id, **query_params)
+
+        if not resp:
+            self._handle_nodata(query_params)
+
+        # TODO(damb): Serialize according to query_param format=JSON|XML
+        # format response
+        resp = HydraulicSampleSchema(many=True).dumps(resp)
 
         return make_response(resp, settings.MIMETYPE_JSON)
     
@@ -177,16 +306,16 @@ class BoreholeHydraulicDataListResource(ResourceBase):
     def _process_request(self, session, borehole_id=None, section_id=None,
                          **query_params):
 
-        print('_process_request')
         if not borehole_id:
             raise ValueError(f"Invalid borehole identifier: {borehole_id!r}")
 
-        query = session.query(orm.Borehole).\
-            join(orm.BoreholeSection).\
-            join(orm.HydraulicSample).\
-            filter(orm.Borehole.m_publicid==borehole_id)
+        query = session.query(orm.HydraulicSample).\
+                join(orm.BoreholeSection).\
+                join(orm.Borehole).\
+            filter(orm.Borehole.m_publicid==borehole_id).\
+            filter(orm.BoreholeSection.m_publicid==section_id)
 
-        dynamic_query = DynamicFilter(query, orm.BoreholeSection)
+        dynamic_query = DynamicQuery(query)
 
         # XXX(damb): Emulate QuakeML type Epoch (though on DB level it is
         # defined as QuakeML type OpenEpoch
@@ -205,30 +334,25 @@ class BoreholeHydraulicDataListResource(ResourceBase):
                 filter(orm.HydraulicSample.m_datetime_value <= endtime)
 
         # XXX(lsarson): Filter None first or query will fail due to type differences.
-        dynamic_query.filter_query([('m_starttime', 'ne', None),
-            ('m_starttime', 'ge', query_params.get('starttime'))])
-
-        # TODO(lsarson): Think about if endtime not defined.
-        dynamic_query.filter_query(['m_endtime', 'le', query_params.get('endtime')])
-        # TODO(lsarson): Add additional filter criteria. Just test out this for now.
+        dynamic_query.filter_query(orm.HydraulicSample, query_params,
+                                   filter_hydraulics)
 
         try:
-            return query.\
-                order_by(orm.BoreholeSection.m_starttime).\
-                order_by(orm.HydraulicSample.m_datetime_value).\
-                one()
+            return dynamic_query.query.all()
         except NoResultFound:
             return None
 
-
-class SectionHydraulicDataListResource(ResourceBase):
-
-    def get(self, borehole_id, section_id):
-        pass
 
 
 # TODO(damb):
 # Add resources to API
 
-api_v1.add_resource(BoreholeHydraulicDataListResource,
+api_v1.add_resource(BoreholeListResource,
+                    '{}/'.format(settings.HYDWS_PATH_BOREHOLES))
+api_v1.add_resource(BoreholeHydraulicSampleListResource,
                     '{}/<borehole_id>'.format(settings.HYDWS_PATH_BOREHOLES))
+api_v1.add_resource(SectionHydraulicSampleListResource,
+                    '{}/<borehole_id>{}/<section_id>{}'.format(
+                        settings.HYDWS_PATH_BOREHOLES,
+                        settings.HYDWS_PATH_SECTIONS,
+                        settings.HYDWS_PATH_HYDRAULICS))

@@ -17,11 +17,15 @@ Format = functools.partial(
     validate=validate.OneOf(settings.HYDWS_OFORMATS))
 
 
-Level = functools.partial(
+LevelSection = functools.partial(
     fields.String,
     missing=settings.HYDWS_DEFAULT_LEVEL,
-    validate=validate.OneOf(settings.HYDWS_LEVELS))
+    validate=validate.OneOf(settings.HYDWS_SECTION_LEVELS))
 
+LevelHydraulic = functools.partial(
+    fields.String,
+    missing=settings.HYDWS_DEFAULT_LEVEL,
+    validate=validate.OneOf(settings.HYDWS_HYDRAULIC_LEVELS))
 
 NoData = functools.partial(
     fields.Int,
@@ -55,8 +59,74 @@ class GeneralSchema(Schema):
     nodata = NoData()
     format = Format()
 
+class LocationConstraintsSchemaMixin(Schema):
+    """
+    Query parameters for boreholes, location specific.
+    """
+    minlatitude = fields.Float()
+    maxlatitude = fields.Float()
+    minlongitude = fields.Float()
+    maxlongitude = fields.Float()
+    # do validations on what is accepted as lat and lon
+
+    @validates_schema
+    def validate_lat_long_constraints(self, data):
+        """
+        Validation of latitude and longitude constraints.
+        """
+        maxlatitude = data.get('maxlatitude')
+        minlatitude = data.get('minlatitude')
+        maxlongitude = data.get('maxlongitude')
+        minlongitude = data.get('minlongitude')
+
+        if maxlatitude and maxlatitude > 90.0:
+            raise ValidationError('maxlatitude greater than 90 degrees')
+        if minlatitude and minlatitude < -90.0:
+            raise ValidationError('minlatitude less than -90 degrees')
+        if maxlongitude and maxlongitude > 180.0:
+            raise ValidationError('maxlongitude greater than 180 degrees')
+        if minlongitude and minlongitude > -180.0:
+            raise ValidationError('minlongitude greater than -180 degrees')
+
+        if maxlatitude and minlatitude:
+            if maxlatitude < minlatitude:
+                raise ValidationError('maxlatitude must be greater than'
+                                      'minlatitude')
+
+        if maxlongitude and minlongitude:
+            if maxlongitude < minlongitude:
+                raise ValidationError('maxlongitude must be greater than'
+                                      'minlongitude')
+class HydraulicsSchemaMixin(Schema):
+    """
+    Query parameters for hydraulics data.
+    """
+    minbottomflow = fields.Float()
+    maxbottomflow = fields.Float()
+    mintopflow = fields.Float()
+    maxtopflow = fields.Float()
+    minbottompressure = fields.Float()
+    maxbottompressure = fields.Float()
+    mintoppressure = fields.Float()
+    maxtoppressure = fields.Float()
+    mintoptemperature = fields.Float()
+    maxtoptemperature = fields.Float()
+    minbottomtemperature = fields.Float()
+    maxbottomtemperature = fields.Float()
+    minfluiddensity = fields.Float()
+    maxfluiddensity = fields.Float()
+    minfluidviscosity = fields.Float()
+    maxfluidviscosity = fields.Float()
+    minfluidph = fields.Float()
+    maxfluidph = fields.Float()
+    limit = fields.Integer()
+    offset = fields.Integer()
+    #XXX Todo sarsonl add constraints vaidation.
 
 class TimeConstraintsSchemaMixin(Schema):
+    """
+    Schema for time related query parameters.
+    """
 
     starttime = FDSNWSDateTime(format='fdsnws')
     start = fields.Str(load_only=True)
@@ -116,6 +186,29 @@ class TimeConstraintsSchemaMixin(Schema):
         ordered = True
 
 
-class BoreholeHydraulicDataListResourceSchema(TimeConstraintsSchemaMixin,
+class BoreholeHydraulicSampleListResourceSchema(TimeConstraintsSchemaMixin,
+                                              HydraulicsSchemaMixin,
                                               GeneralSchema):
+    """
+    Handle optional query parameters for call returning hydraulics
+    data for specified borehole id.
+    """
+    level = LevelHydraulic()    
+
+class BoreholeListResourceSchema(TimeConstraintsSchemaMixin,
+                                 LocationConstraintsSchemaMixin,
+                                 GeneralSchema):
+
+    """
+    Handle optional query parameters for call returning borehole
+    data for geographical area optionally including section data.
+    """
+    level = LevelSection()
+
+class SectionHydraulicSampleListResourceSchema(TimeConstraintsSchemaMixin,
+                                             GeneralSchema):
+    """
+    Handle optional query parameters for call returning hydraulics
+    data for specified borehole id and section id.
+    """
     pass

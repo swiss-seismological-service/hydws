@@ -1,6 +1,7 @@
 """
 HYDWS datamodel ORM entity de-/serialization facilities.
 """
+import logging
 
 import datetime
 
@@ -25,12 +26,13 @@ class QuakeMLQuantityField(fields.Field):
     _CHECK_ATTRIBUTE = False  # We generate the attribute dynamically
     ATTRS = ('value', 'uncertainty', 'loweruncertainty', 'upperuncertainty',
              'confidencelevel')
-
+    logger = logging.getLogger('hydws.server.v1.resource')
     def _serialize(self, value, attr, obj, **kwargs):
         retval = {}
         for _attr in self.ATTRS:
             key = f"{_ATTR_PREFIX}{attr}_{_attr}".lower()
             value = get_value(obj, key, default=None)
+            
             if isinstance(value, datetime.datetime):
                 retval[_attr] = value.isoformat()
             elif value is not None:
@@ -43,7 +45,6 @@ class SchemaBase(Schema):
     """
     Schema base class for object de-/serialization.
     """
-    publicid = fields.String()
 
     def get_attribute(self, obj, key, default):
         """
@@ -80,10 +81,11 @@ class HydraulicSampleSchema(SchemaBase):
     fluidcomposition = fields.String()
 
 
-class BoreholeSectionSchema(SchemaBase):
+class SectionSchema(SchemaBase):
     """
     Schema implementation of a borehole section.
     """
+    publicid = fields.String()
     starttime = fields.DateTime(format='iso')
     endtime = fields.DateTime(format='iso')
     toplongitude = QuakeMLQuantityField()
@@ -101,6 +103,8 @@ class BoreholeSectionSchema(SchemaBase):
     casingtype = fields.String()
     description = fields.String()
 
+class SectionHydraulicSampleSchema(SectionSchema, SchemaBase):
+
     hydraulics = fields.Nested(HydraulicSampleSchema, many=True,
                                attribute='_hydraulics')
 
@@ -109,13 +113,18 @@ class BoreholeSchema(SchemaBase):
     """
     Schema implementation of a borehole.
     """
-    # TODO(damb): Provide a hierarchical implementation of sub_types (e.g.
-    # CreationInfo, LiteratureSource etc.); create them dynamically (see: e.g.
-    # QuakeMLQuantityField)
+    # TODO(damb): Provide a hierarchical implementation of sub_types; create
+    # them dynamically (see: e.g. QuakeMLQuantityField)
+    publicid = fields.String()
     longitude = QuakeMLQuantityField()
     latitude = QuakeMLQuantityField()
     depth = QuakeMLQuantityField()
     bedrockdepth = QuakeMLQuantityField()
 
-    sections = fields.Nested(BoreholeSectionSchema, many=True,
+class BoreholeSectionSchema(BoreholeSchema, SchemaBase):
+    sections = fields.Nested(SectionSchema, many=True,
+                             attribute='_sections')
+
+class BoreholeSectionHydraulicSampleSchema(BoreholeSchema, SchemaBase):
+    sections = fields.Nested(SectionHydraulicSampleSchema, many=True,
                              attribute='_sections')

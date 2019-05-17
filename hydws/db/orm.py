@@ -2,8 +2,12 @@
 HYDWS datamodel ORM representation.
 """
 
+from operator import itemgetter
 from sqlalchemy import Column, String, Boolean, Integer, ForeignKey
 from sqlalchemy.orm import relationship
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy import select, func
+
 
 from hydws.db.base import (ORMBase, CreationInfoMixin, RealQuantityMixin,
                            TimeQuantityMixin, EpochMixin,
@@ -36,7 +40,47 @@ class Borehole(CreationInfoMixin('CreationInfo',
         *Quantities* are implemented as `QuakeML
         <https://quake.ethz.ch/quakeml>`_ quantities.
     """
-    _sections = relationship("BoreholeSection", back_populates="_borehole")
+    _sections = relationship("BoreholeSection", back_populates="_borehole",
+                             order_by="BoreholeSection.m_topdepth_value",
+                             cascade='all, delete-orphan')
+
+    @hybrid_property
+    def m_longitude(self):
+        # min topdepth defines top-section
+        return min([s for s in self._sections],
+                   key=lambda x: x.m_topdepth_value).m_toplongitude_value
+
+    @hybrid_property
+    def m_latitude(self):
+        # min topdepth defines top-section
+        return min([s for s in self._sections],
+                   key=lambda x: x.m_topdepth_value).m_toplatitude_value
+
+    @hybrid_property
+    def m_depth(self):
+        # max bottomdepth defines bottom-section
+        return max([s.m_bottomdepth_value for s in self._sections])
+
+    @hybrid_property
+    def m_injectionpoint(self):
+        """
+        Injection point of the borehole. It is defined by the uppermost
+        section's bottom with casing and an open bottom.
+
+        .. note::
+
+            The implementation requires boreholes to be linear.
+        """
+        isection = min([s for s in self._sections
+                       if s.m_casingdiameter_value and not s._bottomclosed],
+                       key=lambda x: x.m_bottomdepth_value, default=None)
+
+        if not isection:
+            raise ValueError('Cased borehole has a closed bottom.')
+
+        return (isection.bottomlongitude_value,
+                isection.bottomlatitude_value,
+                isection.bottomdepth_value)
 
 
 class BoreholeSection(EpochMixin('Epoch', epoch_type='open',
@@ -69,7 +113,8 @@ class BoreholeSection(EpochMixin('Epoch', epoch_type='open',
     m_borehole_oid = Column(Integer, ForeignKey('borehole._oid'))
     _borehole = relationship("Borehole", back_populates="_sections")
 
-    _hydraulics = relationship("HydraulicSample", back_populates="_section")
+    _hydraulics = relationship("HydraulicSample", back_populates="_section",
+                               order_by="HydraulicSample.m_datetime_value")
 
 
 class HydraulicSample(TimeQuantityMixin('m_datetime'),
