@@ -5,7 +5,7 @@ Well related test facilities.
 
 import unittest
 from unittest.mock import MagicMock, patch
-from hydws.server import misc
+from hydws.server import query_filters
 
 class MockQuery(object):
 
