@@ -47,246 +47,266 @@ class EBibtexEntryType(AutoName):
     TECHREPORT = enum.auto()
     UNPUBLISHED = enum.auto()
 
-
-def _create_used(column_prefix=None, key_prefix=None):
+# XXX No seperate column name defined, use parent name.
+# It should only be accessed on orm side through attribute name.
+def _create_used(parent_prefix=None, global_column_prefix=None):
     @declared_attr
     def _used(cls):
-        #if not column_prefix:
-        #    column_prefix = ''
-        #if key_prefix:
-        #    column_prefix = '{}{}'.format(key_prefix, column_prefix)
-
-        return Column('%s%sused' % (key_prefix, column_prefix), Boolean, nullable=False,
+        return Column('%s%sused' % (global_column_prefix, parent_prefix), Boolean, nullable=False,
                       default=False)
 
-    return {'{}{}'.format(column_prefix, 'used'): _used}
+    return {'{}{}'.format(parent_prefix, 'used'): _used}
 
 
-def _create_resourceidentifier_map(column_prefix=None, key_prefix=None, used=True):
+def _create_resourceidentifier_map(parent_prefix=None, global_column_prefix=None, column_prefix=None, used=True):
 
+    if not parent_prefix:
+        parent_prefix = ''
     if not column_prefix:
-        column_prefix = ''
-    attr_prefix = column_prefix
+        column_prefix = parent_prefix
     
-    if key_prefix:
-        column_prefix = '%s%s' % (key_prefix, column_prefix)
+    if global_column_prefix:
+        column_prefix = '%s%s' % (global_column_prefix, column_prefix)
 
     @declared_attr
     def _resourceid(cls):
         return Column('%sresourceid' % column_prefix, String)
-    func_map = [('resourceid', _resourceid), ]
+    func_map = [('%sresourceid' % parent_prefix, _resourceid), ]
 
     if used:
-        func_map.extend(_create_used(column_prefix=attr_prefix, key_prefix=key_prefix).items())
+        func_map.extend(_create_used(parent_prefix=parent_prefix,
+                        global_column_prefix=global_column_prefix).items())
 
-    return {'{}{}'.format(attr_prefix, attr_name): attr
+    return {'{}'.format(attr_name): attr
             for attr_name, attr in func_map}
 
 
-def _create_resourcelocator_map(column_prefix=None, key_prefix=None, used=True):
+def _create_resourcelocator_map(parent_prefix=None, global_column_prefix=None, column_prefix=None, used=True):
 
+    if not parent_prefix:
+        parent_prefix = ''
     if not column_prefix:
-        column_prefix = ''
-    attr_prefix = column_prefix
-
-    if key_prefix:
-        column_prefix = '%s%s' % (key_prefix, column_prefix)
+        column_prefix = parent_prefix
+    
+    if global_column_prefix:
+        column_prefix = '%s%s' % (global_column_prefix, column_prefix)
 
     @declared_attr
     def _resourcelocator(cls):
         return Column('%sresourcelocator' % column_prefix, String)
-    func_map = [('resourcelocator', _resourcelocator), ]
+    func_map = [('%sresourcelocator' % parent_prefix, _resourcelocator), ]
 
     if used:
-        func_map.extend(_create_used(column_prefix=attr_prefix, key_prefix=key_prefix).items())
+        func_map.extend(_create_used(parent_prefix=parent_prefix,
+                        global_column_prefix=global_column_prefix).items())
 
-    return {'{}{}'.format(attr_prefix, attr_name): attr
+    return {'{}'.format(attr_name): attr
             for attr_name, attr in func_map}
 
 
-def _create_creationinfo_map(column_prefix=None, key_prefix=None, used=True):
+def _create_creationinfo_map(parent_prefix=None, global_column_prefix=None, column_prefix=None, used=True):
 
+    if not parent_prefix:
+        parent_prefix = ''
     if not column_prefix:
-        column_prefix = ''
-    attr_prefix = column_prefix
-
-    if key_prefix:
-        column_prefix = '%s%s' % (key_prefix, column_prefix)
+        column_prefix = parent_prefix
+    
+    if global_column_prefix:
+        column_prefix = '%s%s' % (global_column_prefix, column_prefix)
 
     @declared_attr
     def _author(cls):
         return Column('%sauthor' % column_prefix, String)
-    func_map = [('author', _author), ]
+    func_map = [('%sauthor' % parent_prefix, _author), ]
     func_map.extend(
         _create_resourceidentifier_map(
-            column_prefix='%sauthoruri_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%sauthoruri_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=used).items())
 
     @declared_attr
     def _agencyid(cls):
         return Column('%sagencyid' % column_prefix, String)
-    func_map.append(('agencyid', _agencyid))
+    func_map.append(('%sagencyid' % parent_prefix, _agencyid))
     func_map.extend(
         _create_resourceidentifier_map(
-            column_prefix='%sagencyuri_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%sagencyuri_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=used).items())
 
     @declared_attr
     def _creationtime(cls):
         return Column('%screationtime' % column_prefix, DateTime,
                       default=datetime.datetime.utcnow())
-    func_map.append(('creationtime', _creationtime))
+    func_map.append(('%screationtime'% parent_prefix, _creationtime))
 
     @declared_attr
     def _version(cls):
         return Column('%sversion' % column_prefix, String)
-    func_map.append(('version', _version))
+    func_map.append(('%sversion' % parent_prefix, _version))
 
     @declared_attr
     def _copyrightowner(cls):
         return Column('%scopyrightowner' % column_prefix, String)
-    func_map.append(('copyrightowner', _copyrightowner))
+    func_map.append(('%scopyrightowner'% parent_prefix, _copyrightowner))
     func_map.extend(
         _create_resourceidentifier_map(
-            column_prefix='%scopyrightowneruri_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%scopyrightowneruri_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=used).items())
 
     @declared_attr
     def _license(cls):
         return Column('%slicense' % column_prefix, String)
-    func_map.append(('license', _license))
+    func_map.append(('%slicense' % parent_prefix, _license))
 
     if used:
-        func_map.extend(_create_used(column_prefix=attr_prefix, key_prefix=key_prefix).items())
+        func_map.extend(_create_used(parent_prefix=parent_prefix,
+                        global_column_prefix=global_column_prefix).items())
 
-    return {'{}{}'.format(attr_prefix, attr_name): attr
+    return {'{}'.format(attr_name): attr
             for attr_name, attr in func_map}
 
 
-def _create_domtypeuri_map(column_prefix=None, key_prefix=None, used=True):
+def _create_domtypeuri_map(parent_prefix=None, global_column_prefix=None, column_prefix=None, used=True):
 
+    if not parent_prefix:
+        parent_prefix = ''
     if not column_prefix:
-        column_prefix = ''
-    attr_prefix = column_prefix
-
-    if key_prefix:
-        column_prefix = '%s%s' % (key_prefix, column_prefix)
+        column_prefix = parent_prefix
+    
+    if global_column_prefix:
+        column_prefix = '%s%s' % (global_column_prefix, column_prefix)
 
     func_map = []
     func_map.extend(
         _create_resourceidentifier_map(
-            column_prefix='%suri_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%suri_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=False).items())
 
     @declared_attr
     def _type(cls):
         return Column('%stype' % column_prefix, String)
-    func_map.append(('type', _type))
+    func_map.append(('%stype' % parent_prefix, _type))
 
     if used:
-        func_map.extend(_create_used(column_prefix=attr_prefix, key_prefix=key_prefix).items())
+        func_map.extend(_create_used(parent_prefix=parent_prefix,
+                        global_column_prefix=global_column_prefix).items())
 
-    return {'{}{}'.format(attr_prefix, attr_name): attr
+    return {'{}'.format(attr_name): attr
             for attr_name, attr in func_map}
 
 
-def _create_languagecodeuri_map(column_prefix=None, key_prefix=None, used=True):
+def _create_languagecodeuri_map(parent_prefix=None, global_column_prefix=None, column_prefix=None, used=True):
 
+    if not parent_prefix:
+        parent_prefix = ''
     if not column_prefix:
-        column_prefix = ''
-    attr_prefix = column_prefix
-
-    if key_prefix:
-        column_prefix = '%s%s' % (key_prefix, column_prefix)
+        column_prefix = parent_prefix
+    
+    if global_column_prefix:
+        column_prefix = '%s%s' % (global_column_prefix, column_prefix)
 
     func_map = []
     func_map.extend(
         _create_resourceidentifier_map(
-            column_prefix='%suri_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%suri_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=False).items())
 
     @declared_attr
     def _code(cls):
         return Column('%scode' % column_prefix, String)
-    func_map.append(('code', _code))
+    func_map.append(('%scode' % parent_prefix, _code))
 
     @declared_attr
     def _language(cls):
         return Column('%slanguage' % column_prefix, String)
-    func_map.append(('language', _language))
+    func_map.append(('%slanguage' % parent_prefix, _language))
 
     if used:
-        func_map.extend(_create_used(column_prefix=attr_prefix, key_prefix=key_prefix).items())
+        func_map.extend(_create_used(parent_prefix=parent_prefix,
+                        global_column_prefix=global_column_prefix).items())
 
-    return {'{}{}'.format(attr_prefix, attr_name): attr
+    return {'{}'.format(attr_name): attr
             for attr_name, attr in func_map}
 
 
-def _create_countrycodeuri_map(column_prefix=None, key_prefix=None, used=True):
+def _create_countrycodeuri_map(parent_prefix=None, global_column_prefix=None, column_prefix=None, used=True):
 
+    if not parent_prefix:
+        parent_prefix = ''
     if not column_prefix:
-        column_prefix = ''
-    attr_prefix = column_prefix
-
-    if key_prefix:
-        column_prefix = '%s%s' % (key_prefix, column_prefix)
+        column_prefix = parent_prefix
+    
+    if global_column_prefix:
+        column_prefix = '%s%s' % (global_column_prefix, column_prefix)
 
     func_map = []
     func_map.extend(
         _create_resourceidentifier_map(
-            column_prefix='%suri_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%suri_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=False).items())
 
     @declared_attr
     def _code(cls):
         return Column('%scode' % column_prefix, String)
-    func_map.append(('code', _code))
+    func_map.append(('%scode' % parent_prefix, _code))
 
     @declared_attr
     def _country(cls):
         return Column('%scountry' % column_prefix, String)
-    func_map.append(('country', _country))
+    func_map.append(('%scountry'  % parent_prefix, _country))
 
     if used:
-        func_map.extend(_create_used(column_prefix=attr_prefix, key_prefix=key_prefix).items())
+        func_map.extend(_create_used(parent_prefix=parent_prefix,
+                        global_column_prefix=global_column_prefix).items())
 
-    return {'{}{}'.format(attr_prefix, attr_name): attr
+    return {'{}'.format(attr_name): attr
             for attr_name, attr in func_map}
 
 
-def _create_author_map(column_prefix=None, key_prefix=None, used=True):
+def _create_author_map(parent_prefix=None, global_column_prefix=None, column_prefix=None, used=True):
 
+    if not parent_prefix:
+        parent_prefix = ''
     if not column_prefix:
-        column_prefix = ''
-    attr_prefix = column_prefix
-
-    if key_prefix:
-        column_prefix = '%s%s' % (key_prefix, column_prefix)
+        column_prefix = parent_prefix
+    
+    if global_column_prefix:
+        column_prefix = '%s%s' % (global_column_prefix, column_prefix)
 
     func_map = []
     func_map.extend(
         _create_person_map(
-            column_prefix='%sperson_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%sperson_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=False).items())
 
     func_map.extend(
         _create_personalaffiliatation_map(
-            column_prefix='%saffiliation_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%saffiliation_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=used).items())
 
     func_map.extend(
         _create_personalaffiliatation_map(
-            column_prefix='%salternateaffiliation_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%salternateaffiliation_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=used).items())
 
     func_map.extend(
         _create_resourceidentifier_map(
-            column_prefix='%smbox_' % attr_prefix, key_prefix=key_prefix,# XXX don't use column prefix
+            parent_prefix='%smbox_' % parent_prefix,
+            global_column_prefix=global_column_prefix,# XXX don't use column prefix
             used=used).items())
 
     func_map.extend(
         _create_comment_map(
-            column_prefix='%scomment_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%scomment_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=used).items())
 
     @declared_attr
@@ -298,410 +318,442 @@ def _create_author_map(column_prefix=None, key_prefix=None, used=True):
         return Column('%spositioninauthorlist' % column_prefix, Integer)
 
     if used:
-        func_map.extend(_create_used(column_prefix=attr_prefix, key_prefix=key_prefix).items())
+        func_map.extend(_create_used(parent_prefix=parent_prefix,
+                        global_column_prefix=global_column_prefix).items())
 
-    return {'{}{}'.format(attr_prefix, attr_name): attr
+    return {'{}'.format(attr_name): attr
             for attr_name, attr in func_map}
 
 
-def _create_person_map(column_prefix=None, key_prefix=None, used=True):
+def _create_person_map(parent_prefix=None, global_column_prefix=None, column_prefix=None, used=True):
 
+    if not parent_prefix:
+        parent_prefix = ''
     if not column_prefix:
-        column_prefix = ''
-    attr_prefix = column_prefix
-
-    if key_prefix:
-        column_prefix = '%s%s' % (key_prefix, column_prefix)
+        column_prefix = parent_prefix
+    
+    if global_column_prefix:
+        column_prefix = '%s%s' % (global_column_prefix, column_prefix)
 
     @declared_attr
     def _name(cls):
         return Column('%sname' % column_prefix, String)
-    func_map = [('name', _name), ]
+    func_map = [('%sname' % parent_prefix, _name)]
 
     @declared_attr
     def _givenname(cls):
         return Column('%sgivenname' % column_prefix, String)
-    func_map.append(('givenname', _givenname))
+    func_map.append(('%sgivenname' % parent_prefix, _givenname))
 
     @declared_attr
     def _familyname(cls):
         return Column('%sfamilyname' % column_prefix, String)
-    func_map.append(('familyname', _familyname))
+    func_map.append(('%sfamilyname' % parent_prefix, _familyname))
 
     @declared_attr
     def _title(cls):
         return Column('%stitle' % column_prefix, String)
-    func_map.append(('title', _title))
+    func_map.append(('%stitle' % parent_prefix, _title))
 
     func_map.extend(
         _create_resourceidentifier_map(
-            column_prefix='%spersonid_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%spersonid_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=used).items())
 
     func_map.extend(
         _create_resourceidentifier_map(
-            column_prefix='%salternatepersonid_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%salternatepersonid_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=used).items())
 
     func_map.extend(
         _create_resourceidentifier_map(
-            column_prefix='%smbox_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%smbox_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=used).items())
 
     func_map.extend(
         _create_resourceidentifier_map(
-            column_prefix='%sphone_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%sphone_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=used).items())
 
     func_map.extend(
         _create_resourcelocator_map(
-            column_prefix='%shomepage_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%shomepage_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=used).items())
 
     func_map.extend(
         _create_resourcelocator_map(
-            column_prefix='%sworkplacehomepage_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%sworkplacehomepage_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=used).items())
 
     if used:
-        func_map.extend(_create_used(column_prefix=attr_prefix, key_prefix=key_prefix).items())
+        func_map.extend(_create_used(parent_prefix=parent_prefix,
+                        global_column_prefix=global_column_prefix).items())
 
-    return {'{}{}'.format(attr_prefix, attr_name): attr
+    return {'{}'.format(attr_name): attr
             for attr_name, attr in func_map}
 
 
-def _create_personalaffiliatation_map(column_prefix=None, key_prefix=None, used=True):
+def _create_personalaffiliatation_map(parent_prefix=None, global_column_prefix=None, column_prefix=None, used=True):
 
+    if not parent_prefix:
+        parent_prefix = ''
     if not column_prefix:
-        column_prefix = ''
-    attr_prefix = column_prefix
-
-    if key_prefix:
-        column_prefix = '%s%s' % (key_prefix, column_prefix)
+        column_prefix = parent_prefix
+    
+    if global_column_prefix:
+        column_prefix = '%s%s' % (global_column_prefix, column_prefix)
 
     func_map = []
     func_map.extend(
         _create_institution_map(
-            column_prefix='%sinstutution_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%sinstitution_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=used).items())
 
     @declared_attr
     def _department(cls):
         return Column('%sdepartment' % column_prefix, String)
-    func_map.append(('department', _department))
+    func_map.append(('%sdepartment' % parent_prefix, _department))
 
     @declared_attr
     def _function(cls):
         return Column('%sfunction' % column_prefix, String)
-    func_map.append(('function', _function))
+    func_map.append(('%sfunction' % parent_prefix, _function))
 
     func_map.extend(
         _create_comment_map(
-            column_prefix='%scomment_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%scomment_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=used).items())
 
     if used:
-        func_map.extend(_create_used(column_prefix=attr_prefix, key_prefix=key_prefix).items())
+        func_map.extend(_create_used(parent_prefix=parent_prefix,
+                        global_column_prefix=global_column_prefix).items())
 
-    return {'{}{}'.format(attr_prefix, attr_name): attr
+    return {'{}'.format(attr_name): attr
             for attr_name, attr in func_map}
 
 
-def _create_comment_map(column_prefix=None, key_prefix=None, used=True):
+def _create_comment_map(parent_prefix=None, global_column_prefix=None, column_prefix=None, used=True):
 
+    if not parent_prefix:
+        parent_prefix = ''
     if not column_prefix:
-        column_prefix = ''
-    attr_prefix = column_prefix
-
-    if key_prefix:
-        column_prefix = '%s%s' % (key_prefix, column_prefix)
+        column_prefix = parent_prefix
+    
+    if global_column_prefix:
+        column_prefix = '%s%s' % (global_column_prefix, column_prefix)
 
     @declared_attr
     def _comment(cls):
         return Column('%scomment' % column_prefix, String)
-    func_map = [('comment', _comment), ]
+    func_map = [('%scomment' % parent_prefix, _comment), ]
 
     func_map.extend(
         _create_resourceidentifier_map(
-            column_prefix='%sid_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%sid_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=used).items())
 
     func_map.extend(
         _create_creationinfo_map(
-            column_prefix='%screationinfo_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%screationinfo_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=used).items())
 
     if used:
-        func_map.extend(_create_used(column_prefix=attr_prefix, key_prefix=key_prefix).items())
+        func_map.extend(_create_used(parent_prefix=parent_prefix,
+                        global_column_prefix=global_column_prefix).items())
 
-    return {'{}{}'.format(attr_prefix, attr_name): attr
+    return {'{}'.format(attr_name): attr
             for attr_name, attr in func_map}
 
 
-def _create_institution_map(column_prefix=None, key_prefix=None, used=True):
+def _create_institution_map(parent_prefix=None, global_column_prefix=None, column_prefix=None, used=True):
 
+    if not parent_prefix:
+        parent_prefix = ''
     if not column_prefix:
-        column_prefix = ''
-    attr_prefix = column_prefix
-
-    if key_prefix:
-        column_prefix = '%s%s' % (key_prefix, column_prefix)
+        column_prefix = parent_prefix
+    
+    if global_column_prefix:
+        column_prefix = '%s%s' % (global_column_prefix, column_prefix)
 
     @declared_attr
     def _name(cls):
         return Column('%sname' % column_prefix, String)
-    func_map = [('name', _name), ]
+    func_map = [('%sname' % parent_prefix, _name), ]
 
     func_map.extend(
         _create_resourceidentifier_map(
-            column_prefix='%sidentifier_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%sidentifier_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=used).items())
 
     func_map.extend(
         _create_resourceidentifier_map(
-            column_prefix='%smbox_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%smbox_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=used).items())
 
     func_map.extend(
         _create_resourceidentifier_map(
-            column_prefix='%sphone_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%sphone_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=used).items())
 
     func_map.extend(
         _create_resourcelocator_map(
-            column_prefix='%shomepage_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%shomepage_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=used).items())
 
     func_map.extend(
         _create_postaladdress_map(
-            column_prefix='%spostaladdress_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%spostaladdress_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=used).items())
 
     if used:
-        func_map.extend(_create_used(column_prefix=attr_prefix, key_prefix=key_prefix).items())
+        func_map.extend(_create_used(parent_prefix=parent_prefix,
+                        global_column_prefix=global_column_prefix).items())
 
-    return {'{}{}'.format(attr_prefix, attr_name): attr
+    return {'{}'.format(attr_name): attr
             for attr_name, attr in func_map}
 
 
-def _create_postaladdress_map(column_prefix=None, key_prefix=None, used=True):
+def _create_postaladdress_map(parent_prefix=None, global_column_prefix=None, column_prefix=None, used=True):
 
+    if not parent_prefix:
+        parent_prefix = ''
     if not column_prefix:
-        column_prefix = ''
-    attr_prefix = column_prefix
-
-    if key_prefix:
-        column_prefix = '%s%s' % (key_prefix, column_prefix)
+        column_prefix = parent_prefix
+    
+    if global_column_prefix:
+        column_prefix = '%s%s' % (global_column_prefix, column_prefix)
     @declared_attr
     def _streetaddress(cls):
         return Column('%sstreetaddress' % column_prefix, String)
-    func_map = [('streetaddress', _streetaddress), ]
+    func_map = [('%sstreetaddress' % parent_prefix, _streetaddress), ]
 
     @declared_attr
     def _locality(cls):
         return Column('%slocality' % column_prefix, String)
-    func_map.append(('locality', _locality))
+    func_map.append(('%slocality' % parent_prefix, _locality))
 
     @declared_attr
     def _postalcode(cls):
         return Column('%spostalcode' % column_prefix, String)
-    func_map.append(('postalcode', _postalcode))
+    func_map.append(('%spostalcode' % parent_prefix, _postalcode))
 
     func_map.extend(
         _create_countrycodeuri_map(
-            column_prefix='%scountry_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%scountry_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=used).items())
 
     if used:
-        func_map.extend(_create_used(column_prefix=attr_prefix, key_prefix=key_prefix).items())
+        func_map.extend(_create_used(parent_prefix=parent_prefix,
+                        global_column_prefix=global_column_prefix).items())
 
-    return {'{}{}'.format(attr_prefix, attr_name): attr
+    return {'{}'.format(attr_name): attr
             for attr_name, attr in func_map}
 
 
-def _create_literaturesource_map(column_prefix=None, key_prefix=None, used=True):
+def _create_literaturesource_map(parent_prefix=None, global_column_prefix=None, column_prefix=None, used=True):
 
+    if not parent_prefix:
+        parent_prefix = ''
     if not column_prefix:
-        column_prefix = ''
-    attr_prefix = column_prefix
-
-    if key_prefix:
-        column_prefix = '%s%s' % (key_prefix, column_prefix)
+        column_prefix = parent_prefix
+    
+    if global_column_prefix:
+        column_prefix = '%s%s' % (global_column_prefix, column_prefix)
 
     func_map = []
     func_map.extend(
         _create_resourceidentifier_map(
-            column_prefix='%sidentifier_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%sidentifier_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=used).items())
 
     # QuakeML: DOMTypeURI
     func_map.extend(
         _create_domtypeuri_map(
-            column_prefix='%stype_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%stype_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=used).items())
 
     # QuakeML: BibtexEntryType
     @declared_attr
     def _bibtextype(cls):
         return Column('%sbibtextype' % column_prefix, Enum(EBibtexEntryType))
-    func_map.append(('bibtextype', _bibtextype))
+    func_map.append(('%sbibtextype' % parent_prefix, _bibtextype))
 
     if used:
         func_map.extend(_create_used(
-            column_prefix='%sbibtextype_' % attr_prefix, key_prefix=key_prefix).items())
+            parent_prefix='%sbibtextype_' % parent_prefix,
+            global_column_prefix=global_column_prefix).items())
 
     # QuakeML: LanguageCodeURI
     func_map.extend(
         _create_languagecodeuri_map(
-            column_prefix='%stype_' % attr_prefix, key_prefix=key_prefix,
+            parent_prefix='%stype_' % parent_prefix,
+            global_column_prefix=global_column_prefix,
             used=used).items())
 
     # QuakeML: Author
     func_map.extend(
         _create_author_map(
-            column_prefix='%screator_' % attr_prefix, key_prefix=key_prefix,# XXX don't use column prefix
+            parent_prefix='%screator_' % parent_prefix,
+            global_column_prefix=global_column_prefix,# XXX don't use column prefix
             used=used).items())
 
     @declared_attr
     def _title(cls):
         return Column('%stitle' % column_prefix, String)
-    func_map.append(('title', _title))
+    func_map.append(('%stitle' % parent_prefix, _title))
 
     @declared_attr
     def _author(cls):
         return Column('%sauthor' % column_prefix, String)
-    func_map.append(('author', _author))
+    func_map.append(('%sauthor' % parent_prefix, _author))
 
     @declared_attr
     def _editor(cls):
         return Column('%seditor' % column_prefix, String)
-    func_map.append(('editor', _editor))
+    func_map.append(('%seditor' % parent_prefix, _editor))
 
     @declared_attr
     def _bibliographiccitation(cls):
         return Column('%sbibliographiccitation' % column_prefix, String)
-    func_map.append(('bibliographiccitation', _bibliographiccitation))
+    func_map.append(('%sbibliographiccitation' % parent_prefix, _bibliographiccitation))
 
     @declared_attr
     def _date(cls):
         return Column('%sdate' % column_prefix, DateTime)
-    func_map.append(('date', _date))
+    func_map.append(('%sdate' % parent_prefix, _date))
 
     @declared_attr
     def _booktitle(cls):
         return Column('%sbooktitle' % column_prefix, String)
-    func_map.append(('booktitle', _booktitle))
+    func_map.append(('%sbooktitle' % parent_prefix, _booktitle))
 
     @declared_attr
     def _volume(cls):
         return Column('%svolume' % column_prefix, String)
-    func_map.append(('volume', _volume))
+    func_map.append(('%svolume' % parent_prefix, _volume))
 
     @declared_attr
     def _number(cls):
         return Column('%snumber' % column_prefix, String)
-    func_map.append(('number', _number))
+    func_map.append(('%snumber' % parent_prefix, _number))
 
     @declared_attr
     def _series(cls):
         return Column('%sseries' % column_prefix, String)
-    func_map.append(('series', _series))
+    func_map.append(('%sseries' % parent_prefix, _series))
 
     @declared_attr
     def _issue(cls):
         return Column('%sissue' % column_prefix, String)
-    func_map.append(('issue', _issue))
+    func_map.append(('%sissue' % parent_prefix, _issue))
 
     @declared_attr
     def _year(cls):
         return Column('%syear' % column_prefix, String)
-    func_map.append(('year', _year))
+    func_map.append(('%syear' % parent_prefix, _year))
 
     @declared_attr
     def _edition(cls):
         return Column('%sedition' % column_prefix, String)
-    func_map.append(('edition', _edition))
+    func_map.append(('%sedition' % parent_prefix, _edition))
 
     @declared_attr
     def _startpage(cls):
         return Column('%sstartpage' % column_prefix, String)
-    func_map.append(('startpage', _startpage))
+    func_map.append(('%sstartpage' % parent_prefix, _startpage))
 
     @declared_attr
     def _endpage(cls):
         return Column('%sendpage' % column_prefix, String)
-    func_map.append(('endpage', _endpage))
+    func_map.append(('%sendpage' % parent_prefix, _endpage))
 
     @declared_attr
     def _publisher(cls):
         return Column('%spublisher' % column_prefix, String)
-    func_map.append(('publisher', _publisher))
+    func_map.append(('%spublisher' % parent_prefix, _publisher))
 
     @declared_attr
     def _address(cls):
         return Column('%saddress' % column_prefix, String)
-    func_map.append(('address', _address))
+    func_map.append(('%saddress' % parent_prefix, _address))
 
     @declared_attr
     def _rights(cls):
         return Column('%srights' % column_prefix, String)
-    func_map.append(('rights', _rights))
+    func_map.append(('%srights' % parent_prefix, _rights))
 
     @declared_attr
     def _rightsholder(cls):
         return Column('%srightsholder' % column_prefix, String)
-    func_map.append(('rightsholder', _rightsholder))
+    func_map.append(('%srightsholder' % parent_prefix, _rightsholder))
 
     @declared_attr
     def _accessrights(cls):
         return Column('%saccessrights' % column_prefix, String)
-    func_map.append(('accessrights', _accessrights))
+    func_map.append(('%saccessrights' % parent_prefix, _accessrights))
 
     @declared_attr
     def _license(cls):
         return Column('%slicense' % column_prefix, String)
-    func_map.append(('license', _license))
+    func_map.append(('%slicense' % parent_prefix, _license))
 
     @declared_attr
     def _publicationstatus(cls):
         return Column('%spublicationstatus' % column_prefix, String)
-    func_map.append(('publicationstatus', _publicationstatus))
+    func_map.append(('%spublicationstatus' % parent_prefix, _publicationstatus))
 
     if used:
-        func_map.extend(_create_used(column_prefix=attr_prefix, key_prefix=key_prefix).items())
-    print(['{}{}'.format(attr_prefix, attr_name)
-            for attr_name, attr in func_map])
-    return {'{}{}'.format(attr_prefix, attr_name): attr
+        func_map.extend(_create_used(parent_prefix=parent_prefix,
+                        global_column_prefix=global_column_prefix).items())
+
+    return {'{}'.format(attr_name): attr
             for attr_name, attr in func_map}
 
 
-def CreationInfoMixin(name, column_prefix=None, key_prefix=None, used=True):
+def CreationInfoMixin(name, parent_prefix=None, global_column_prefix=None, column_prefix=None, used=True):
     """
     `SQLAlchemy <https://www.sqlalchemy.org/>`_ mixin emulating type
     :code:`CreationInfo` from `QuakeML <https://quake.ethz.ch/quakeml/>`_.
     """
-    if not column_prefix:
-        column_prefix = '%s_' % name
-
+    if not parent_prefix:
+        parent_prefix = ''
 
     return type(name, (object,),
-                _create_creationinfo_map(column_prefix, key_prefix, used))
+                _create_creationinfo_map(parent_prefix=parent_prefix, global_column_prefix=global_column_prefix, used=used))
 
 
-def LiteratureSourceMixin(name, column_prefix=None, key_prefix=None, used=True):
+def LiteratureSourceMixin(name, parent_prefix=None, global_column_prefix=None, column_prefix=None, used=True):
     """
     `SQLAlchemy <https://www.sqlalchemy.org/>`_ mixin emulating type
     :code:`LiteratureSource` from `QuakeML <https://quake.ethz.ch/quakeml/>`_.
     """
-    if not column_prefix:
-        column_prefix = '%s_' % name
+    if not parent_prefix:
+        parent_prefix = ''
 
 
     return type(name, (object,),
-                _create_literaturesource_map(column_prefix, key_prefix, used))
+                _create_literaturesource_map(parent_prefix=parent_prefix, global_column_prefix=global_column_prefix, used=used))
 
 
-def PublicIDMixin(name='', column_prefix=None):
+def PublicIDMixin(name='', parent_prefix=None, column_prefix=None, global_column_prefix=None):
     """
     `SQLAlchemy <https://www.sqlalchemy.org/>`_ mixin providing a general
     purpose :code:`publicID` attribute.
@@ -711,17 +763,22 @@ def PublicIDMixin(name='', column_prefix=None):
         The attribute :code:`publicID` is inherited from `QuakeML
         <https://quake.ethz.ch/quakeml/>`_.
     """
+    if not parent_prefix:
+        parent_prefix = name
     if not column_prefix:
-        column_prefix = '%s_' % name
+        column_prefix = parent_prefix
+    
+    if global_column_prefix:
+        column_prefix = '%s%s' % (global_column_prefix, column_prefix)
 
     @declared_attr
     def _publicid(cls):
         return Column('%spublicid' % column_prefix, String)
 
-    return type(name, (object,), {'%spublicid' % column_prefix: _publicid})
+    return type(name, (object,), {'%spublicid' % parent_prefix: _publicid})
 
 
-def EpochMixin(name, epoch_type=None, column_prefix=None):
+def EpochMixin(name, epoch_type=None, parent_prefix=None, column_prefix=None, global_column_prefix=None):
     """
     Mixin factory for common :code:`Epoch` types from
     `QuakeML <https://quake.ethz.ch/quakeml/>`_.
@@ -757,8 +814,14 @@ def EpochMixin(name, epoch_type=None, column_prefix=None):
         my_obj = MyObject(epoch_starttime=datetime.datetime.utcnow())
 
     """
-    if column_prefix is None:
-        column_prefix = '%s_' % name
+
+    if not parent_prefix:
+        parent_prefix = ''
+    if not column_prefix:
+        column_prefix = parent_prefix
+    
+    if global_column_prefix:
+        column_prefix = '%s%s' % (global_column_prefix, column_prefix)
 
     column_prefix = column_prefix.lower()
 
@@ -811,7 +874,7 @@ def EpochMixin(name, epoch_type=None, column_prefix=None):
         return {'{}{}'.format(attr_prefix, attr_name): attr
                 for attr_name, attr in func_map}
 
-    return type(name, (object,), __dict__(_func_map, column_prefix))
+    return type(name, (object,), __dict__(_func_map, parent_prefix))
 
 
 UniqueEpochMixin = EpochMixin('Epoch', column_prefix='')
@@ -819,7 +882,7 @@ UniqueOpenEpochMixin = EpochMixin('Epoch', epoch_type='open',
                                   column_prefix='')
 
 
-def QuantityMixin(name, quantity_type, column_prefix=None, key_prefix=None):
+def QuantityMixin(name, quantity_type, column_prefix=None, global_column_prefix=None):
     """
     Mixin factory for common :code:`Quantity` types from
     `QuakeML <https://quake.ethz.ch/quakeml/>`_.
@@ -859,10 +922,10 @@ def QuantityMixin(name, quantity_type, column_prefix=None, key_prefix=None):
         foobar = FooBar(foo_value=1, bar_value=2)
 
     """
-    if not key_prefix:
-        key_prefix = ''
+    if not global_column_prefix:
+        global_column_prefix = ''
     if column_prefix is None:
-        column_prefix = '{}{}_'.format(key_prefix, name)
+        column_prefix = '{}{}_'.format(global_column_prefix, name)
     column_prefix = column_prefix.lower()
 
     # Name attribute differently to column key.

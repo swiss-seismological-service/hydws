@@ -30,7 +30,7 @@ class QuakeMLQuantityField(fields.Field):
     def _serialize(self, value, attr, obj, **kwargs):
         retval = {}
         for _attr in self.ATTRS:
-            key = f"{_ATTR_PREFIX}{attr}_{_attr}".lower()
+            key = f"{attr}_{_attr}".lower()
             value = get_value(obj, key, default=None)
             
             if isinstance(value, datetime.datetime):
@@ -51,8 +51,10 @@ class SchemaBase(Schema):
         Custom accessor method extracting values from objects applying the
         :code:`m_` prefix to attribute keys.
         """
-        if not key.startswith(_ATTR_PREFIX) and not key.startswith('_'):
-            key = _ATTR_PREFIX + key.lower()
+        #print(key, _ATTR_PREFIX)
+        #if key.startswith(_ATTR_PREFIX):
+        #    key = _ATTR_PREFIX + key.lower()
+
         return get_value(obj, key, default)
 
     @post_dump
@@ -103,6 +105,7 @@ class SectionSchema(SchemaBase):
     casingtype = fields.String()
     description = fields.String()
 
+
 class SectionHydraulicSampleSchema(SectionSchema, SchemaBase):
 
     hydraulics = fields.Nested(HydraulicSampleSchema, many=True,
@@ -120,6 +123,8 @@ class BoreholeSchema(SchemaBase):
     latitude = QuakeMLQuantityField()
     depth = QuakeMLQuantityField()
     bedrockdepth = QuakeMLQuantityField()
+
+    literature_source = LiteratureSource()
 
 class BoreholeSectionSchema(BoreholeSchema, SchemaBase):
     sections = fields.Nested(SectionSchema, many=True,
