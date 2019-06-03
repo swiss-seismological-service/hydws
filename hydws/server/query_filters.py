@@ -3,6 +3,40 @@ SQLAlchemy object actions including filter, order by, paginate,
 limit.
 """
 from sqlalchemy.orm.exc import NoResultFound
+from hydws.db.orm import Borehole, HydraulicSample
+
+
+# Mapping of columns to comparison operator and input parameter.
+# [(orm column, operator, input comparison value)]
+# Filter on hydraulics fields:
+filter_hydraulics = [
+    ('datetime', 'ge', 'starttime'),
+    ('datetime', 'le', 'endtime'),
+    ('toptemperature', 'ge', 'mintoptemperature'),
+    ('toptemperature', 'le', 'maxtoptemperature'),
+    ('bottomtemperature', 'ge', 'minbottomtemperature'),
+    ('bottomtemperature', 'le', 'maxbottomtemperature'),
+    ('toppressure', 'ge', 'mintoppressure'),
+    ('toppressure', 'le', 'maxtoppressure'),
+    ('bottompressure', 'ge', 'minbottompressure'),
+    ('bottompressure', 'le', 'maxbottompressure'),
+    ('topflow', 'ge', 'mintopflow'),
+    ('topflow', 'le', 'maxtopflow'),
+    ('bottomflow', 'ge', 'minbottomflow'),
+    ('bottomflow', 'le', 'maxbottomflow'),
+    ('fluiddensity', 'ge', 'minfluiddensity'),
+    ('fluiddensity', 'le', 'maxfluiddensity'),
+    ('fluidviscosity', 'ge', 'minfluidviscosity'),
+    ('fluidviscosity', 'le', 'maxfluidviscosity'),
+    ('fluidph', 'ge', 'minfluidph'),
+    ('fluidph', 'le', 'maxfluidph')]
+
+filter_boreholes = [
+    ('latitude', 'ge', 'minlatitude'),
+    ('latitude', 'le', 'maxlatitude'),
+    ('longitude', 'ge', 'minlongitude'),
+    ('longitude', 'le', 'maxlongitude')]
+
 
 class DynamicQuery(object):
     """
@@ -79,7 +113,7 @@ class DynamicQuery(object):
         except IndexError:
             raise Exception('Invalid filter operator: %s' % op)
 
-    def filter_query(self, orm_class, query_params, filter_condition,
+    def filter_query(self, query_params, filter_level,
                      key_suffix="_value"):
         """
         Update self.query based on filter_condition.
@@ -95,6 +129,16 @@ class DynamicQuery(object):
             key must belong in self.orm_class.
 
         """
+        if filter_level == 'hydraulic':
+            orm_class = HydraulicSample
+            filter_condition = filter_hydraulics
+        elif filter_level == 'borehole':
+            orm_class = Borehole
+            filter_condition = filter_boreholes
+        else:
+            raise Exception(f'filter level not handled: {filter_level}')
+
+        
         for f in filter_condition:
             try:
                 key_basename, op, param_name = f
@@ -123,6 +167,7 @@ class DynamicQuery(object):
             else:
                 attr = self.operator_attr(column, op)
                 filt = getattr(column, attr)(param_value)
+                print(filt, column, attr, param_value)
             self.query = self.query.filter(filt)
 
 

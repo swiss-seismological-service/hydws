@@ -59,6 +59,11 @@ class GeneralSchema(Schema):
     nodata = NoData()
     format = Format()
 
+    class Meta:
+        strict = True
+        ordered = True
+    
+
 class LocationConstraintsSchemaMixin(Schema):
     """
     Query parameters for boreholes, location specific.
@@ -88,15 +93,14 @@ class LocationConstraintsSchemaMixin(Schema):
         if minlongitude and minlongitude > -180.0:
             raise ValidationError('minlongitude greater than -180 degrees')
 
-        if maxlatitude and minlatitude:
-            if maxlatitude < minlatitude:
-                raise ValidationError('maxlatitude must be greater than'
-                                      'minlatitude')
+        if maxlatitude and minlatitude and maxlatitude < minlatitude:
+            raise ValidationError('maxlatitude must be greater than'
+                                  'minlatitude')
 
-        if maxlongitude and minlongitude:
-            if maxlongitude < minlongitude:
-                raise ValidationError('maxlongitude must be greater than'
-                                      'minlongitude')
+        if maxlongitude and minlongitude and maxlongitude < minlongitude:
+            raise ValidationError('maxlongitude must be greater than'
+                                  'minlongitude')
+
 class HydraulicsSchemaMixin(Schema):
     """
     Query parameters for hydraulics data.
@@ -120,7 +124,7 @@ class HydraulicsSchemaMixin(Schema):
     minfluidph = fields.Float()
     maxfluidph = fields.Float()
     limit = fields.Integer()
-    offset = fields.Integer()
+    page = fields.Integer()
     #XXX Todo sarsonl add constraints vaidation.
 
 class TimeConstraintsSchemaMixin(Schema):
@@ -179,11 +183,6 @@ class TimeConstraintsSchemaMixin(Schema):
                 raise ValidationError(
                     'endtime must be greater than starttime')
 
-    # validate_temporal_constraints ()
-
-    class Meta:
-        strict = True
-        ordered = True
 
 
 class BoreholeHydraulicSampleListResourceSchema(TimeConstraintsSchemaMixin,
@@ -195,6 +194,7 @@ class BoreholeHydraulicSampleListResourceSchema(TimeConstraintsSchemaMixin,
     """
     level = LevelHydraulic()    
 
+
 class BoreholeListResourceSchema(TimeConstraintsSchemaMixin,
                                  LocationConstraintsSchemaMixin,
                                  GeneralSchema):
@@ -205,8 +205,10 @@ class BoreholeListResourceSchema(TimeConstraintsSchemaMixin,
     """
     level = LevelSection()
 
+
 class SectionHydraulicSampleListResourceSchema(TimeConstraintsSchemaMixin,
-                                             GeneralSchema):
+                                               HydraulicsSchemaMixin,
+                                               GeneralSchema):
     """
     Handle optional query parameters for call returning hydraulics
     data for specified borehole id and section id.

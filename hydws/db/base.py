@@ -136,8 +136,7 @@ def _create_creationinfo_map(parent_prefix=None, global_column_prefix=None, colu
 
     @declared_attr
     def _creationtime(cls):
-        return Column('%screationtime' % column_prefix, DateTime,
-                      default=datetime.datetime.utcnow())
+        return Column('%screationtime' % column_prefix, DateTime)
     func_map.append(('%screationtime'% parent_prefix, _creationtime))
 
     @declared_attr
@@ -745,9 +744,9 @@ def LiteratureSourceMixin(name, parent_prefix=None, global_column_prefix=None, c
     `SQLAlchemy <https://www.sqlalchemy.org/>`_ mixin emulating type
     :code:`LiteratureSource` from `QuakeML <https://quake.ethz.ch/quakeml/>`_.
     """
+
     if not parent_prefix:
         parent_prefix = ''
-
 
     return type(name, (object,),
                 _create_literaturesource_map(parent_prefix=parent_prefix, global_column_prefix=global_column_prefix, used=used))
@@ -773,7 +772,7 @@ def PublicIDMixin(name='', parent_prefix=None, column_prefix=None, global_column
 
     @declared_attr
     def _publicid(cls):
-        return Column('%spublicid' % column_prefix, String)
+        return Column('%spublicid' % column_prefix, String, nullable=False)
 
     return type(name, (object,), {'%spublicid' % parent_prefix: _publicid})
 
@@ -882,7 +881,7 @@ UniqueOpenEpochMixin = EpochMixin('Epoch', epoch_type='open',
                                   column_prefix='')
 
 
-def QuantityMixin(name, quantity_type, column_prefix=None, global_column_prefix=None):
+def QuantityMixin(name, quantity_type, column_prefix=None, global_column_prefix=None, value_nullable=True):
     """
     Mixin factory for common :code:`Quantity` types from
     `QuakeML <https://quake.ethz.ch/quakeml/>`_.
@@ -937,10 +936,8 @@ def QuantityMixin(name, quantity_type, column_prefix=None, global_column_prefix=
 
             @declared_attr
             def _value(cls):
-                #return {'%svalue' % name: Column('%svalue' % column_prefix, sql_type,
-                #              nullable=False)}
                 return Column('%svalue' % column_prefix, sql_type,
-                              nullable=False)
+                              nullable=value_nullable)
             return _value
 
         if 'int' == quantity_type:

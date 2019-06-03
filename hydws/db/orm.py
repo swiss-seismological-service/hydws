@@ -23,16 +23,20 @@ PREFIX = 'm_'
 # columns.
 
 
+
 class Borehole(CreationInfoMixin('CreationInfo',
                                  parent_prefix='creationinfo_',
-                                 global_column_prefix=PREFIX),
+                                 global_column_prefix=PREFIX,
+                                 used=False),
                LiteratureSourceMixin('LiteratureSource',
                                      parent_prefix='literaturesource_',
-                                     global_column_prefix=PREFIX),
-               RealQuantityMixin('longitude', global_column_prefix=PREFIX),
-               RealQuantityMixin('latitude', global_column_prefix=PREFIX),
+                                     global_column_prefix=PREFIX,
+                                     used=False),
+               RealQuantityMixin('longitude', global_column_prefix=PREFIX, value_nullable=False),
+               RealQuantityMixin('latitude', global_column_prefix=PREFIX, value_nullable=False),
                RealQuantityMixin('depth', global_column_prefix=PREFIX),
                RealQuantityMixin('bedrockdepth', global_column_prefix=PREFIX),
+               RealQuantityMixin('measureddepth', global_column_prefix=PREFIX),
                PublicIDMixin(global_column_prefix=PREFIX),
                ORMBase):
     """
@@ -45,7 +49,7 @@ class Borehole(CreationInfoMixin('CreationInfo',
         <https://quake.ethz.ch/quakeml>`_ quantities.
     """
     _sections = relationship("BoreholeSection", back_populates="_borehole",
-                             cascade='all, delete-orphan')
+                             cascade='all, delete-orphan', lazy='noload', order_by='BoreholeSection.topdepth_value')
 
 
 
@@ -70,19 +74,23 @@ class BoreholeSection(EpochMixin('Epoch', epoch_type='open',
         *Quantities* are implemented as `QuakeML
         <https://quake.ethz.ch/quakeml>`_ quantities.
     """
-    topclosed = Column('{}topclosed'.format(PREFIX), Boolean)
-    bottomclosed = Column('{}bottomclosed'.format(PREFIX), Boolean)
+    topclosed = Column('{}topclosed'.format(PREFIX), Boolean, nullable=False)
+    bottomclosed = Column('{}bottomclosed'.format(PREFIX), Boolean, nullable=False)
     sectiontype = Column('{}sectiontype'.format(PREFIX), String)
     casingtype = Column('{}casingtype'.format(PREFIX), String)
     description = Column('{}description'.format(PREFIX), String)
 
-    borehole_oid = Column('{}borehole_oid'.format(PREFIX), Integer, ForeignKey('borehole._oid'))
+    borehole_oid = Column('{}borehole_oid'.format(PREFIX), Integer,
+                          ForeignKey('borehole._oid'))
+
     _borehole = relationship("Borehole", back_populates="_sections")
 
-    _hydraulics = relationship("HydraulicSample", back_populates="_section")
+    _hydraulics = relationship("HydraulicSample", back_populates="_section",
+                               lazy='noload',
+                               order_by='HydraulicSample.datetime_value')
 
 
-class HydraulicSample(TimeQuantityMixin('datetime', global_column_prefix=PREFIX),
+class HydraulicSample(TimeQuantityMixin('datetime', global_column_prefix=PREFIX, value_nullable=False),
                       RealQuantityMixin('bottomtemperature', global_column_prefix=PREFIX),
                       RealQuantityMixin('bottomflow', global_column_prefix=PREFIX),
                       RealQuantityMixin('bottompressure', global_column_prefix=PREFIX),
@@ -105,5 +113,7 @@ class HydraulicSample(TimeQuantityMixin('datetime', global_column_prefix=PREFIX)
     """
     fluidcomposition = Column('{}fluidcomposition'.format(PREFIX), String)
 
-    boreholesection_oid = Column('boreholesection_oid'.format(PREFIX), Integer, ForeignKey('boreholesection._oid'))
     _section = relationship("BoreholeSection", back_populates="_hydraulics")
+
+    boreholesection_oid = Column('{}boreholesection_oid'.format(PREFIX),
+                                 Integer, ForeignKey('boreholesection._oid'))
