@@ -1,5 +1,9 @@
 """
-HYDWS datamodel ORM representation.
+.. module:: orm
+   :synopsis: HYDWS datamodel ORM representation.
+
+.. moduleauthor:: Laura Sarson <laura.sarson@sed.ethz.ch>
+
 """
 
 from operator import itemgetter
@@ -12,8 +16,9 @@ from sqlalchemy import select, func
 from hydws.db.base import (ORMBase, CreationInfoMixin, RealQuantityMixin,
                            TimeQuantityMixin, EpochMixin,
                            LiteratureSourceMixin, PublicIDMixin)
+from hydws.server import settings
 
-PREFIX = 'm_'
+
 
 # XXX(damb): The implementation of the entities below is based on the QuakeML
 # and the SC3 DB model naming conventions. As a consequence,
@@ -22,22 +27,28 @@ PREFIX = 'm_'
 # Note, that this fact inherently leads to huge tables containing lots of
 # columns.
 
+# XXX(sarsonl): Do we want to restrict nullable values on the db level,
+# or just schema.
 
+try:
+    PREFIX = settings.HYDWS_PREFIX
+except AttributeError:
+    PREFIX = ''
 
 class Borehole(CreationInfoMixin('CreationInfo',
                                  parent_prefix='creationinfo_',
-                                 global_column_prefix=PREFIX,
                                  used=False),
                LiteratureSourceMixin('LiteratureSource',
                                      parent_prefix='literaturesource_',
-                                     global_column_prefix=PREFIX,
                                      used=False),
-               RealQuantityMixin('longitude', global_column_prefix=PREFIX, value_nullable=False),
-               RealQuantityMixin('latitude', global_column_prefix=PREFIX, value_nullable=False),
-               RealQuantityMixin('depth', global_column_prefix=PREFIX),
-               RealQuantityMixin('bedrockdepth', global_column_prefix=PREFIX),
-               RealQuantityMixin('measureddepth', global_column_prefix=PREFIX),
-               PublicIDMixin(global_column_prefix=PREFIX),
+               RealQuantityMixin('longitude',
+                                 value_nullable=False),
+               RealQuantityMixin('latitude',
+                                 value_nullable=False),
+               RealQuantityMixin('depth'),
+               RealQuantityMixin('bedrockdepth'),
+               RealQuantityMixin('measureddepth'),
+               PublicIDMixin(),
                ORMBase):
     """
     ORM representation of a borehole. The attributes are in accordance with
@@ -52,18 +63,16 @@ class Borehole(CreationInfoMixin('CreationInfo',
                              cascade='all, delete-orphan', lazy='noload', order_by='BoreholeSection.topdepth_value')
 
 
-
-class BoreholeSection(EpochMixin('Epoch', epoch_type='open',
-                                 column_prefix='m_'),
-                      RealQuantityMixin('toplongitude', global_column_prefix=PREFIX),
-                      RealQuantityMixin('toplatitude', global_column_prefix=PREFIX),
-                      RealQuantityMixin('topdepth', global_column_prefix=PREFIX),
-                      RealQuantityMixin('bottomlongitude', global_column_prefix=PREFIX),
-                      RealQuantityMixin('bottomlatitude', global_column_prefix=PREFIX),
-                      RealQuantityMixin('bottomdepth', global_column_prefix=PREFIX),
-                      RealQuantityMixin('holediameter', global_column_prefix=PREFIX),
-                      RealQuantityMixin('casingdiameter', global_column_prefix=PREFIX),
-                      PublicIDMixin(global_column_prefix=PREFIX),
+class BoreholeSection(EpochMixin('Epoch', epoch_type='open'),
+                      RealQuantityMixin('toplongitude'),
+                      RealQuantityMixin('toplatitude'),
+                      RealQuantityMixin('topdepth'),
+                      RealQuantityMixin('bottomlongitude'),
+                      RealQuantityMixin('bottomlatitude'),
+                      RealQuantityMixin('bottomdepth'),
+                      RealQuantityMixin('holediameter'),
+                      RealQuantityMixin('casingdiameter'),
+                      PublicIDMixin(),
                       ORMBase):
     """
     ORM representation of a borehole. The attributes are in accordance with
@@ -74,13 +83,13 @@ class BoreholeSection(EpochMixin('Epoch', epoch_type='open',
         *Quantities* are implemented as `QuakeML
         <https://quake.ethz.ch/quakeml>`_ quantities.
     """
-    topclosed = Column('{}topclosed'.format(PREFIX), Boolean, nullable=False)
-    bottomclosed = Column('{}bottomclosed'.format(PREFIX), Boolean, nullable=False)
-    sectiontype = Column('{}sectiontype'.format(PREFIX), String)
-    casingtype = Column('{}casingtype'.format(PREFIX), String)
-    description = Column('{}description'.format(PREFIX), String)
+    topclosed = Column(f'{PREFIX}topclosed', Boolean, nullable=False)
+    bottomclosed = Column(f'{PREFIX}bottomclosed', Boolean, nullable=False)
+    sectiontype = Column(f'{PREFIX}sectiontype', String)
+    casingtype = Column(f'{PREFIX}casingtype', String)
+    description = Column(f'{PREFIX}description', String)
 
-    borehole_oid = Column('{}borehole_oid'.format(PREFIX), Integer,
+    borehole_oid = Column(f'{PREFIX}borehole_oid', Integer,
                           ForeignKey('borehole._oid'))
 
     _borehole = relationship("Borehole", back_populates="_sections")
@@ -90,17 +99,17 @@ class BoreholeSection(EpochMixin('Epoch', epoch_type='open',
                                order_by='HydraulicSample.datetime_value')
 
 
-class HydraulicSample(TimeQuantityMixin('datetime', global_column_prefix=PREFIX, value_nullable=False),
-                      RealQuantityMixin('bottomtemperature', global_column_prefix=PREFIX),
-                      RealQuantityMixin('bottomflow', global_column_prefix=PREFIX),
-                      RealQuantityMixin('bottompressure', global_column_prefix=PREFIX),
-                      RealQuantityMixin('toptemperature', global_column_prefix=PREFIX),
-                      RealQuantityMixin('topflow', global_column_prefix=PREFIX),
-                      RealQuantityMixin('toppressure', global_column_prefix=PREFIX),
-                      RealQuantityMixin('fluiddensity', global_column_prefix=PREFIX),
-                      RealQuantityMixin('fluidviscosity', global_column_prefix=PREFIX),
-                      RealQuantityMixin('fluidph', global_column_prefix=PREFIX),
-                      PublicIDMixin(global_column_prefix=PREFIX),
+class HydraulicSample(TimeQuantityMixin('datetime', value_nullable=False),
+                      RealQuantityMixin('bottomtemperature'),
+                      RealQuantityMixin('bottomflow'),
+                      RealQuantityMixin('bottompressure'),
+                      RealQuantityMixin('toptemperature'),
+                      RealQuantityMixin('topflow'),
+                      RealQuantityMixin('toppressure'),
+                      RealQuantityMixin('fluiddensity'),
+                      RealQuantityMixin('fluidviscosity'),
+                      RealQuantityMixin('fluidph'),
+                      PublicIDMixin(),
                       ORMBase):
     """
     Represents an hydraulics sample. The definition is based on `QuakeML
@@ -111,9 +120,9 @@ class HydraulicSample(TimeQuantityMixin('datetime', global_column_prefix=PREFIX,
         *Quantities* are implemented as `QuakeML
         <https://quake.ethz.ch/quakeml>`_ quantities.
     """
-    fluidcomposition = Column('{}fluidcomposition'.format(PREFIX), String)
+    fluidcomposition = Column(f'{PREFIX}fluidcomposition', String)
 
     _section = relationship("BoreholeSection", back_populates="_hydraulics")
 
-    boreholesection_oid = Column('{}boreholesection_oid'.format(PREFIX),
+    boreholesection_oid = Column(f'{PREFIX}boreholesection_oid',
                                  Integer, ForeignKey('boreholesection._oid'))

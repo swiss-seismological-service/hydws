@@ -1,22 +1,13 @@
 """
-HYDWS datamodel ORM entity de-/serialization facilities.
+.. module:: schema
+   :synopsis: HYDWS datamodel ORM entity de-/serialization facilities..
+
+.. moduleauthor:: Laura Sarson <laura.sarson@sed.ethz.ch>
+
 """
 import logging
-
-import datetime
-
-from marshmallow import Schema, fields, post_dump, pre_load, missing, validate
-from marshmallow.utils import get_value
-from collections import defaultdict
-from functools import reduce, partial
-from operator import getitem
-
-from hydws.server.v1.ostream import schema_literaturesource as sdc
-from hydws.db.orm import Borehole
-
-
-_ATTR_PREFIX = 'm_'
-
+from functools import partial
+from marshmallow import Schema, fields, post_dump, pre_load, validate, validates_schema
 
 
 ValidateLatitude = validate.Range(min=-90., max=90.)
@@ -25,10 +16,13 @@ ValidatePositive = validate.Range(min=0.)
 ValidateConfidenceLevel = validate.Range(min=0., max=100.)
 ValidateCelcius = validate.Range(min=-273.15)
 
-Datetime = fields.DateTime(format='iso')
+Datetime = partial(fields.DateTime, format='iso')
+DatetimeRequired = partial(Datetime, required=True)
 Degree = partial(fields.Float)
 Latitude = partial(Degree, validate=ValidateLatitude)
+RequiredLatitude = partial(Latitude, required=True)
 Longitude = partial(Degree, validate=ValidateLongitude)
+RequiredLongitude = partial(Longitude, required=True)
 Uncertainty = partial(fields.Float, validate=ValidatePositive)
 ConfidenceLevel = partial(fields.Float, validate=ValidateConfidenceLevel)
 Depth = partial(fields.Float, validate=ValidatePositive)
@@ -53,7 +47,7 @@ class SchemaBase(Schema):
         Filter out fields with empty (e.g. :code:`None`, :code:`[], etc.)
         values.
         """
-        return {k: v for k, v in data.items() if v}
+        return {k: v for k, v in data.items() if v or isinstance(v, (int, float))}
 
     @classmethod
     def _flatten_dict(cls, data, sep='_'):
@@ -115,7 +109,6 @@ class CreationInfoSchema(SchemaBase):
     creationinfo_copyrightowner = fields.String()
     creationinfo_copyrightowneruri_resourceid = fields.String()
     creationinfo_license = fields.String()
-
 
 
 class LSCreatorPersonSchema(SchemaBase):
@@ -261,7 +254,7 @@ class HydraulicSampleSchema(SchemaBase):
     """Schema implementation of an hydraulic data sample.
 
     """
-    datetime_value = Datetime
+    datetime_value = DatetimeRequired()
     datetime_uncertainty = Uncertainty()
     datetime_loweruncertainty = Uncertainty()
     datetime_upperuncertainty = Uncertainty()
@@ -328,9 +321,9 @@ class SectionSchema(SchemaBase):
     """Schema implementation of a borehole section.
 
     """
-    publicid = fields.String()
-    starttime = Datetime
-    endtime = Datetime
+    publicid = fields.String(required=True)
+    starttime = DatetimeRequired()
+    endtime = Datetime()
 
     toplongitude_value = Longitude()
     toplongitude_uncertainty = Uncertainty()
@@ -382,9 +375,8 @@ class SectionSchema(SchemaBase):
     casingdiameter_upperuncertainty = Uncertainty()
     casingdiameter_confidencelevel = ConfidenceLevel()
 
-
-    topclosed = fields.Boolean()
-    bottomclosed = fields.Boolean()
+    topclosed = fields.Boolean(required=True)
+    bottomclosed = fields.Boolean(required=True)
     sectiontype = fields.String()
     casingtype = fields.String()
     description = fields.String()
@@ -392,20 +384,29 @@ class SectionSchema(SchemaBase):
     hydraulics = fields.Nested(HydraulicSampleSchema, many=True,
                                attribute='_hydraulics')
 
+    @validates_schema
+    def validate_temporal_constraints(self, data):
+        """Validation of temporal constraints."""
+        starttime = data.get('starttime')
+        endtime = data.get('endtime')
+        now = datetime.datetime.utcnow()
+
+        if starttime and endtime and starttime >= endtime:
+                raise ValidationError(
+                    'endtime must be greater than starttime')
+
 
 class BoreholeSchema(LiteratureSourceCreationInfoSchema, SchemaBase):
     """Schema implementation of a borehole."""
-    # TODO(damb): Provide a hierarchical implementation of sub_types; create
-    # them dynamically (see: e.g. QuakeMLQuantityField)
     publicid = fields.String()
 
-    longitude_value = Longitude()
+    longitude_value = RequiredLongitude()
     longitude_uncertainty = Uncertainty()
     longitude_loweruncertainty = Uncertainty()
     longitude_upperuncertainty = Uncertainty()
     longitude_confidencelevel = ConfidenceLevel()
 
-    latitude_value = Latitude()
+    latitude_value = RequiredLatitude()
     latitude_uncertainty = Uncertainty()
     latitude_loweruncertainty = Uncertainty()
     latitude_upperuncertainty = Uncertainty()

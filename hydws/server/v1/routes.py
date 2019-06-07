@@ -1,5 +1,9 @@
 """
-HYDWS resources.
+.. module:: routes
+    :synopsis: Contains resources for HYDWS route handling.
+
+.. moduleauthor:: Laura Sarson <laura.sarson@sed.ethz.ch>
+
 """
 
 import logging
@@ -28,8 +32,6 @@ from hydws.server.query_filters import DynamicQuery
 from hydws.server.strict import with_strict_args
 
 api_v1 = Api(blueprint)
-
-some_parser = {"maxlatitude": fields.Str(), "maxlongitude": fields.Str()}
 
 
 class ResourceBase(Resource):
@@ -73,14 +75,10 @@ class ResourceBase(Resource):
         raise NotImplementedError
 
 
-
 class BoreholeListResource(ResourceBase):
 
     LOGGER = 'hydws.server.v1.boreholelistresource'
 
-    # For some reason, if invalid query parameters are used,
-    # no exception or anything is raised, even though the default
-    # functionality means that an exception should be raised.
     @with_fdsnws_exception_handling(__version__)
     @use_kwargs(BoreholeListResourceSchema, locations=("query",))
     @with_strict_args(BoreholeListResourceSchema, locations=("query",))
@@ -108,7 +106,6 @@ class BoreholeListResource(ResourceBase):
                          **query_params):
         
         query = session.query(Borehole)
-
         level = query_params.get('level')
         if level == 'section':
             query = query.options(lazyload(Borehole._sections))
@@ -117,13 +114,11 @@ class BoreholeListResource(ResourceBase):
         # XXX(damb): Emulate QuakeML type Epoch (though on DB level it is
         # defined as QuakeML type OpenEpoch
 
+        # Use borehole level filtering.
         dynamic_query.filter_query(query_params,
                                    'borehole')
-        try: 
-            return dynamic_query.return_all()
+        return dynamic_query.return_all()
 
-        except NoResultFound:
-            return None
 
 class BoreholeHydraulicSampleListResource(ResourceBase):
 
@@ -136,7 +131,7 @@ class BoreholeHydraulicSampleListResource(ResourceBase):
                 locations=("query", ))
     def get(self, borehole_id, **query_params):
         borehole_id = decode_publicid(borehole_id)
-        params_schema = BoreholeListResourceSchema()
+        params_schema = BoreholeHydraulicSampleListResourceSchema()
         query_params = params_schema.dump(query_params)
         self.logger.debug(
             f"Received request: borehole_id={borehole_id}, "
@@ -162,21 +157,25 @@ class BoreholeHydraulicSampleListResource(ResourceBase):
             raise ValueError(f"Invalid borehole identifier: {borehole_id!r}")
 
         level = query_params.get('level')
+        order_by_levels = []
 
         query = session.query(Borehole)
         if level == 'section':
-            query = query.options(lazyload(Borehole._sections))
+            query = query.options(subqueryload(Borehole._sections)).join(BoreholeSection)
+            order_by_levels.append('section')
 
         elif level == 'hydraulic':
             query = query.options(lazyload(Borehole._sections).\
-                        lazyload(BoreholeSection._hydraulics))
+                        lazyload(BoreholeSection._hydraulics)).\
+                    join(BoreholeSection).join(HydraulicSample)
         
         query = query.filter(Borehole.publicid==borehole_id)
+        
 
         dynamic_query = DynamicQuery(query)
         dynamic_query.filter_query(query_params,
                                    'hydraulic')
-
+        print(query)
         if query_params.get('limit'):
             paginate_obj = dynamic_query.paginate_query(
                 query_params.get('limit'), query_params.get('page'))
@@ -195,12 +194,11 @@ class SectionHydraulicSampleListResource(ResourceBase):
     @use_kwargs(SectionHydraulicSampleListResourceSchema,
                 locations=("query", ))
     @with_strict_args(SectionHydraulicSampleListResourceSchema,
-                locations=("query", ))
+                      locations=("query", ))
     def get(self, borehole_id, section_id, **query_params):
-
         borehole_id = decode_publicid(borehole_id)
         section_id = decode_publicid(section_id)
-        params_schema = BoreholeListResourceSchema()
+        params_schema = SectionHydraulicSampleListResourceSchema()
         query_params = params_schema.dump(query_params)
         self.logger.debug(
             f"Received request: borehole_id={borehole_id}, "
@@ -219,19 +217,25 @@ class SectionHydraulicSampleListResource(ResourceBase):
         resp = HydraulicSampleSchema(many=True).dumps(resp)
         return make_response(resp, settings.MIMETYPE_JSON)
     
-
-    def _process_request(self, session, borehole_id=None, section_id=None,
-                         **query_params):
-        if not borehole_id:
-            raise ValueError(f"Invalid borehole identifier: {borehole_id!r}")
-
-        boreholesection_filter = session.query(Borehole).\
+    def _section_in_borehole(self, query, borehole_id, section_id):
+        boreholesection_filter = query(Borehole).\
             options(lazyload(Borehole._sections)).\
             filter(Borehole.publicid == borehole_id).\
             filter(BoreholeSection.publicid == section_id)
 
-        section_exists = session.query(literal(True)).\
+        section_exists = query(literal(True)).\
             filter(boreholesection_filter.exists()).scalar()
+
+        return section_exists
+
+    def _process_request(self, session, borehole_id=None, section_id=None,
+                         **query_params):
+        if not borehole_id or not section_id:
+            raise ValueError(f"Invalid borehole or section identifier: "
+                             "{borehole_id!r} {section_id!r}")
+
+        section_exists = self._section_in_borehole(session.query,
+                                                   borehole_id, section_id)
 
         if not section_exists:
             raise ValueError("Borehole Section is not a child of Borehole.")
@@ -260,7 +264,7 @@ class SectionHydraulicSampleListResource(ResourceBase):
 
 
 api_v1.add_resource(BoreholeListResource,
-                    '{}/'.format(settings.HYDWS_PATH_BOREHOLES))
+                    '{}'.format(settings.HYDWS_PATH_BOREHOLES))
 api_v1.add_resource(BoreholeHydraulicSampleListResource,
                     '{}/<borehole_id>'.format(settings.HYDWS_PATH_BOREHOLES))
 api_v1.add_resource(SectionHydraulicSampleListResource,

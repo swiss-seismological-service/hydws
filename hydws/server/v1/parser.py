@@ -1,15 +1,20 @@
 """
-HYDWS parser related facilities.
+.. module:: parser
+   :synopsis: HYDWS parser related facilities.
+
+.. moduleauthor:: Laura Sarson <laura.sarson@sed.ethz.ch>
+
 """
 import datetime
 import functools
+from collections import OrderedDict
 
 from marshmallow import (Schema, fields, pre_load, validates_schema,
                          validate, ValidationError)
 
 from hydws.server import settings
 from hydws.server.misc import from_fdsnws_datetime, fdsnws_isoformat
-
+import logging
 
 Format = functools.partial(
     fields.String,
@@ -56,76 +61,14 @@ class GeneralSchema(Schema):
     """
     Common HYDWS parser schema
     """
+    LOGGER = 'hydws.server.v1.parserschema'
+
     nodata = NoData()
     format = Format()
 
     class Meta:
         strict = True
         ordered = True
-    
-
-class LocationConstraintsSchemaMixin(Schema):
-    """
-    Query parameters for boreholes, location specific.
-    """
-    minlatitude = fields.Float()
-    maxlatitude = fields.Float()
-    minlongitude = fields.Float()
-    maxlongitude = fields.Float()
-    # do validations on what is accepted as lat and lon
-
-    @validates_schema
-    def validate_lat_long_constraints(self, data):
-        """
-        Validation of latitude and longitude constraints.
-        """
-        maxlatitude = data.get('maxlatitude')
-        minlatitude = data.get('minlatitude')
-        maxlongitude = data.get('maxlongitude')
-        minlongitude = data.get('minlongitude')
-
-        if maxlatitude and maxlatitude > 90.0:
-            raise ValidationError('maxlatitude greater than 90 degrees')
-        if minlatitude and minlatitude < -90.0:
-            raise ValidationError('minlatitude less than -90 degrees')
-        if maxlongitude and maxlongitude > 180.0:
-            raise ValidationError('maxlongitude greater than 180 degrees')
-        if minlongitude and minlongitude > -180.0:
-            raise ValidationError('minlongitude greater than -180 degrees')
-
-        if maxlatitude and minlatitude and maxlatitude < minlatitude:
-            raise ValidationError('maxlatitude must be greater than'
-                                  'minlatitude')
-
-        if maxlongitude and minlongitude and maxlongitude < minlongitude:
-            raise ValidationError('maxlongitude must be greater than'
-                                  'minlongitude')
-
-class HydraulicsSchemaMixin(Schema):
-    """
-    Query parameters for hydraulics data.
-    """
-    minbottomflow = fields.Float()
-    maxbottomflow = fields.Float()
-    mintopflow = fields.Float()
-    maxtopflow = fields.Float()
-    minbottompressure = fields.Float()
-    maxbottompressure = fields.Float()
-    mintoppressure = fields.Float()
-    maxtoppressure = fields.Float()
-    mintoptemperature = fields.Float()
-    maxtoptemperature = fields.Float()
-    minbottomtemperature = fields.Float()
-    maxbottomtemperature = fields.Float()
-    minfluiddensity = fields.Float()
-    maxfluiddensity = fields.Float()
-    minfluidviscosity = fields.Float()
-    maxfluidviscosity = fields.Float()
-    minfluidph = fields.Float()
-    maxfluidph = fields.Float()
-    limit = fields.Integer()
-    page = fields.Integer()
-    #XXX Todo sarsonl add constraints vaidation.
 
 class TimeConstraintsSchemaMixin(Schema):
     """
@@ -184,15 +127,90 @@ class TimeConstraintsSchemaMixin(Schema):
                     'endtime must be greater than starttime')
 
 
+    
 
-class BoreholeHydraulicSampleListResourceSchema(TimeConstraintsSchemaMixin,
-                                              HydraulicsSchemaMixin,
-                                              GeneralSchema):
+class LocationConstraintsSchemaMixin(Schema):
     """
-    Handle optional query parameters for call returning hydraulics
+    Query parameters for boreholes, location specific.
+    """
+    minlatitude = fields.Float()
+    maxlatitude = fields.Float()
+    minlongitude = fields.Float()
+    maxlongitude = fields.Float()
+    # do validations on what is accepted as lat and lon
+
+    @validates_schema
+    def validate_lat_long_constraints(self, data):
+        """
+        Validation of latitude and longitude constraints.
+        """
+        maxlatitude = data.get('maxlatitude')
+        minlatitude = data.get('minlatitude')
+        maxlongitude = data.get('maxlongitude')
+        minlongitude = data.get('minlongitude')
+
+        if maxlatitude and maxlatitude > 90.0:
+            raise ValidationError('maxlatitude greater than 90 degrees')
+        if minlatitude and minlatitude < -90.0:
+            raise ValidationError('minlatitude less than -90 degrees')
+        if maxlongitude and maxlongitude > 180.0:
+            raise ValidationError('maxlongitude greater than 180 degrees')
+        if minlongitude and minlongitude > -180.0:
+            raise ValidationError('minlongitude greater than -180 degrees')
+
+        if maxlatitude and minlatitude and maxlatitude < minlatitude:
+            raise ValidationError('maxlatitude must be greater than'
+                                  'minlatitude')
+
+        if maxlongitude and minlongitude and maxlongitude < minlongitude:
+            raise ValidationError('maxlongitude must be greater than'
+                                  'minlongitude')
+
+class HydraulicsSchemaMixin(TimeConstraintsSchemaMixin, Schema):
+    """
+    Query parameters for hydraulics data.
+    """
+    minbottomflow = fields.Float()
+    maxbottomflow = fields.Float()
+    mintopflow = fields.Float()
+    maxtopflow = fields.Float()
+    minbottompressure = fields.Float()
+    maxbottompressure = fields.Float()
+    mintoppressure = fields.Float()
+    maxtoppressure = fields.Float()
+    mintoptemperature = fields.Float()
+    maxtoptemperature = fields.Float()
+    minbottomtemperature = fields.Float()
+    maxbottomtemperature = fields.Float()
+    minfluiddensity = fields.Float()
+    maxfluiddensity = fields.Float()
+    minfluidviscosity = fields.Float()
+    maxfluidviscosity = fields.Float()
+    minfluidph = fields.Float()
+    maxfluidph = fields.Float()
+    limit = fields.Integer()
+    page = fields.Integer()
+
+
+class BoreholeHydraulicSampleListResourceSchema(HydraulicsSchemaMixin,
+                                                GeneralSchema):
+    """
+    Handle optional query parameters for call returning section and hydraulics
     data for specified borehole id.
     """
-    level = LevelHydraulic()    
+    level = LevelHydraulic()
+
+    @validates_schema
+    def validate_level_query_params(self, data):
+        """If the hydraulic data is not included in the response,
+        raise ValidationError on hydraulic level query parameters.
+        """
+        if data.get('level') in ('borehole', 'section'):
+            hydraulic_params = HydraulicsSchemaMixin().dump(data)
+            if hydraulic_params:
+                raise ValidationError(
+                    'Hydraulic query parameters not allowed: {}'.\
+                    format(hydraulic_params))
 
 
 class BoreholeListResourceSchema(TimeConstraintsSchemaMixin,
@@ -206,11 +224,11 @@ class BoreholeListResourceSchema(TimeConstraintsSchemaMixin,
     level = LevelSection()
 
 
-class SectionHydraulicSampleListResourceSchema(TimeConstraintsSchemaMixin,
-                                               HydraulicsSchemaMixin,
+class SectionHydraulicSampleListResourceSchema(HydraulicsSchemaMixin,
                                                GeneralSchema):
     """
     Handle optional query parameters for call returning hydraulics
     data for specified borehole id and section id.
     """
     pass
+

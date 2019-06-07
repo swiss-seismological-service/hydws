@@ -1,41 +1,54 @@
 """
-SQLAlchemy object actions including filter, order by, paginate,
-limit.
+.. module:: query_filters
+    :synopsis: Contains class to interact with SQLAlchemy Query
+        object including filter and paginate.
+
+.. moduleauthor:: Laura Sarson <laura.sarson@sed.ethz.ch>
+
 """
 from sqlalchemy.orm.exc import NoResultFound
-from hydws.db.orm import Borehole, HydraulicSample
+
+from hydws.db.orm import Borehole, BoreholeSection, HydraulicSample
 
 
-# Mapping of columns to comparison operator and input parameter.
-# [(orm column, operator, input comparison value)]
-# Filter on hydraulics fields:
+# Mapping of orm table columns to comparison operator and input values.
+# [(orm attr, operator, input comparison value)]
+#            operator examples:
+#                eq for ==
+#                lt for <
+#                ge for >=
+#                in for in_
+#                like for like
+#
+#            input comparison value can be list or a string.
+#            operator must belong in orm attr as op, op_, __op__
 filter_hydraulics = [
-    ('datetime', 'ge', 'starttime'),
-    ('datetime', 'le', 'endtime'),
-    ('toptemperature', 'ge', 'mintoptemperature'),
-    ('toptemperature', 'le', 'maxtoptemperature'),
-    ('bottomtemperature', 'ge', 'minbottomtemperature'),
-    ('bottomtemperature', 'le', 'maxbottomtemperature'),
-    ('toppressure', 'ge', 'mintoppressure'),
-    ('toppressure', 'le', 'maxtoppressure'),
-    ('bottompressure', 'ge', 'minbottompressure'),
-    ('bottompressure', 'le', 'maxbottompressure'),
-    ('topflow', 'ge', 'mintopflow'),
-    ('topflow', 'le', 'maxtopflow'),
-    ('bottomflow', 'ge', 'minbottomflow'),
-    ('bottomflow', 'le', 'maxbottomflow'),
-    ('fluiddensity', 'ge', 'minfluiddensity'),
-    ('fluiddensity', 'le', 'maxfluiddensity'),
-    ('fluidviscosity', 'ge', 'minfluidviscosity'),
-    ('fluidviscosity', 'le', 'maxfluidviscosity'),
-    ('fluidph', 'ge', 'minfluidph'),
-    ('fluidph', 'le', 'maxfluidph')]
+    ('datetime_value', 'ge', 'starttime'),
+    ('datetime_value', 'le', 'endtime'),
+    ('toptemperature_value', 'ge', 'mintoptemperature'),
+    ('toptemperature_value', 'le', 'maxtoptemperature'),
+    ('bottomtemperature_value', 'ge', 'minbottomtemperature'),
+    ('bottomtemperature_value', 'le', 'maxbottomtemperature'),
+    ('toppressure_value', 'ge', 'mintoppressure'),
+    ('toppressure_value', 'le', 'maxtoppressure'),
+    ('bottompressure_value', 'ge', 'minbottompressure'),
+    ('bottompressure_value', 'le', 'maxbottompressure'),
+    ('topflow_value', 'ge', 'mintopflow'),
+    ('topflow_value', 'le', 'maxtopflow'),
+    ('bottomflow_value', 'ge', 'minbottomflow'),
+    ('bottomflow_value', 'le', 'maxbottomflow'),
+    ('fluiddensity_value', 'ge', 'minfluiddensity'),
+    ('fluiddensity_value', 'le', 'maxfluiddensity'),
+    ('fluidviscosity_value', 'ge', 'minfluidviscosity'),
+    ('fluidviscosity_value', 'le', 'maxfluidviscosity'),
+    ('fluidph_value', 'ge', 'minfluidph'),
+    ('fluidph_value', 'le', 'maxfluidph')]
 
 filter_boreholes = [
-    ('latitude', 'ge', 'minlatitude'),
-    ('latitude', 'le', 'maxlatitude'),
-    ('longitude', 'ge', 'minlongitude'),
-    ('longitude', 'le', 'maxlongitude')]
+    ('latitude_value', 'ge', 'minlatitude'),
+    ('latitude_value', 'le', 'maxlatitude'),
+    ('longitude_value', 'ge', 'minlongitude'),
+    ('longitude_value', 'le', 'maxlongitude')]
 
 
 class DynamicQuery(object):
@@ -44,8 +57,12 @@ class DynamicQuery(object):
     Dynamic filtering and of query.
 
     Example:
-     dyn_query = DynamicQuery(query, orm.BoreholeSection)
-     dyn_query.filter_query([('m_starttime', 'eq', datetime(...))])
+     dq = DynamicQuery(session.query)
+     dq.filter_query([('m_starttime', 'eq', datetime(...))], 'borehole')
+     results = dq.return_all()
+
+    :param query: sqlalchemy query to manipulate.
+    :type query: sqlalchemy.orm.query.Query()
 
     """
 
@@ -54,120 +71,94 @@ class DynamicQuery(object):
         self.page = 1
 
     def return_all(self):
+        """Returns all results from query.
+
+        :rtype: list
+        """
         try: 
             return self.query.all()
-        except NoResultFound:
+        except NoResultFound as err:
             return None
-
 
     def paginate_query(self, limit, page=None, error_flag=False):
         """Paginate used to return a subset of results, starting from
         offset*limit to offset*limit + limit.
         To be used instead of self.return_all()
 
-        :returns type: Pagination object. Use .items to get similar
-            response to .all()
+        :returns:  Pagination of query. Use .items to get similar
+            response to .return_all()
+        :rtype: Pagination object
+
         """
         if not page:
             page = self.page
         return self.query.paginate(page, limit, error_flag)
 
-    
-    def limit_by_query(self, limit):
-        """Append a limit_by clause to the query.
-        """
-        self.query = self.query.limit_by(limit)
+    def operator_attr(self, obj, op):
+        """Returns method associated with an comparison operator
+        If one of op,  op_, __op__ do not exist, Exception raised
 
-    def order_by_query(self, orm_class, key, ascending=True):
-        """Append an order_by clause to the query.
+        :param obj: Object used to find existing operator methods
+        :type obj: Class or class instance.
+        :param str op: Operator to find method for, e.g. 'eq'
 
-        :orm_class: str name of ORM class included in query.
-        :param key: str name of column belonging to orm_class.
-
-        """
-        try:
-            column = getattr(orm_class, key)
-            if not ascending:
-                column = column.desc()
-        except AttributeError:
-            raise Exception('Key: {} is not an attribute of class: {}'.\
-                format(key, orm_class))
-        try:
-            self.query = self.query.order_by(column)
-        except KeyError:
-            raise Exception('Invalid column: %s' % key)
-
-
-    def operator_attr(self, column, op):
-        """
-        Returns method associated with an comparison operator.
-        If op, op_ or __op__ does not exist, Exception returned.
-
-        :returns type: str.
+        :return: Method that exists ob obj associted with op
+        :rtype: str
+        :raises: Exception
 
         """
-        try:
-            return list(filter(
-                lambda e: hasattr(column, e % op),
-                    ['%s', '%s_', '__%s__']))[0] % op
-        except IndexError:
-            raise Exception('Invalid filter operator: %s' % op)
+        obj_methods = [op, f"{op}_", f"__{op}__"]
+        existing_methods = [m for m in obj_methods
+                                if hasattr(obj, m)]
+        if existing_methods:
+            return existing_methods[0]
+        else:
+            raise Exception(f"Invalid operator: {op}")
 
-    def filter_query(self, query_params, filter_level,
-                     key_suffix="_value"):
-        """
-        Update self.query based on filter_condition.
-        :param filter_condition: list, ie: [(key,operator,value)]
-            operator examples:
-                eq for ==
-                lt for <
-                ge for >=
-                in for in_
-                like for like
+    def filter_query(self, query_params, filter_level):
+        """Update self.query with chained filters based
+        on query_params
 
-            value can be list or a string.
-            key must belong in self.orm_class.
+        :param query_params: values to filter query results
+        :type query_params: dict
+        :params filter_level: orm table level to use to filter query,
+             one of ("hydraulic", "borehole")
+        :type filter_level: str
+        :raises: Exception
 
         """
-        if filter_level == 'hydraulic':
+        if filter_level == "hydraulic":
             orm_class = HydraulicSample
             filter_condition = filter_hydraulics
-        elif filter_level == 'borehole':
+        elif filter_level == "borehole":
             orm_class = Borehole
             filter_condition = filter_boreholes
         else:
             raise Exception(f'filter level not handled: {filter_level}')
 
-        
-        for f in filter_condition:
+        for filter_tuple in filter_condition:
             try:
-                key_basename, op, param_name = f
+                key, op, param_name = filter_tuple
             except ValueError:
-                raise Exception('Invalid filter input: %s' % f)
-            if key_suffix:
-                key = "{}{}".format(key_basename, key_suffix)
-            else:
-                key = key_basename
-            #put in try statement?
+                raise Exception(f"Invalid filter input: {filter_tuple}")
+
             param_value = query_params.get(param_name)
+
             if not param_value:
                 continue
-            # todo: check column type against value type
-            # and if they don't match then error?
+
             try:
                 column = getattr(orm_class, key)
             except AttributeError:
-                raise Exception('Invalid filter column: %s' % key)
-            
-            if op == 'in':
+                raise Exception(f"Invalid filter column: {key}")
+
+            if op == "in":
                 if isinstance(value, list):
                     filt = column.in_(param_value)
                 else:
-                    filt = column.in_(param_value.split(','))
+                    filt = column.in_(param_value.split(","))
             else:
                 attr = self.operator_attr(column, op)
                 filt = getattr(column, attr)(param_value)
-                print(filt, column, attr, param_value)
+
             self.query = self.query.filter(filt)
-
-

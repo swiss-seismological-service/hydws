@@ -5,9 +5,12 @@ Well related test facilities.
 
 import unittest
 from unittest.mock import MagicMock, patch
-from hydws.server import query_filters
+from sqlalchemy.orm.exc import NoResultFound
+from hydws.server import query_filters as qf
+
 
 class MockQuery(object):
+    """Mock session.query"""
 
     def __init__(self, query_text):
         self.val = query_text
@@ -15,8 +18,11 @@ class MockQuery(object):
     def filter(self, filt):
         self.val += str(filt)
         return self
+    def paginate(self, page, limit, error_flag):
+        pass
 
 class MockColumn(object):
+    """Mock sqlalchemy.Column"""
     def __init__(self):
         self.mock_attr = 'mock_attr'
 
@@ -24,67 +30,81 @@ class MockColumn(object):
         return val
 
 class MockClass(object):
+    """Mock orm class containing 'column'"""
 
-    mock_column_value = MockColumn()
+    mock_column = MockColumn()
 
     def mock_method(self):
         pass
 
 class MockClassUnderscore(object):
+    """Mock orm class containing method with single underscore."""
 
     def mock_method_(self):
         pass
 
 class MockClassDoubleUnderscore(object):
+    """Mock orm class containing method with double underscores."""
 
     def __mock_method__(self):
         pass
 
 class MockParams(object):
+    """Mock query parameters to filter query on."""
 
     def get(self, param_name):
         return param_name
 
+
+@patch.object(qf, 'Borehole', new=MockClass)
 class DynamicQueryTestCase(unittest.TestCase):
 
     def test_operator_attr_exception(self):
-        dyn_f = misc.DynamicQuery(MagicMock(), MagicMock())
+        """Exception raised when no method exists in class."""
+        dyn_f = qf.DynamicQuery(MagicMock())
         op = 'invalid_method'
         with self.assertRaises(Exception):
             dyn_f.operator_attr(MockClass(), op)
 
     def test_operator_attr_return(self):
-        dyn_f = misc.DynamicQuery(MagicMock(), MagicMock())
+        """Assert that <method> in class used."""
+        dyn_f = qf.DynamicQuery(MagicMock())
         op = 'mock_method'
         self.assertEqual(dyn_f.operator_attr(MockClass(), op), op)
 
     def test_operator_attr_underscore(self):
-        dyn_f = misc.DynamicQuery(MagicMock(), MagicMock())
+        """Assert that <method>_ with underscores used."""
+        dyn_f = qf.DynamicQuery(MagicMock())
         op = 'mock_method'
         existing_op = 'mock_method_'
         self.assertEqual(dyn_f.operator_attr(MockClassUnderscore(), op),
                          existing_op)
 
     def test_operator_attr_double_underscore(self):
-        dyn_f = misc.DynamicQuery(MagicMock(), MagicMock())
+        """Assert that __<method>__ with underscores used."""
+        dyn_f = qf.DynamicQuery(MagicMock())
         op = 'mock_method'
         existing_op = '__mock_method__'
         self.assertEqual(dyn_f.operator_attr(MockClassDoubleUnderscore(), op),
                          existing_op)
 
-    @patch.object(misc.DynamicQuery, 'operator_attr')
+    @patch.object(qf.DynamicQuery, 'operator_attr')
     def test_filter_query_return(self, mock_operator_attr):
-        """Return mock query with filter applied."""
+        """Return mock query with one filter applied."""
         query_str = 'query'
         filter_str = '_mock_filter_value'
         expected_final_query = query_str + filter_str
         mock_operator_attr.return_value = "mock_method"
-        dyn_f = misc.DynamicQuery(MockQuery(query_str), MockClass())
-        dyn_f.filter_query(MockParams(),
-                [('mock_column', 'mock_method', filter_str)])
+
+        # Set values (column obj, method on column obj, value used in filter)
+        qf.filter_boreholes = [('mock_column', 'mock_method', filter_str)]
+
+        dyn_f = qf.DynamicQuery(MockQuery(query_str))
+        dyn_f.filter_query(MockParams(), 'borehole')
+
         self.assertEqual(dyn_f.query.val, expected_final_query)
 
-    @patch.object(misc.DynamicQuery, 'operator_attr')
+    @patch.object(qf.DynamicQuery, 'operator_attr')
     def test_filter_multi_query_return(self, mock_operator_attr):
         """Return mock query with >1 filter applied."""
         query_str = 'query'
@@ -92,22 +112,57 @@ class DynamicQueryTestCase(unittest.TestCase):
         filter_str2 = 'second_value'
         expected_final_query = query_str + filter_str + filter_str2
 
+        qf.filter_boreholes = [('mock_column', 'mock_method', filter_str),
+                               ('mock_column', 'mock_method', filter_str2)]
+
         mock_operator_attr.return_value = "mock_method"
-        dyn_f = misc.DynamicQuery(MockQuery(query_str), MockClass())
-        dyn_f.filter_query(MockParams(),
-                [('mock_column', 'mock_method', filter_str),
-                 ('mock_column', 'mock_method', filter_str2)])
+        dyn_f = qf.DynamicQuery(MockQuery(query_str))
+        dyn_f.filter_query(MockParams(), 'borehole')
+
         self.assertEqual(dyn_f.query.val, expected_final_query)
 
-    def test_filter_query_invalid_input(self):
-        dyn_f = misc.DynamicQuery(MockQuery('query'), MockClass())
-        with self.assertRaises(Exception):
-            dyn_f.filter_query(MockParams(),
-                [('mock_column', 'mock_method',
-                  '_mock_filter_value', 'extra val')])
-
     def test_filter_query_invalid_method(self):
-        dyn_f = misc.DynamicQuery(MockQuery('query'), MockClass())
+        """Raise Exception in case of non-existent method on column obj.
+        
+        """
+        dyn_f = qf.DynamicQuery(MockQuery('query'))
+        qf.filter_boreholes = [('mock_column', 'invalid_method',
+                                '_mock_filter_value')]
+
         with self.assertRaises(Exception):
-            dyn_f.filter_query(MockParams(),
-                [('mock_column', 'invalid_method', '_mock_filter_value')])
+            dyn_f.filter_query(MockParams(), 'borehole')
+
+    def test_filter_query_invalid_level(self):
+        """Raise Exception in case of level not handled.
+        
+        """
+        dyn_f = qf.DynamicQuery(MockQuery('query'))
+        qf.filter_boreholes = [('mock_column', 'invalid_method',
+                                '_mock_filter_value')]
+
+        with self.assertRaises(Exception):
+            dyn_f.filter_query(MockParams(), 'unhandled_level')
+
+    def test_paginate_query(self):
+        """Check paginate called with correct params."""
+        mock_query = MagicMock()
+        dyn_f = qf.DynamicQuery(mock_query)
+        limit=10
+        dyn_f.paginate_query(limit)
+
+        mock_query.paginate.assert_called_with(1, limit, False)
+
+    def test_return_all(self):
+        """Check paginate called with correct params."""
+        mock_query = MagicMock()
+        dyn_f = qf.DynamicQuery(mock_query)
+        return_val = dyn_f.return_all()
+        self.assertEqual(return_val, mock_query.all())
+
+    def test_return_none(self):
+        """Check paginate called with correct params."""
+        mock_query = MagicMock()
+        dyn_f = qf.DynamicQuery(mock_query)
+        mock_query.all.side_effect = NoResultFound
+        return_val = dyn_f.return_all()
+        self.assertEqual(return_val, None)
