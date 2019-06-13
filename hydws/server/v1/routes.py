@@ -109,10 +109,8 @@ class BoreholeListResource(ResourceBase):
         level = query_params.get('level')
         if level == 'section':
             query = query.options(lazyload(Borehole._sections))
+        
         dynamic_query = DynamicQuery(query)
-
-        # XXX(damb): Emulate QuakeML type Epoch (though on DB level it is
-        # defined as QuakeML type OpenEpoch
 
         # Use borehole level filtering.
         dynamic_query.filter_query(query_params,
@@ -175,7 +173,7 @@ class BoreholeHydraulicSampleListResource(ResourceBase):
         dynamic_query = DynamicQuery(query)
         dynamic_query.filter_query(query_params,
                                    'hydraulic')
-        print(query)
+
         if query_params.get('limit'):
             paginate_obj = dynamic_query.paginate_query(
                 query_params.get('limit'), query_params.get('page'))

@@ -22,7 +22,7 @@ from hydws.db.orm import Borehole, BoreholeSection, HydraulicSample
 #
 #            input comparison value can be list or a string.
 #            operator must belong in orm attr as op, op_, __op__
-filter_hydraulics = [
+filter_hydraulics = [# capital.
     ('datetime_value', 'ge', 'starttime'),
     ('datetime_value', 'le', 'endtime'),
     ('toptemperature_value', 'ge', 'mintoptemperature'),
@@ -113,6 +113,7 @@ class DynamicQuery(object):
         if existing_methods:
             return existing_methods[0]
         else:
+            # define a specific error here
             raise Exception(f"Invalid operator: {op}")
 
     def filter_query(self, query_params, filter_level):
@@ -139,7 +140,7 @@ class DynamicQuery(object):
         for filter_tuple in filter_condition:
             try:
                 key, op, param_name = filter_tuple
-            except ValueError:
+            except ValueError as err:
                 raise Exception(f"Invalid filter input: {filter_tuple}")
 
             param_value = query_params.get(param_name)

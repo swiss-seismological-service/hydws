@@ -5,16 +5,18 @@
 .. moduleauthor:: Laura Sarson <laura.sarson@sed.ethz.ch>
 
 """
+import datetime
 import logging
 from functools import partial
-from marshmallow import Schema, fields, post_dump, pre_load, validate, validates_schema
+from marshmallow import Schema, fields, post_dump, pre_load, validate, validates_schema, post_load
+from hydws.db.orm import Borehole, BoreholeSection, HydraulicSample
 
 
 ValidateLatitude = validate.Range(min=-90., max=90.)
 ValidateLongitude = validate.Range(min=-180., max=180.)
 ValidatePositive = validate.Range(min=0.)
 ValidateConfidenceLevel = validate.Range(min=0., max=100.)
-ValidateCelcius = validate.Range(min=-273.15)
+ValidateCelcius = validate.Range(min=0)
 
 Datetime = partial(fields.DateTime, format='iso')
 DatetimeRequired = partial(Datetime, required=True)
@@ -315,7 +317,9 @@ class HydraulicSampleSchema(SchemaBase):
     fluidph_confidencelevel = ConfidenceLevel()
 
     fluidcomposition = fields.String()
-
+    @post_load
+    def make_hydraulics(self, data):
+        return HydraulicSample(**data)
 
 class SectionSchema(SchemaBase):
     """Schema implementation of a borehole section.
@@ -394,7 +398,9 @@ class SectionSchema(SchemaBase):
         if starttime and endtime and starttime >= endtime:
                 raise ValidationError(
                     'endtime must be greater than starttime')
-
+    @post_load
+    def make_section(self, data):
+        return BoreholeSection(**data)
 
 class BoreholeSchema(LiteratureSourceCreationInfoSchema, SchemaBase):
     """Schema implementation of a borehole."""
@@ -432,3 +438,7 @@ class BoreholeSchema(LiteratureSourceCreationInfoSchema, SchemaBase):
 
     sections = fields.Nested(SectionSchema, many=True,
                                attribute='_sections')
+
+    @post_load
+    def make_borehole(self, data):
+        return Borehole(**data)
