@@ -81,6 +81,13 @@ class DynamicQuery(object):
         except NoResultFound as err:
             return None
 
+    def return_one(self):
+        """Returns one result from query.
+
+        :rtype: dict
+        """
+        return self.query.one_or_none()
+
     def paginate_query(self, limit, page=None, error_flag=False):
         """Paginate used to return a subset of results, starting from
         offset*limit to offset*limit + limit.

@@ -143,7 +143,7 @@ class BoreholeHydraulicSampleListResource(ResourceBase):
 
         # TODO(damb): Serialize according to query_param format=JSON|XML
         # format response
-        resp = BoreholeSchema(many=True).dumps(resp)
+        resp = BoreholeSchema().dumps(resp)
 
         return make_response(resp, settings.MIMETYPE_JSON)
     
@@ -181,7 +181,7 @@ class BoreholeHydraulicSampleListResource(ResourceBase):
             # next_url, has_next.
             return paginate_obj.items
         else:
-            return dynamic_query.return_all()
+            return dynamic_query.return_one()
 
 
 class SectionHydraulicSampleListResource(ResourceBase):
