@@ -170,10 +170,9 @@ class KeywordParser(object):
             schemas = [schemas]
 
         valid_fields = set()
-        print("parse ##########")
+
         for schema in [s() if inspect.isclass(s) else s for s in schemas]:
             valid_fields.update(schema.fields.keys())
-            print("#########################", schema.fields.keys())
 
         parsers = []
         for l in locations:
@@ -196,7 +195,7 @@ class KeywordParser(object):
                 req_args.update(f(req))
 
             invalid_args = req_args.difference(valid_fields)
-            print('#######', valid_fields, req_args)
+
             if invalid_args:
                 err = ValidationError(
                     'Invalid request query parameters: {}'.format(

@@ -52,6 +52,7 @@ filter_boreholes = [
 
 
 class DynamicQuery(object):
+
     """
 
     Dynamic filtering and of query.
