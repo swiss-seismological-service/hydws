@@ -6,6 +6,8 @@
 .. moduleauthor:: Laura Sarson <laura.sarson@sed.ethz.ch>
 
 """
+import datetime
+from sqlalchemy import or_
 from sqlalchemy.orm.exc import NoResultFound
 
 from hydws.db.orm import Borehole, BoreholeSection, HydraulicSample
@@ -44,11 +46,20 @@ filter_hydraulics = [# capital.
     ('fluidph_value', 'ge', 'minfluidph'),
     ('fluidph_value', 'le', 'maxfluidph')]
 
+filter_sections = [
+    ('starttime', 'le', 'endtime'),
+    ('endtime', 'ge', 'starttime')]
+
 filter_boreholes = [
     ('latitude_value', 'ge', 'minlatitude'),
     ('latitude_value', 'le', 'maxlatitude'),
     ('longitude_value', 'ge', 'minlongitude'),
     ('longitude_value', 'le', 'maxlongitude')]
+
+
+#class InvalidOperator(ErrorWithTraceback):
+#    def __init__(self,*args,**kwargs):
+#        Exception.__init__(self,*args,**kwargs)
 
 
 class DynamicQuery(object):
@@ -86,6 +97,7 @@ class DynamicQuery(object):
 
         :rtype: dict
         """
+        #MultipleResultsFound from sqlalchemy.orm.exc
         return self.query.one_or_none()
 
     def paginate_query(self, limit, page=None, error_flag=False):
@@ -124,6 +136,13 @@ class DynamicQuery(object):
             # define a specific error here
             raise Exception(f"Invalid operator: {op}")
 
+    def filter_section_epoch(self, column, attr, param_value):
+        # special case as have to deal with open epochs.
+        eq_attr = self.operator_attr(column, 'eq')
+        filt = getattr(column, attr)(param_value)
+        return filt
+
+
     def filter_query(self, query_params, filter_level):
         """Update self.query with chained filters based
         on query_params
@@ -142,6 +161,10 @@ class DynamicQuery(object):
         elif filter_level == "borehole":
             orm_class = Borehole
             filter_condition = filter_boreholes
+        elif filter_level == "section":
+            orm_class = BoreholeSection
+            #print(dir(Borehole._sections))
+            filter_condition = filter_sections
         else:
             raise Exception(f'filter level not handled: {filter_level}')
 
@@ -168,6 +191,9 @@ class DynamicQuery(object):
                     filt = column.in_(param_value.split(","))
             else:
                 attr = self.operator_attr(column, op)
-                filt = getattr(column, attr)(param_value)
+                if filter_level == "section":
+                    filt = self.filter_section_epoch(column, attr, param_value)
+                else:
+                    filt = getattr(column, attr)(param_value)
 
             self.query = self.query.filter(filt)

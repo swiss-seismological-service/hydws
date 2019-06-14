@@ -199,12 +199,42 @@ bh3_section3 = orm.BoreholeSection(
     holediameter_value=0.3,
     casingdiameter_value=0.25, )  # This has been altered from bh3_section2
 
+
+# Third borehole, sections but no hydraulics
+bh4 = orm.Borehole(
+    publicid='smi:ch.ethz.sed/bh/11111111-e4a0-4692-bf29-33b5591eb7123',
+    depth_value=1000,
+    latitude_value=10.66320713,
+    latitude_uncertainty=0.5368853227,
+    longitude_value=10.66320713,
+    longitude_uncertainty=0.7947170871,
+    bedrockdepth_value=0)
+
+bh4_section1 = orm.BoreholeSection(
+    publicid='smi:ch.ethz.sed/bh/section/'
+               '11111111-8d89-4f13-95e7-526ade73c123',
+    topclosed=False,
+    bottomclosed=False,
+    toplatitude_value=15.63484349,
+    toplatitude_uncertainty=0.0008854447,
+    toplongitude_value=-50.66323323,
+    toplongitude_uncertainty=0.7947170871,
+    topdepth_value=0,
+    bottomlatitude_value=50.66323327,
+    bottomlatitude_uncertainty=0.5368853227,
+    bottomlongitude_value=50.66323330,
+    bottomlongitude_uncertainty=0.7947170871,
+    bottomdepth_value=100,
+    holediameter_value=0.3,
+    casingdiameter_value=0.28, )
+
 def insert_orm_values(db_url):
 
     bh1_section1._hydraulics.append(sample1)
     bh1_section1._hydraulics.append(sample2)
     bh1_section1._hydraulics.append(sample3)
     bh1._sections = [bh1_section1, bh1_section2]
+    bh4._sections = [bh4_section1]
 
     bh3._sections = [bh3_section1, bh3_section2, bh3_section3]
 
@@ -217,6 +247,7 @@ def insert_orm_values(db_url):
         session.add(bh1)
         session.add(bh2)
         session.add(bh3)
+        session.add(bh4)
         session.commit()
         session.close()
 

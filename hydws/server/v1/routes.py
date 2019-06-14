@@ -5,14 +5,15 @@
 .. moduleauthor:: Laura Sarson <laura.sarson@sed.ethz.ch>
 
 """
+import datetime as datetime
 
 import logging
-from sqlalchemy import literal
+from sqlalchemy import literal, and_
 from flask_restful import Api, Resource
 from sqlalchemy.orm.exc import NoResultFound
 from webargs.flaskparser import use_kwargs
 from marshmallow import fields
-from sqlalchemy.orm import subqueryload, eagerload, joinedload, contains_eager, lazyload
+from sqlalchemy.orm import subqueryload, eagerload, joinedload, joinedload_all, contains_eager, lazyload, aliased, selectinload
 
 from hydws import __version__
 from hydws.db.orm import Borehole, BoreholeSection, HydraulicSample
@@ -83,8 +84,7 @@ class BoreholeListResource(ResourceBase):
     @use_kwargs(BoreholeListResourceSchema, locations=("query",))
     @with_strict_args(BoreholeListResourceSchema, locations=("query",))
     def get(self, **query_params):
-        params_schema = BoreholeListResourceSchema()
-        query_params = params_schema.dump(query_params)
+
         self.logger.debug(
             f"Received request: "
             f"query_params={query_params}")
@@ -129,16 +129,16 @@ class BoreholeHydraulicSampleListResource(ResourceBase):
                 locations=("query", ))
     def get(self, borehole_id, **query_params):
         borehole_id = decode_publicid(borehole_id)
-        params_schema = BoreholeHydraulicSampleListResourceSchema()
-        query_params = params_schema.dump(query_params)
+
+        map_return_levels = [{'hydraulic': 'section',}]
         self.logger.debug(
             f"Received request: borehole_id={borehole_id}, "
             f"query_params={query_params}")
 
         resp = self._process_request(db.session, borehole_id=borehole_id,
                                      **query_params)
-
         if not resp:
+            
             self._handle_nodata(query_params)
 
         # TODO(damb): Serialize according to query_param format=JSON|XML
@@ -155,25 +155,49 @@ class BoreholeHydraulicSampleListResource(ResourceBase):
             raise ValueError(f"Invalid borehole identifier: {borehole_id!r}")
 
         level = query_params.get('level')
-        order_by_levels = []
 
+
+
+        hyd_subquery = DynamicQuery(session.query(HydraulicSample.boreholesection_oid))
+        sec_subquery = DynamicQuery(session.query(BoreholeSection.borehole_oid))
+        if level in ['section', 'hydraulic']:
+            sec_subquery.filter_query(query_params, 'section')
+
+        if level == 'hydraulic':
+            hyd_subquery.filter_query(query_params,
+                                   'hydraulic')
+        hyd_query = hyd_subquery.query.subquery(name="hyd_query")
+        sec_query = sec_subquery.query.subquery(name="sec_query")
+        print(sec_query)
         query = session.query(Borehole)
         if level == 'section':
-            query = query.options(subqueryload(Borehole._sections)).join(BoreholeSection)
-            order_by_levels.append('section')
+            query = query.options(lazyload(Borehole._sections)).\
+            join(BoreholeSection, isouter=True).options(contains_eager("_sections"))
 
+        #TODO(sarsonl): Currently if querying at the hydraulic level, and no hydraulics
+        # exist, then no result is output. Not sure why as using left outer joins.
         elif level == 'hydraulic':
             query = query.options(lazyload(Borehole._sections).\
                         lazyload(BoreholeSection._hydraulics)).\
-                    join(BoreholeSection).join(HydraulicSample)
+                    join(sec_query,  Borehole._oid==sec_query.c.borehole_oid , isouter=True).\
+                    join(hyd_query, sec_query.c._oid==hyd_query.c.boreholesection_oid,
+                    isouter=True).\
+                    options(contains_eager("_sections").\
+                            contains_eager("_hydraulics"))
+        
         
         query = query.filter(Borehole.publicid==borehole_id)
-        
-
         dynamic_query = DynamicQuery(query)
-        dynamic_query.filter_query(query_params,
-                                   'hydraulic')
 
+        
+        
+        
+        #if level in ['section', 'hydraulic']:
+        #    dynamic_query.filter_query(query_params, 'section')
+        #if level == 'hydraulic':
+        #   dynamic_query.filter_query(query_params,
+        #                           'hydraulic')
+        print(dynamic_query.query)
         if query_params.get('limit'):
             paginate_obj = dynamic_query.paginate_query(
                 query_params.get('limit'), query_params.get('page'))
@@ -196,8 +220,7 @@ class SectionHydraulicSampleListResource(ResourceBase):
     def get(self, borehole_id, section_id, **query_params):
         borehole_id = decode_publicid(borehole_id)
         section_id = decode_publicid(section_id)
-        params_schema = SectionHydraulicSampleListResourceSchema()
-        query_params = params_schema.dump(query_params)
+
         self.logger.debug(
             f"Received request: borehole_id={borehole_id}, "
             f"section_id={section_id}, "
