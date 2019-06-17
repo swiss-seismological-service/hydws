@@ -45,6 +45,9 @@ _entry_points = {
         'hydws-test = hydws.server.app:main_test',
         'hydws-db-init = hydws.db.emerge:emerge', ]}
 
+_extras = {
+    'postgres': ['psycopg2-binary']}
+
 
 # ----------------------------------------------------------------------------
 setup(
@@ -71,6 +74,7 @@ setup(
     packages=find_packages(),
     data_files=_data_files,
     install_requires=_install_requires,
+    extras_require=_extras,
     entry_points=_entry_points,
     include_package_data=True,
     zip_safe=False,
