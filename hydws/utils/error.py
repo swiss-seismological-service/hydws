@@ -22,7 +22,7 @@ class Error(Exception):
     # it is always a (fatal and abrupt) EXIT_ERROR, never just
     # a warning.
     exit_code = ExitCodes.EXIT_ERROR
-    # show a traceback?
+
     traceback = False
 
     def __init__(self, *args, **kwargs):

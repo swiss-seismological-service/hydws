@@ -1,6 +1,6 @@
 """
 .. module:: schema
-   :synopsis: HYDWS datamodel ORM entity de-/serialization facilities..
+   :synopsis: HYDWS datamodel ORM entity de-/serialization facilities.
 
 .. moduleauthor:: Laura Sarson <laura.sarson@sed.ethz.ch>
 
@@ -8,40 +8,33 @@
 import datetime
 import logging
 from functools import partial
-from marshmallow import Schema, fields, post_dump, pre_load, validate, validates_schema, post_load
+from marshmallow import (Schema, fields, post_dump, pre_load,
+    validate, validates_schema, post_load)
 from hydws.db.orm import Borehole, BoreholeSection, HydraulicSample
 
 
-ValidateLatitude = validate.Range(min=-90., max=90.)
-ValidateLongitude = validate.Range(min=-180., max=180.)
-ValidatePositive = validate.Range(min=0.)
-ValidateConfidenceLevel = validate.Range(min=0., max=100.)
-ValidateCelcius = validate.Range(min=0)
+VALIDATE_LATITUDE = validate.Range(min=-90., max=90.)
+VALIDATE_LONGITUDE = validate.Range(min=-180., max=180.)
+VALIDATE_POSITIVE = validate.Range(min=0.)
+VALIDATE_CONFIDENCE_LEVEL = validate.Range(min=0., max=100.)
+VALIDATE_KELVIN = validate.Range(min=0.)
+VALIDATE_PH = validate.Range(min=0., max=14)
 
 Datetime = partial(fields.DateTime, format='iso')
 DatetimeRequired = partial(Datetime, required=True)
 Degree = partial(fields.Float)
-Latitude = partial(Degree, validate=ValidateLatitude)
+FloatPositive = partial(fields.Float, validate=VALIDATE_POSITIVE)
+Latitude = partial(Degree, validate=VALIDATE_LATITUDE)
 RequiredLatitude = partial(Latitude, required=True)
-Longitude = partial(Degree, validate=ValidateLongitude)
+Longitude = partial(Degree, validate=VALIDATE_LONGITUDE)
 RequiredLongitude = partial(Longitude, required=True)
-Uncertainty = partial(fields.Float, validate=ValidatePositive)
-ConfidenceLevel = partial(fields.Float, validate=ValidateConfidenceLevel)
-Depth = partial(fields.Float, validate=ValidatePositive)
-BedrockDepth = partial(fields.Float, validate=ValidatePositive)
-MeasuredDepth = partial(fields.Float, validate=ValidatePositive)
-Diameter = partial(fields.Float, validate=ValidatePositive)
-Temperature = partial(fields.Float, validate=ValidateCelcius)
-Pressure = partial(fields.Float, validate=ValidatePositive)
-Flow = partial(fields.Float, validate=ValidatePositive)
-FluidPh = partial(fields.Float, validate=ValidatePositive)
-FluidViscosity = partial(fields.Float, validate=ValidatePositive)
-FluidDensity = partial(fields.Float, validate=ValidatePositive)
-
+ConfidenceLevel = partial(fields.Float, validate=VALIDATE_CONFIDENCE_LEVEL)
+Temperature = partial(fields.Float, validate=VALIDATE_KELVIN)
+FluidPh = partial(fields.Float, validate=VALIDATE_PH)
 
 class SchemaBase(Schema):
-    """Schema base class for object de-/serialization.
-
+    """
+    Schema base class for object de-/serialization.
     """
     @classmethod
     def remove_empty(self, data):
@@ -98,9 +91,9 @@ class SchemaBase(Schema):
 
 
 class CreationInfoSchema(SchemaBase):
-    """Schema implementation of literature source and creation info
+    """
+    Schema implementation of literature source and creation info
     defined levels.
-    
     """
     creationinfo_author = fields.String()
     creationinfo_authoruri_resourceid = fields.String()
@@ -114,9 +107,9 @@ class CreationInfoSchema(SchemaBase):
 
 
 class LSCreatorPersonSchema(SchemaBase):
-    """Schema implementation of literature source and creation info
+    """
+    Schema implementation of literature source and creation info
     defined levels.
-    
     """
     literaturesource_creator_person_name = fields.String()
     literaturesource_creator_person_givenname = fields.String()
@@ -131,9 +124,9 @@ class LSCreatorPersonSchema(SchemaBase):
 
 
 class LSCreatorAffiliationSchema(SchemaBase):
-    """Schema implementation of literature source and creation info
+    """
+    Schema implementation of literature source and creation info
     defined levels.
-    
     """
     literaturesource_creator_affiliation_institution_name = fields.String()
     literaturesource_creator_affiliation_institution_identifier_resourceid = fields.String()
@@ -163,9 +156,9 @@ class LSCreatorAffiliationSchema(SchemaBase):
 
 
 class LSCreatorAlternateAffiliationSchema(SchemaBase):
-    """Schema implementation of literature source and creation info
+    """
+    Schema implementation of literature source and creation info
     defined levels.
-    
     """
     literaturesource_creator_alternateaffiliation_institution_name = fields.String()
     literaturesource_creator_alternateaffiliation_institution_identifier_resourceid = fields.String()
@@ -195,9 +188,9 @@ class LSCreatorAlternateAffiliationSchema(SchemaBase):
 
 
 class LSCreatorSchema(SchemaBase):
-    """Schema implementation of literature source and creation info
+    """
+    Schema implementation of literature source and creation info
     defined levels.
-    
     """
     literaturesource_creator_mbox_resourceid = fields.String()
     literaturesource_creator_comment_comment = fields.String()
@@ -219,9 +212,9 @@ class LiteratureSourceCreationInfoSchema(
         LSCreatorAffiliationSchema,
         LSCreatorPersonSchema,
         CreationInfoSchema, SchemaBase):
-    """Schema implementation of literature source and creation info
+    """
+    Schema implementation of literature source and creation info
     defined levels.
-    
     """
     literaturesource_identifier_resourceid = fields.String()
     literaturesource_type_uri_resourceid = fields.String()
@@ -253,67 +246,67 @@ class LiteratureSourceCreationInfoSchema(
 
 
 class HydraulicSampleSchema(SchemaBase):
-    """Schema implementation of an hydraulic data sample.
-
+    """
+    Schema implementation of an hydraulic data sample.
     """
     datetime_value = DatetimeRequired()
-    datetime_uncertainty = Uncertainty()
-    datetime_loweruncertainty = Uncertainty()
-    datetime_upperuncertainty = Uncertainty()
+    datetime_uncertainty = FloatPositive()
+    datetime_loweruncertainty = FloatPositive()
+    datetime_upperuncertainty = FloatPositive()
     datetime_confidencelevel = ConfidenceLevel()
 
     toptemperature_value = Temperature()
-    toptemperature_uncertainty = Uncertainty()
-    toptemperature_loweruncertainty = Uncertainty()
-    toptemperature_upperuncertainty = Uncertainty()
+    toptemperature_uncertainty = FloatPositive()
+    toptemperature_loweruncertainty = FloatPositive()
+    toptemperature_upperuncertainty = FloatPositive()
     toptemperature_confidencelevel = ConfidenceLevel()
 
     bottomtemperature_value = Temperature()
-    bottomtemperature_uncertainty = Uncertainty()
-    bottomtemperature_loweruncertainty = Uncertainty()
-    bottomtemperature_upperuncertainty = Uncertainty()
+    bottomtemperature_uncertainty = FloatPositive()
+    bottomtemperature_loweruncertainty = FloatPositive()
+    bottomtemperature_upperuncertainty = FloatPositive()
     bottomtemperature_confidencelevel = ConfidenceLevel()
 
-    topflow_value = Flow()
-    topflow_uncertainty = Uncertainty()
-    topflow_loweruncertainty = Uncertainty()
-    topflow_upperuncertainty = Uncertainty()
+    topflow_value = fields.Float()
+    topflow_uncertainty = FloatPositive()
+    topflow_loweruncertainty = FloatPositive()
+    topflow_upperuncertainty = FloatPositive()
     topflow_confidencelevel = ConfidenceLevel()
 
-    bottomflow_value = Flow()
-    bottomflow_uncertainty = Uncertainty()
-    bottomflow_loweruncertainty = Uncertainty()
-    bottomflow_upperuncertainty = Uncertainty()
+    bottomflow_value = fields.Float()
+    bottomflow_uncertainty = FloatPositive()
+    bottomflow_loweruncertainty = FloatPositive()
+    bottomflow_upperuncertainty = FloatPositive()
     bottomflow_confidencelevel = ConfidenceLevel()
 
-    toppressure_value = Pressure()
-    toppressure_uncertainty = Uncertainty()
-    toppressure_loweruncertainty = Uncertainty()
-    toppressure_upperuncertainty = Uncertainty()
+    toppressure_value = FloatPositive()
+    toppressure_uncertainty = FloatPositive()
+    toppressure_loweruncertainty = FloatPositive()
+    toppressure_upperuncertainty = FloatPositive()
     toppressure_confidencelevel = ConfidenceLevel()
 
-    bottompressure_value = Pressure()
-    bottompressure_uncertainty = Uncertainty()
-    bottompressure_loweruncertainty = Uncertainty()
-    bottompressure_upperuncertainty = Uncertainty()
+    bottompressure_value = FloatPositive()
+    bottompressure_uncertainty = FloatPositive()
+    bottompressure_loweruncertainty = FloatPositive()
+    bottompressure_upperuncertainty = FloatPositive()
     bottompressure_confidencelevel = ConfidenceLevel()
 
-    fluiddensity_value = FluidDensity()
-    fluiddensity_uncertainty = Uncertainty()
-    fluiddensity_loweruncertainty = Uncertainty()
-    fluiddensity_upperuncertainty = Uncertainty()
+    fluiddensity_value = FloatPositive()
+    fluiddensity_uncertainty = FloatPositive()
+    fluiddensity_loweruncertainty = FloatPositive()
+    fluiddensity_upperuncertainty = FloatPositive()
     fluiddensity_confidencelevel = ConfidenceLevel()
 
-    fluidviscosity_value = FluidViscosity()
-    fluidviscosity_uncertainty = Uncertainty()
-    fluidviscosity_loweruncertainty = Uncertainty()
-    fluidviscosity_upperuncertainty = Uncertainty()
+    fluidviscosity_value = FloatPositive()
+    fluidviscosity_uncertainty = FloatPositive()
+    fluidviscosity_loweruncertainty = FloatPositive()
+    fluidviscosity_upperuncertainty = FloatPositive()
     fluidviscosity_confidencelevel = ConfidenceLevel()
 
     fluidph_value = FluidPh()
-    fluidph_uncertainty = Uncertainty()
-    fluidph_loweruncertainty = Uncertainty()
-    fluidph_upperuncertainty = Uncertainty()
+    fluidph_uncertainty = FloatPositive()
+    fluidph_loweruncertainty = FloatPositive()
+    fluidph_upperuncertainty = FloatPositive()
     fluidph_confidencelevel = ConfidenceLevel()
 
     fluidcomposition = fields.String()
@@ -322,61 +315,61 @@ class HydraulicSampleSchema(SchemaBase):
         return HydraulicSample(**data)
 
 class SectionSchema(SchemaBase):
-    """Schema implementation of a borehole section.
-
+    """
+    Schema implementation of a borehole section.
     """
     publicid = fields.String(required=True)
     starttime = DatetimeRequired()
     endtime = Datetime()
 
     toplongitude_value = Longitude()
-    toplongitude_uncertainty = Uncertainty()
-    toplongitude_loweruncertainty = Uncertainty()
-    toplongitude_upperuncertainty = Uncertainty()
+    toplongitude_uncertainty = FloatPositive()
+    toplongitude_loweruncertainty = FloatPositive()
+    toplongitude_upperuncertainty = FloatPositive()
     toplongitude_confidencelevel = ConfidenceLevel()
 
     bottomlongitude_value = Longitude()
-    bottomlongitude_uncertainty = Uncertainty()
-    bottomlongitude_loweruncertainty = Uncertainty()
-    bottomlongitude_upperuncertainty = Uncertainty()
+    bottomlongitude_uncertainty = FloatPositive()
+    bottomlongitude_loweruncertainty = FloatPositive()
+    bottomlongitude_upperuncertainty = FloatPositive()
     bottomlongitude_confidencelevel = ConfidenceLevel()
 
     toplatitude_value = Latitude()
-    toplatitude_uncertainty = Uncertainty()
-    toplatitude_loweruncertainty = Uncertainty()
-    toplatitude_upperuncertainty = Uncertainty()
+    toplatitude_uncertainty = FloatPositive()
+    toplatitude_loweruncertainty = FloatPositive()
+    toplatitude_upperuncertainty = FloatPositive()
     toplatitude_confidencelevel = ConfidenceLevel()
 
     bottomlatitude_value = Latitude()
-    bottomlatitude_uncertainty = Uncertainty()
-    bottomlatitude_loweruncertainty = Uncertainty()
-    bottomlatitude_upperuncertainty = Uncertainty()
+    bottomlatitude_uncertainty = FloatPositive()
+    bottomlatitude_loweruncertainty = FloatPositive()
+    bottomlatitude_upperuncertainty = FloatPositive()
     bottomlatitude_confidencelevel = ConfidenceLevel()
 
-    topdepth_value = Depth()
-    topdepth_uncertainty = Uncertainty()
-    topdepth_loweruncertainty = Uncertainty()
-    topdepth_upperuncertainty = Uncertainty()
+    topdepth_value = FloatPositive()
+    topdepth_uncertainty = FloatPositive()
+    topdepth_loweruncertainty = FloatPositive()
+    topdepth_upperuncertainty = FloatPositive()
     topdepth_confidencelevel = ConfidenceLevel()
 
-    bottomdepth_value = Depth()
-    bottomdepth_uncertainty = Uncertainty()
-    bottomdepth_loweruncertainty = Uncertainty()
-    bottomdepth_upperuncertainty = Uncertainty()
+    bottomdepth_value = FloatPositive()
+    bottomdepth_uncertainty = FloatPositive()
+    bottomdepth_loweruncertainty = FloatPositive()
+    bottomdepth_upperuncertainty = FloatPositive()
     bottomdepth_confidencelevel = ConfidenceLevel()
 
 
-    holediameter_value = Diameter()
-    holediameter_uncertainty = Uncertainty()
-    holediameter_loweruncertainty = Uncertainty()
-    holediameter_upperuncertainty = Uncertainty()
+    holediameter_value = FloatPositive()
+    holediameter_uncertainty = FloatPositive()
+    holediameter_loweruncertainty = FloatPositive()
+    holediameter_upperuncertainty = FloatPositive()
     holediameter_confidencelevel = ConfidenceLevel()
 
 
-    casingdiameter_value = Diameter()
-    casingdiameter_uncertainty = Uncertainty()
-    casingdiameter_loweruncertainty = Uncertainty()
-    casingdiameter_upperuncertainty = Uncertainty()
+    casingdiameter_value = FloatPositive()
+    casingdiameter_uncertainty = FloatPositive()
+    casingdiameter_loweruncertainty = FloatPositive()
+    casingdiameter_upperuncertainty = FloatPositive()
     casingdiameter_confidencelevel = ConfidenceLevel()
 
     topclosed = fields.Boolean(required=True)
@@ -402,38 +395,39 @@ class SectionSchema(SchemaBase):
     def make_section(self, data):
         return BoreholeSection(**data)
 
-class BoreholeSchema(LiteratureSourceCreationInfoSchema, SchemaBase):
+class BoreholeSchema(LiteratureSourceCreationInfoSchema,
+                     SchemaBase):
     """Schema implementation of a borehole."""
     publicid = fields.String()
 
     longitude_value = RequiredLongitude()
-    longitude_uncertainty = Uncertainty()
-    longitude_loweruncertainty = Uncertainty()
-    longitude_upperuncertainty = Uncertainty()
+    longitude_uncertainty = FloatPositive()
+    longitude_loweruncertainty = FloatPositive()
+    longitude_upperuncertainty = FloatPositive()
     longitude_confidencelevel = ConfidenceLevel()
 
     latitude_value = RequiredLatitude()
-    latitude_uncertainty = Uncertainty()
-    latitude_loweruncertainty = Uncertainty()
-    latitude_upperuncertainty = Uncertainty()
+    latitude_uncertainty = FloatPositive()
+    latitude_loweruncertainty = FloatPositive()
+    latitude_upperuncertainty = FloatPositive()
     latitude_confidencelevel = ConfidenceLevel()
 
-    depth_value = Depth()
-    depth_uncertainty = Uncertainty()
-    depth_loweruncertainty = Uncertainty()
-    depth_upperuncertainty = Uncertainty()
+    depth_value = FloatPositive()
+    depth_uncertainty = FloatPositive()
+    depth_loweruncertainty = FloatPositive()
+    depth_upperuncertainty = FloatPositive()
     depth_confidencelevel = ConfidenceLevel()
 
-    bedrockdepth_value = BedrockDepth()
-    bedrockdepth_uncertainty = Uncertainty()
-    bedrockdepth_loweruncertainty = Uncertainty()
-    bedrockdepth_upperuncertainty = Uncertainty()
+    bedrockdepth_value = FloatPositive()
+    bedrockdepth_uncertainty = FloatPositive()
+    bedrockdepth_loweruncertainty = FloatPositive()
+    bedrockdepth_upperuncertainty = FloatPositive()
     bedrockdepth_confidencelevel = ConfidenceLevel()
 
-    measureddepth_value = MeasuredDepth()
-    measureddepth_uncertainty = Uncertainty()
-    measureddepth_loweruncertainty = Uncertainty()
-    measureddepth_upperuncertainty = Uncertainty()
+    measureddepth_value = FloatPositive()
+    measureddepth_uncertainty = FloatPositive()
+    measureddepth_loweruncertainty = FloatPositive()
+    measureddepth_upperuncertainty = FloatPositive()
     measureddepth_confidencelevel = ConfidenceLevel()
 
     sections = fields.Nested(SectionSchema, many=True,

@@ -31,7 +31,7 @@ _iso8601_re = re.compile(
     r'(?::(?P<second>\d{1,2})(?:\.(?P<microsecond>\d{1,6})\d{0,6})?)?'
     # tzinfo must not be available
     r'(?P<tzinfo>Z|(?![+-]\d{2}(?::?\d{2})?))?$'
-)
+    )
 
 
 def from_fdsnws_datetime(datestring, use_dateutil=True):
@@ -140,6 +140,3 @@ def make_response(obj, mimetype):
     response = _make_response(obj)
     response.headers['Content-Type'] = mimetype
     return response
-
-
-

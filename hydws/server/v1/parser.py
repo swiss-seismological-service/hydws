@@ -189,7 +189,7 @@ class HydraulicsSchemaMixin(TimeConstraintsSchemaMixin, Schema):
     minfluidph = fields.Float()
     maxfluidph = fields.Float()
     limit = fields.Integer()
-    page = fields.Integer()
+    offset = fields.Integer()
 
 
 class BoreholeHydraulicSampleListResourceSchema(HydraulicsSchemaMixin,

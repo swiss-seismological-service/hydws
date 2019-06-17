@@ -24,7 +24,7 @@ from hydws.db.orm import Borehole, BoreholeSection, HydraulicSample
 #
 #            input comparison value can be list or a string.
 #            operator must belong in orm attr as op, op_, __op__
-filter_hydraulics = [# capital.
+FILTER_HYDRAULICS = [
     ('datetime_value', 'ge', 'starttime'),
     ('datetime_value', 'le', 'endtime'),
     ('toptemperature_value', 'ge', 'mintoptemperature'),
@@ -46,11 +46,22 @@ filter_hydraulics = [# capital.
     ('fluidph_value', 'ge', 'minfluidph'),
     ('fluidph_value', 'le', 'maxfluidph')]
 
-filter_sections = [
+FILTER_SECTIONS_EPOCH = [
     ('starttime', 'le', 'endtime'),
     ('endtime', 'ge', 'starttime')]
 
-filter_boreholes = [
+
+FILTER_SECTIONS = [
+    [('toplatitude_value', 'ge', 'minlatitude'),
+     ('bottomlatitude_value', 'ge', 'minlatitude')],
+    [('toplatitude_value', 'le', 'maxlatitude'),
+     ('bottomlatitude_value', 'le', 'maxlatitude')],
+    [('toplongitude_value', 'ge', 'minlongitude'),
+     ('bottomlongitude_value', 'ge', 'minlongitude')],
+    [('toplongitude_value', 'le', 'maxlongitude'),
+     ('longitude_valuee', 'le', 'maxlongitude')]]
+
+FILTER_BOREHOLES = [
     ('latitude_value', 'ge', 'minlatitude'),
     ('latitude_value', 'le', 'maxlatitude'),
     ('longitude_value', 'ge', 'minlongitude'),
@@ -65,7 +76,6 @@ filter_boreholes = [
 class DynamicQuery(object):
 
     """
-
     Dynamic filtering and of query.
 
     Example:
@@ -75,12 +85,10 @@ class DynamicQuery(object):
 
     :param query: sqlalchemy query to manipulate.
     :type query: sqlalchemy.orm.query.Query()
-
     """
 
     def __init__(self, query):
         self.query = query
-        self.page = 1
 
     def return_all(self):
         """Returns all results from query.
@@ -93,29 +101,32 @@ class DynamicQuery(object):
             return None
 
     def return_one(self):
-        """Returns one result from query.
+        """
+        Returns one result from query.
 
         :rtype: dict
         """
         #MultipleResultsFound from sqlalchemy.orm.exc
         return self.query.one_or_none()
 
-    def paginate_query(self, limit, page=None, error_flag=False):
-        """Paginate used to return a subset of results, starting from
-        offset*limit to offset*limit + limit.
-        To be used instead of self.return_all()
-
-        :returns:  Pagination of query. Use .items to get similar
-            response to .return_all()
-        :rtype: Pagination object
-
+    def format_results(self, order_column=None, limit=None, offset=None):
         """
-        if not page:
-            page = self.page
-        return self.query.paginate(page, limit, error_flag)
+        Return a subset of results of size limit
+        and with an offset if required.
+
+        :param limit: Limit to number of results returned.
+        :type query: sqlalchemy.orm.query.Query()
+        """
+        if order_column:
+            self.query = self.query.order_by(order_column)
+        if limit:
+            self.query = self.query.limit(limit)
+        if offset:
+            self.query = self.query.offset(offset)
 
     def operator_attr(self, obj, op):
-        """Returns method associated with an comparison operator
+        """
+        Returns method associated with an comparison operator
         If one of op,  op_, __op__ do not exist, Exception raised
 
         :param obj: Object used to find existing operator methods
@@ -125,7 +136,6 @@ class DynamicQuery(object):
         :return: Method that exists ob obj associted with op
         :rtype: str
         :raises: Exception
-
         """
         obj_methods = [op, f"{op}_", f"__{op}__"]
         existing_methods = [m for m in obj_methods
@@ -137,14 +147,32 @@ class DynamicQuery(object):
             raise Exception(f"Invalid operator: {op}")
 
     def filter_section_epoch(self, column, attr, param_value):
-        # special case as have to deal with open epochs.
+        """
+        Special case for filtering to deal with open epochs.
+        This requires BoreholeSection starttime and endtime values to
+        include None values if no value has been set for them.
+
+        :param column: Attribute name of ORM table to filter on.
+        :type column: str
+        :params attr: Attribute name of operator to use in evaluation.
+        :type filter_level: str
+        :params param_value: Value of input query parameter to filter
+            column on.
+        :type filter_level: matches type of values stored in column.
+
+        :return: Method to evaluate ORM column
+            e.g. getattr(col, operator)(param value)
+        :type: Column evaluation method.
+        """
+
         eq_attr = self.operator_attr(column, 'eq')
-        filt = getattr(column, attr)(param_value)
+        filt =  or_((getattr(column, attr)(param_value)),
+                    (getattr(column, eq_attr)(None)))
         return filt
 
-
-    def filter_query(self, query_params, filter_level):
-        """Update self.query with chained filters based
+    def filter_level(self, query_params, filter_level):
+        """
+        Update self.query with chained filters based
         on query_params
 
         :param query_params: values to filter query results
@@ -153,47 +181,94 @@ class DynamicQuery(object):
              one of ("hydraulic", "borehole")
         :type filter_level: str
         :raises: Exception
-
         """
         if filter_level == "hydraulic":
             orm_class = HydraulicSample
-            filter_condition = filter_hydraulics
+            filter_condition = {"hydraulic": FILTER_HYDRAULICS}
         elif filter_level == "borehole":
             orm_class = Borehole
-            filter_condition = filter_boreholes
+            filter_condition = {"borehole": FILTER_BOREHOLES}
         elif filter_level == "section":
             orm_class = BoreholeSection
-            #print(dir(Borehole._sections))
-            filter_condition = filter_sections
+
+            filter_condition = {"section_epoch": FILTER_SECTIONS_EPOCH,
+                                "section": FILTER_SECTIONS}
         else:
             raise Exception(f'filter level not handled: {filter_level}')
 
-        for filter_tuple in filter_condition:
-            try:
-                key, op, param_name = filter_tuple
-            except ValueError as err:
-                raise Exception(f"Invalid filter input: {filter_tuple}")
+        for filter_name, filter_tuples in filter_condition.items():
+            for filter_clause in filter_tuples:
 
-            param_value = query_params.get(param_name)
+                if isinstance(filter_clause, list):
+                    filt_list = []
+                    for clause in filter_clause:
+                        filt = self.get_filter(clause, filter_name,
+                                               query_params, orm_class)
+                        if filt is None:
+                            continue
 
-            if not param_value:
-                continue
+                        filt_list.append((filt))
+                    self.query = self.query.filter(or_(*filt_list))
 
-            try:
-                column = getattr(orm_class, key)
-            except AttributeError:
-                raise Exception(f"Invalid filter column: {key}")
-
-            if op == "in":
-                if isinstance(value, list):
-                    filt = column.in_(param_value)
                 else:
-                    filt = column.in_(param_value.split(","))
+                    filt = self.get_filter( filter_clause, filter_name, query_params,orm_class)
+                    if filt is None:
+                        continue
+
+                    self.query = self.query.filter(filt)
+
+    def get_filter(self, filter_clause, filter_name, query_params, orm_class):
+        """Return evaluation clause for filtering query if a query param
+        value exists to to the evaluation on.
+
+        :param filter_clause: e.g. ('datetime_value', 'ge', 'starttime')
+        :type filter_clause: tuple
+        :params filter_name: name given to collection of filter clauses.
+        :type filter_level: str
+        :param query_params: values to filter query results
+        :type query_params: dict
+        :param orm_class: Name of ORM class that the column value belongs to.
+        :type query_params: str
+
+        :return: Method to evaluate ORM column
+            e.g. getattr(col, operator)(param value)
+        :type: Column evaluation method or None if no param value exists. 
+
+        """
+        key, op, param_name, param_value = self.get_query_param(filter_clause, query_params)
+        if param_value:
+            return self.filter_query(query_params, filter_name, key, op, param_name, param_value, orm_class)
+        else:
+            return None
+
+    def get_query_param(self, filter_clause, query_params):
+            
+        try:
+            key, op, param_name = filter_clause
+        except ValueError as err:
+            raise Exception(f"Invalid filter input")
+
+        param_value = query_params.get(param_name)
+        
+        return key, op, param_name, param_value
+        
+    def filter_query(self, query_params, filter_name, key, op, param_name, param_value, orm_class):
+
+        try:
+            column = getattr(orm_class, key)
+        except AttributeError:
+           raise Exception(f"Invalid filter column: {key}")
+
+        if op == "in":
+            if isinstance(value, list):
+                filt = column.in_(param_value)
             else:
-                attr = self.operator_attr(column, op)
-                if filter_level == "section":
-                    filt = self.filter_section_epoch(column, attr, param_value)
-                else:
-                    filt = getattr(column, attr)(param_value)
+                filt = column.in_(param_value.split(","))
+        else:
+            attr = self.operator_attr(column, op)
+            if filter_name == "section_epoch":
+                filt = self.filter_section_epoch(column, attr, param_value)
+            else:
+                filt = getattr(column, attr)(param_value)
 
-            self.query = self.query.filter(filt)
+        return filt
