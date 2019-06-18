@@ -20,7 +20,7 @@ VALIDATE_CONFIDENCE_LEVEL = validate.Range(min=0., max=100.)
 VALIDATE_KELVIN = validate.Range(min=0.)
 VALIDATE_PH = validate.Range(min=0., max=14)
 
-Datetime = partial(fields.DateTime, format='iso')
+Datetime = partial(fields.DateTime, format='%Y-%m-%dT%H:%M:%S')
 DatetimeRequired = partial(Datetime, required=True)
 Degree = partial(fields.Float)
 FloatPositive = partial(fields.Float, validate=VALIDATE_POSITIVE)
