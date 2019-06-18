@@ -15,7 +15,13 @@ import argparse
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from hydws.db import orm
+from hydws.db import orm, base
+
+
+res0 = base.ResourceIdentifier(resourceid='2143214214',)
+creator0 = base.Author(_mbox=res0,)
+ls0 = base.LiteratureSource(author='Charles Dickens', _creator=creator0,)
+
 
 bh0 = orm.Borehole(
     publicid='smi:ch.ethz.sed/bh/11111111-e4a0-4692-bf29-33b5591eb2d43',
@@ -25,9 +31,9 @@ bh0 = orm.Borehole(
     longitude_value=10.66320713,
     longitude_uncertainty=0.7947170871,
     bedrockdepth_value=0,
-    literaturesource_author='Charles Dickens',
-    literaturesource_creator_mbox_resourceid='123456'
+    _literaturesource=ls0,
 )
+
 
 bh1 = orm.Borehole(
     publicid='smi:ch.ethz.sed/bh/11111111-e4a0-4692-bf29-33b5591eb798',
@@ -200,7 +206,6 @@ bh3_section3 = orm.BoreholeSection(
     casingdiameter_value=0.25, )  # This has been altered from bh3_section2
 
 
-# Third borehole, sections but no hydraulics
 bh4 = orm.Borehole(
     publicid='smi:ch.ethz.sed/bh/11111111-e4a0-4692-bf29-33b5591eb7123',
     depth_value=1000,

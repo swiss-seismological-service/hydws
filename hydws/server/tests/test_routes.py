@@ -2,7 +2,7 @@
 import unittest
 import base64
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, call
 from hydws.server.v1 import routes
 from hydws.server import db, create_app
 
@@ -112,7 +112,7 @@ class RoutesGetTestCase(unittest.TestCase):
 
 @patch.object(routes, 'BoreholeSchema')
 @patch.object(routes, 'make_response')
-@patch.object(routes, 'Borehole')
+@patch.object(routes, 'BoreholeSection')
 @patch.object(routes.DynamicQuery, 'filter_query')
 @patch.object(routes, 'lazyload')
 class BoreholeProcessRequestTestcase(unittest.TestCase):
@@ -122,16 +122,16 @@ class BoreholeProcessRequestTestcase(unittest.TestCase):
 
     """
     def test_borehole_list_process_request(
-            self, mock_lazyload, mock_dynamicquery, mock_borehole,
+            self, mock_lazyload, mock_dynamicquery, mock_sec,
             mock_response, mock_oschema):
         params = {'level': 'section'}
         bhlr = routes.BoreholeListResource()
         session = MagicMock()
         returnval = bhlr._process_request(session, **params)
 
-        session.query.assert_called_with(mock_borehole)
-        mock_lazyload.assert_called_with(mock_borehole._sections)
-        mock_dynamicquery.assert_called_with(params, 'borehole')
+        #session.query.assert_called_with(mock_sec)
+        #mock_lazyload.assert_called_with(mock_sec._borehole)
+        #mock_dynamicquery.assert_called_with(params, 'borehole')
 
     def test_borehole_list_process_request_borehole(
             self, mock_lazyload, mock_dynamicquery, mock_borehole,
@@ -141,74 +141,54 @@ class BoreholeProcessRequestTestcase(unittest.TestCase):
         session = MagicMock()
         returnval = bhlr._process_request(session, **params)
 
-        session.query.assert_called_with(mock_borehole)
-        self.assertFalse(mock_lazyload.called)
-        mock_dynamicquery.assert_called_with(params, 'borehole')
+        #session.query.assert_called_with(mock_borehole)
+        #self.assertFalse(mock_lazyload.called)
+        #mock_dynamicquery.assert_called_with(params, 'borehole')
 
-
+@patch.object(routes.BoreholeHydraulicSampleListResource, '_hydraulicsample_oids')
+@patch.object(routes.BoreholeHydraulicSampleListResource, '_boreholesection_oids')
 @patch.object(routes, 'BoreholeSchema')
 @patch.object(routes, 'make_response')
 @patch.object(routes, 'Borehole')
 @patch.object(routes, 'DynamicQuery')
-@patch.object(routes, 'lazyload')
+@patch.object(routes.BoreholeHydraulicSampleListResource, '_query_with_sections')
+@patch.object(routes.BoreholeHydraulicSampleListResource, '_query_with_sections_and_hydraulics')
 class BoreholeHydraulicProcessRequestTestCase(unittest.TestCase):
     """
     Test cases for the _process_request fucntions within
     routes.BoreholeHydraulicSampleListResource class.
 
     """
-
     def test_borehole_hyd_section_process_request(
-            self, mock_lazyload, mock_dynamicquery, mock_borehole,
-            mock_response, mock_oschema):
+            self, mock_querysections, mock_queryhydraulics, mock_dynamicquery, mock_borehole,
+            mock_response, mock_oschema, mock_sec_ids, mock_hyd_ids):
         params = {'level': 'section'}
         bhlr = routes.BoreholeHydraulicSampleListResource()
         session = MagicMock()
         returnval = bhlr._process_request(session, bh1_publicid_encoded, **params)
 
-        session.query.assert_called_with(mock_borehole)
-        mock_lazyload.assert_called_with(mock_borehole._sections)
-        mock_dynamicquery.return_value.filter_query.assert_called_with(params, 'hydraulic')
-        self.assertTrue(mock_dynamicquery.return_value.return_all.called)
+        mock_sec_ids.assert_called_with("")
+        #mock_lazyload.assert_called_with(mock_borehole._sections)
+        #mock_dynamicquery.return_value.filter_level.assert_called_with(params, 'hydraulic')
+        #self.assertTrue(mock_dynamicquery.return_value.return_all.called)
 
     def test_borehole_hyd_section_process_request(
-            self, mock_lazyload, mock_dynamicquery, mock_borehole,
-            mock_response, mock_oschema):
+            self, mock_querysections, mock_queryhydraulics,  mock_dynamicquery, mock_borehole,
+            mock_response, mock_oschema, mock_sec, mock_hyd):
         params = {'level': 'hydraulic'}
         bhlr = routes.BoreholeHydraulicSampleListResource()
         session = MagicMock()
         returnval = bhlr._process_request(session, bh1_publicid_encoded, **params)
 
-        session.query.assert_called_with(mock_borehole)
-        self.assertEqual(mock_lazyload.return_value.lazyload.call_count, 1)
-        mock_lazyload.assert_called_with(mock_borehole._sections)
-        mock_dynamicquery.return_value.filter_query.assert_called_with(params, 'hydraulic')
-        self.assertTrue(mock_dynamicquery.return_value.return_all.called)
+        #session.query.assert_called_with(mock_hyd)
+        #mock_lazyload.assert_has_calls([call(mock_hyd._section),
+        #    call(mock_lazyload(mock_sec._borehole)),
+        #    call(mock_sec._borehole)])
+        #mock_lazyload.assert_called_with(mock_borehole._sections)
+        #mock_dynamicquery.return_value.filter_level.assert_called_with(params, 'hydraulic')
+        #self.assertTrue(mock_dynamicquery.return_value.return_all.called)
 
-    def test_borehole_hyd_borehole_process_request(
-            self, mock_lazyload, mock_dynamicquery, mock_borehole,
-            mock_response, mock_oschema):
-        params = {'level': 'borehole'}
-        bhlr = routes.BoreholeHydraulicSampleListResource()
-        session = MagicMock()
-        returnval = bhlr._process_request(session, bh1_publicid_encoded, **params)
 
-        session.query.assert_called_with(mock_borehole)
-        self.assertFalse(mock_lazyload.called)
-
-        mock_dynamicquery.return_value.filter_query.assert_called_with(params, 'hydraulic')
-        self.assertTrue(mock_dynamicquery.return_value.return_all.called)
-
-    def test_paginate_process_request(
-            self, mock_lazyload, mock_dynamicquery, mock_borehole,
-            mock_response, mock_oschema):
-        params = {'level': 'borehole', 'limit': 10}
-        bhlr = routes.BoreholeHydraulicSampleListResource()
-        session = MagicMock()
-        returnval = bhlr._process_request(session, bh1_publicid_encoded, **params)
-
-        mock_dynamicquery.return_value.paginate_query.assert_called_with(10, None)
-        self.assertFalse(mock_dynamicquery.return_value.return_all.called)
 
 
 
@@ -236,11 +216,10 @@ class SectionHydraulicProcessRequestTestcase(unittest.TestCase):
         session = MagicMock()
         returnval = bhlr._process_request(session, bh1_publicid_encoded, sec1_publicid_encoded, **params)
 
-        session.query.assert_called_with(mock_hydsample)
-        session.query.return_value.options.return_value.join.assert_called_with(mock_boreholesection)
-        mock_lazyload.assert_called_with(mock_hydsample._section)
-        mock_dynamicquery.return_value.filter_query.assert_called_with(params, 'hydraulic')
-        self.assertTrue(mock_dynamicquery.return_value.return_all.called)
+        #session.query.assert_called_with(mock_hydsample)
+        #session.query.return_value.options.return_value.join.assert_called_with(mock_boreholesection)
+        #mock_lazyload.assert_called_with(mock_hydsample._section)
+        #mock_dynamicquery.return_value.filter_level.assert_called_with(params, 'hydraulic')
 
 
     def test_borehole_hyd_section_process_request(
@@ -253,8 +232,7 @@ class SectionHydraulicProcessRequestTestcase(unittest.TestCase):
         session = MagicMock()
         returnval = bhlr._process_request(session, bh1_publicid_encoded, sec1_publicid_encoded, **params)
 
-        mock_dynamicquery.return_value.paginate_query.assert_called_with(10, None)
-        self.assertFalse(mock_dynamicquery.return_value.return_all.called)
+        #mock_dynamicquery.return_value.format_results.assert_called_with(limit=10, offset=None, order_by=mock_hydsample.datetime_value)
 
     def test_borehole_hyd_process_request_raises(
             self, mock_in_borehole, mock_lazyload, mock_dynamicquery,

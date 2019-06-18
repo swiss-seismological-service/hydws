@@ -32,6 +32,7 @@ ConfidenceLevel = partial(fields.Float, validate=VALIDATE_CONFIDENCE_LEVEL)
 Temperature = partial(fields.Float, validate=VALIDATE_KELVIN)
 FluidPh = partial(fields.Float, validate=VALIDATE_PH)
 
+
 class SchemaBase(Schema):
     """
     Schema base class for object de-/serialization.
@@ -90,159 +91,173 @@ class SchemaBase(Schema):
         return flattened_data
 
 
+class ResourceIdentifierSchema(SchemaBase):
+    resourceid = fields.String()
+
+
+class ResourceLocatorSchema(SchemaBase):
+    resourcelocator = fields.String()
+
+
 class CreationInfoSchema(SchemaBase):
+    creationtime = Datetime()
+    version = fields.String()
+    copyrightowner = fields.String()
+    license = fields.String()
+    author = fields.String()
+    agencyid = fields.String()
+
+
+    authoruri = fields.Nested(ResourceIdentifierSchema, many=False,
+                               attribute='_authoruri')
+    agencyuri = fields.Nested(ResourceIdentifierSchema, many=False,
+                               attribute='_agencyuri')
+    copyrightowneruri = fields.Nested(ResourceIdentifierSchema, many=False,
+                               attribute='_copyrightowneruri')
+
+class CommentSchema(SchemaBase):
+    comment = fields.String()
+
+    id = fields.Nested(ResourceIdentifierSchema, many=False,
+                               attribute='_id')
+    creationinfo = fields.Nested(CreationInfoSchema, many=False,
+                               attribute='_creationinfo')
+
+class DomTypeURISchema(SchemaBase):
+    type = fields.String()
+
+    uri = fields.Nested(ResourceIdentifierSchema, many=False,
+                               attribute='_uri')
+
+class LanguageCodeURISchema(SchemaBase):
+    code = fields.String()
+    language = fields.String()
+
+    uri = fields.Nested(ResourceIdentifierSchema, many=False,
+                               attribute='_uri')
+
+class CountryCodeURISchema(SchemaBase):
+    code = fields.String()
+    country = fields.String()
+
+    uri = fields.Nested(ResourceIdentifierSchema, many=False,
+                               attribute='_uri')
+class PersonSchema(SchemaBase):
+    name = fields.String()
+    givenname = fields.String()
+    familyname = fields.String()
+    title = fields.String()
+
+    alternatepersonid = fields.Nested(ResourceIdentifierSchema, many=False,
+                               attribute='_alternatepersonid')
+    personid = fields.Nested(ResourceIdentifierSchema, many=False,
+                               attribute='_personid')
+    mbox = fields.Nested(ResourceIdentifierSchema, many=False,
+                               attribute='_mbox')
+    phone = fields.Nested(ResourceIdentifierSchema, many=False,
+                               attribute='_phone')
+    homepage = fields.Nested(ResourceIdentifierSchema, many=False,
+                               attribute='_homepage')
+    workplacehomepage = fields.Nested(CommentSchema, many=False,
+                               attribute='_workplacehomepage')
+
+class AuthorSchema(SchemaBase):
+    positioninauthorlist = fields.Integer()
+
+    person = fields.Nested(PersonSchema, many=False,
+                               attribute='_person')
+    affiliation = fields.Nested(ResourceIdentifierSchema, many=False,
+                               attribute='_affiliation')
+    alternateaffiliation = fields.Nested(ResourceIdentifierSchema, many=False,
+                               attribute='_alternateaffiliation')
+    mbox = fields.Nested(ResourceIdentifierSchema, many=False,
+                               attribute='_mbox')
+    comment = fields.Nested(CommentSchema, many=False,
+                               attribute='_comment')
+
+class InstitutionSchema(SchemaBase):
+    name = fields.String()
+
+    identifier = fields.Nested(ResourceIdentifierSchema, many=False,
+                               attribute='_identifier')
+    mbox = fields.Nested(ResourceIdentifierSchema, many=False,
+                               attribute='_mbox')
+    phone = fields.Nested(ResourceIdentifierSchema, many=False,
+                               attribute='_phone')
+    country = fields.Nested(CountryCodeURISchema, many=False,
+                               attribute='_country')
+    homepage = fields.Nested(ResourceIdentifierSchema, many=False,
+                               attribute='_homepage')
+
+class PersonalAffiliationSchema(SchemaBase):
+    department = fields.String()
+    function = fields.String()
+
+    institution = fields.Nested(InstitutionSchema, many=False,
+                               attribute='_institution')
+    comment = fields.Nested(CommentSchema, many=False,
+                               attribute='_comment')
+
+class PostalAddressSchema(SchemaBase):
+    streetaddress = fields.String()
+    locality = fields.String()
+    postalcode = fields.String()
+
+    country = fields.Nested(CountryCodeURISchema, many=False,
+                               attribute='_country')
+
+
+class CreatorSchema(SchemaBase):
     """
     Schema implementation of literature source and creation info
     defined levels.
     """
-    creationinfo_author = fields.String()
-    creationinfo_authoruri_resourceid = fields.String()
-    creationinfo_agencyid = fields.String()
-    creationinfo_agencyuri_resourceid = fields.String()
-    creationinfo_creationtime = fields.String()
-    creationinfo_version = fields.String()
-    creationinfo_copyrightowner = fields.String()
-    creationinfo_copyrightowneruri_resourceid = fields.String()
-    creationinfo_license = fields.String()
+    person = fields.Nested(PersonSchema, many=False, attribute='_person')
+    affiliation = fields.Nested(PersonalAffiliationSchema, many=False,
+                                attribute='_affiliation')
+    alternateaffiliation = fields.Nested(PersonalAffiliationSchema,
+                                         many=False,
+                                         attribute='_alternateaffiliation')
+    mbox = fields.Nested(ResourceIdentifierSchema, many=False,
+                         attribute='_mbox')
+    comment = fields.Nested(CommentSchema, many=False,
+                            attribute='_comment')
 
-
-class LSCreatorPersonSchema(SchemaBase):
+class LiteratureSourceSchema(SchemaBase):
     """
-    Schema implementation of literature source and creation info
-    defined levels.
+    Schema implementation of literature source.
     """
-    literaturesource_creator_person_name = fields.String()
-    literaturesource_creator_person_givenname = fields.String()
-    literaturesource_creator_person_familyname = fields.String()
-    literaturesource_creator_person_title = fields.String()
-    literaturesource_creator_person_personid_resourceid = fields.String()
-    literaturesource_creator_person_alternatepersonid_resourceid = fields.String()
-    literaturesource_creator_person_mbox_resourceid = fields.String()
-    literaturesource_creator_person_phone_resourceid = fields.String()
-    literaturesource_creator_person_homepage_resourcelocator = fields.String()
-    literaturesource_creator_person_workplacehomepage_resourcelocator = fields.String()
+    bibtextype = fields.String()
+    type_code = fields.String()
+    type_language = fields.String()
+    title = fields.String()
+    author = fields.String()
+    editor = fields.String()
+    bibliographiccitation = fields.String()
+    date = fields.String()
+    booktitle = fields.String()
+    volume = fields.String()
+    number = fields.String()
+    series = fields.String()
+    issue = fields.String()
+    year = fields.String()
+    edition = fields.String()
+    startpage = fields.String()
+    endpage = fields.String()
+    publisher = fields.String()
+    address = fields.String()
+    rights = fields.String()
+    rightsholder = fields.String()
+    accessrights = fields.String()
+    license = fields.String()
+    publicationstatus = fields.String()
 
-
-class LSCreatorAffiliationSchema(SchemaBase):
-    """
-    Schema implementation of literature source and creation info
-    defined levels.
-    """
-    literaturesource_creator_affiliation_institution_name = fields.String()
-    literaturesource_creator_affiliation_institution_identifier_resourceid = fields.String()
-    literaturesource_creator_affiliation_institution_mbox_resourceid = fields.String()
-    literaturesource_creator_affiliation_institution_phone_resourceid = fields.String()
-    literaturesource_creator_affiliation_institution_homepage_resourcelocator = fields.String()
-    literaturesource_creator_affiliation_institution_postaladdress_streetaddress = fields.String()
-    literaturesource_creator_affiliation_institution_postaladdress_locality = fields.String()
-    literaturesource_creator_affiliation_institution_postaladdress_postalcode = fields.String()
-    literaturesource_creator_affiliation_institution_postaladdress_country_uri_resourceid = fields.String()
-    literaturesource_creator_affiliation_institution_postaladdress_country_code = fields.String()
-    literaturesource_creator_affiliation_institution_postaladdress_country_country = fields.String()
-    literaturesource_creator_affiliation_department = fields.String()
-    literaturesource_creator_affiliation_function = fields.String()
-
-    literaturesource_creator_affiliation_comment_comment = fields.String()
-    literaturesource_creator_affiliation_comment_id_resourceid = fields.String()
-    literaturesource_creator_affiliation_comment_creationinfo_author = fields.String()
-    literaturesource_creator_affiliation_comment_creationinfo_authoruri_resourceid = fields.String()
-    literaturesource_creator_affiliation_comment_creationinfo_agencyid = fields.String()
-    literaturesource_creator_affiliation_comment_creationinfo_agencyuri_resourceid = fields.String()
-    literaturesource_creator_affiliation_comment_creationinfo_creationtime = fields.String()
-    literaturesource_creator_affiliation_comment_creationinfo_version = fields.String()
-    literaturesource_creator_affiliation_comment_creationinfo_copyrightowner = fields.String()
-    literaturesource_creator_affiliation_comment_creationinfo_copyrightowneruri_resourceid = fields.String()
-    literaturesource_creator_affiliation_comment_creationinfo_license = fields.String()
-
-
-class LSCreatorAlternateAffiliationSchema(SchemaBase):
-    """
-    Schema implementation of literature source and creation info
-    defined levels.
-    """
-    literaturesource_creator_alternateaffiliation_institution_name = fields.String()
-    literaturesource_creator_alternateaffiliation_institution_identifier_resourceid = fields.String()
-    literaturesource_creator_alternateaffiliation_institution_mbox_resourceid = fields.String()
-    literaturesource_creator_alternateaffiliation_institution_phone_resourceid = fields.String()
-    literaturesource_creator_alternateaffiliation_institution_homepage_resourcelocator = fields.String()
-    literaturesource_creator_alternateaffiliation_institution_postaladdress_streetaddress = fields.String()
-    literaturesource_creator_alternateaffiliation_institution_postaladdress_locality = fields.String()
-    literaturesource_creator_alternateaffiliation_institution_postaladdress_postalcode = fields.String()
-    literaturesource_creator_alternateaffiliation_institution_postaladdress_country_uri_resourceid = fields.String()
-    literaturesource_creator_alternateaffiliation_institution_postaladdress_country_code = fields.String()
-    literaturesource_creator_alternateaffiliation_institution_postaladdress_country_country = fields.String()
-
-    literaturesource_creator_alternateaffiliation_department = fields.String()
-    literaturesource_creator_alternateaffiliation_function = fields.String()
-    literaturesource_creator_alternateaffiliation_comment_comment = fields.String()
-    literaturesource_creator_alternateaffiliation_comment_id_resourceid = fields.String()
-    literaturesource_creator_alternateaffiliation_comment_creationinfo_author = fields.String()
-    literaturesource_creator_alternateaffiliation_comment_creationinfo_authoruri_resourceid = fields.String()
-    literaturesource_creator_alternateaffiliation_comment_creationinfo_agencyid = fields.String()
-    literaturesource_creator_alternateaffiliation_comment_creationinfo_agencyuri_resourceid = fields.String()
-    literaturesource_creator_alternateaffiliation_comment_creationinfo_creationtime = fields.String()
-    literaturesource_creator_alternateaffiliation_comment_creationinfo_version = fields.String()
-    literaturesource_creator_alternateaffiliation_comment_creationinfo_copyrightowner = fields.String()
-    literaturesource_creator_alternateaffiliation_comment_creationinfo_copyrightowneruri_resourceid = fields.String()
-    literaturesource_creator_alternateaffiliation_comment_creationinfo_license = fields.String()
-
-
-class LSCreatorSchema(SchemaBase):
-    """
-    Schema implementation of literature source and creation info
-    defined levels.
-    """
-    literaturesource_creator_mbox_resourceid = fields.String()
-    literaturesource_creator_comment_comment = fields.String()
-    literaturesource_creator_comment_id_resourceid = fields.String()
-    literaturesource_creator_comment_creationinfo_author = fields.String()
-    literaturesource_creator_comment_creationinfo_authoruri_resourceid = fields.String()
-    literaturesource_creator_comment_creationinfo_agencyid = fields.String()
-    literaturesource_creator_comment_creationinfo_agencyuri_resourceid = fields.String()
-    literaturesource_creator_comment_creationinfo_creationtime = fields.String()
-    literaturesource_creator_comment_creationinfo_version = fields.String()
-    literaturesource_creator_comment_creationinfo_copyrightowner = fields.String()
-    literaturesource_creator_comment_creationinfo_copyrightowneruri_resourceid = fields.String()
-    literaturesource_creator_comment_creationinfo_license = fields.String()
-
-
-class LiteratureSourceCreationInfoSchema(
-        LSCreatorSchema,
-        LSCreatorAlternateAffiliationSchema,
-        LSCreatorAffiliationSchema,
-        LSCreatorPersonSchema,
-        CreationInfoSchema, SchemaBase):
-    """
-    Schema implementation of literature source and creation info
-    defined levels.
-    """
-    literaturesource_identifier_resourceid = fields.String()
-    literaturesource_type_uri_resourceid = fields.String()
-    literaturesource_type_type = fields.String()
-    literaturesource_bibtextype = fields.String()
-    literaturesource_type_code = fields.String()
-    literaturesource_type_language = fields.String()
-    literaturesource_title = fields.String()
-    literaturesource_author = fields.String()
-    literaturesource_editor = fields.String()
-    literaturesource_bibliographiccitation = fields.String()
-    literaturesource_date = fields.String()
-    literaturesource_booktitle = fields.String()
-    literaturesource_volume = fields.String()
-    literaturesource_number = fields.String()
-    literaturesource_series = fields.String()
-    literaturesource_issue = fields.String()
-    literaturesource_year = fields.String()
-    literaturesource_edition = fields.String()
-    literaturesource_startpage = fields.String()
-    literaturesource_endpage = fields.String()
-    literaturesource_publisher = fields.String()
-    literaturesource_address = fields.String()
-    literaturesource_rights = fields.String()
-    literaturesource_rightsholder = fields.String()
-    literaturesource_accessrights = fields.String()
-    literaturesource_license = fields.String()
-    literaturesource_publicationstatus = fields.String()
+    creator = fields.Nested(AuthorSchema, many=False,
+                               attribute='_creator')
+    type = fields.Nested(ResourceIdentifierSchema, many=False,
+                               attribute='_type')
+    identifier = fields.Nested(ResourceIdentifierSchema, many=False,
+                               attribute='_identifier')
 
 
 class HydraulicSampleSchema(SchemaBase):
@@ -313,6 +328,7 @@ class HydraulicSampleSchema(SchemaBase):
     @post_load
     def make_hydraulics(self, data):
         return HydraulicSample(**data)
+
 
 class SectionSchema(SchemaBase):
     """
@@ -395,8 +411,8 @@ class SectionSchema(SchemaBase):
     def make_section(self, data):
         return BoreholeSection(**data)
 
-class BoreholeSchema(LiteratureSourceCreationInfoSchema,
-                     SchemaBase):
+
+class BoreholeSchema(SchemaBase):
     """Schema implementation of a borehole."""
     publicid = fields.String()
 
@@ -431,7 +447,11 @@ class BoreholeSchema(LiteratureSourceCreationInfoSchema,
     measureddepth_confidencelevel = ConfidenceLevel()
 
     sections = fields.Nested(SectionSchema, many=True,
-                               attribute='_sections')
+                             attribute='_sections')
+    literaturesource = fields.Nested(LiteratureSourceSchema, many=False,
+                                     attribute='_literaturesource')
+    creationinfo = fields.Nested(CreationInfoSchema, many=False,
+                                 attribute='_creationinfo')
 
     @post_load
     def make_borehole(self, data):

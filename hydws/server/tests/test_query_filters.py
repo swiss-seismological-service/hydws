@@ -97,10 +97,10 @@ class DynamicQueryTestCase(unittest.TestCase):
         mock_operator_attr.return_value = "mock_method"
 
         # Set values (column obj, method on column obj, value used in filter)
-        qf.filter_boreholes = [('mock_column', 'mock_method', filter_str)]
+        qf.FILTER_BOREHOLES = [('mock_column', 'mock_method', filter_str)]
 
         dyn_f = qf.DynamicQuery(MockQuery(query_str))
-        dyn_f.filter_query(MockParams(), 'borehole')
+        dyn_f.filter_level(MockParams(), 'borehole')
 
         self.assertEqual(dyn_f.query.val, expected_final_query)
 
@@ -112,12 +112,12 @@ class DynamicQueryTestCase(unittest.TestCase):
         filter_str2 = 'second_value'
         expected_final_query = query_str + filter_str + filter_str2
 
-        qf.filter_boreholes = [('mock_column', 'mock_method', filter_str),
+        qf.FILTER_BOREHOLES = [('mock_column', 'mock_method', filter_str),
                                ('mock_column', 'mock_method', filter_str2)]
 
         mock_operator_attr.return_value = "mock_method"
         dyn_f = qf.DynamicQuery(MockQuery(query_str))
-        dyn_f.filter_query(MockParams(), 'borehole')
+        dyn_f.filter_level(MockParams(), 'borehole')
 
         self.assertEqual(dyn_f.query.val, expected_final_query)
 
@@ -126,41 +126,41 @@ class DynamicQueryTestCase(unittest.TestCase):
         
         """
         dyn_f = qf.DynamicQuery(MockQuery('query'))
-        qf.filter_boreholes = [('mock_column', 'invalid_method',
+        qf.FILTER_BOREHOLES = [('mock_column', 'invalid_method',
                                 '_mock_filter_value')]
 
         with self.assertRaises(Exception):
-            dyn_f.filter_query(MockParams(), 'borehole')
+            dyn_f.filter_level(MockParams(), 'borehole')
 
     def test_filter_query_invalid_level(self):
         """Raise Exception in case of level not handled.
         
         """
         dyn_f = qf.DynamicQuery(MockQuery('query'))
-        qf.filter_boreholes = [('mock_column', 'invalid_method',
+        qf.FILTER_BOREHOLES = [('mock_column', 'invalid_method',
                                 '_mock_filter_value')]
 
         with self.assertRaises(Exception):
-            dyn_f.filter_query(MockParams(), 'unhandled_level')
+            dyn_f.filter_level(MockParams(), 'unhandled_level')
 
-    def test_paginate_query(self):
-        """Check paginate called with correct params."""
+    def test_format_results_query(self):
+        """Check format_results called with correct params."""
         mock_query = MagicMock()
         dyn_f = qf.DynamicQuery(mock_query)
         limit=10
-        dyn_f.paginate_query(limit)
+        dyn_f.format_results(limit=limit)
 
-        mock_query.paginate.assert_called_with(1, limit, False)
+        mock_query.format_results.assert_called_with(limit=limit)
 
     def test_return_all(self):
-        """Check paginate called with correct params."""
+        """Check return_all() called with correct params."""
         mock_query = MagicMock()
         dyn_f = qf.DynamicQuery(mock_query)
         return_val = dyn_f.return_all()
         self.assertEqual(return_val, mock_query.all())
 
     def test_return_none(self):
-        """Check paginate called with correct params."""
+        """Check None returned."""
         mock_query = MagicMock()
         dyn_f = qf.DynamicQuery(mock_query)
         mock_query.all.side_effect = NoResultFound

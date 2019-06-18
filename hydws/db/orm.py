@@ -13,9 +13,8 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy import select, func
 
 
-from hydws.db.base import (ORMBase, CreationInfoMixin, RealQuantityMixin,
-                           TimeQuantityMixin, EpochMixin,
-                           LiteratureSourceMixin, PublicIDMixin)
+from hydws.db.base import (ORMBase, RealQuantityMixin, LiteratureSource, CreationInfo,
+                           TimeQuantityMixin, EpochMixin, PublicIDMixin)
 from hydws.server import settings
 
 
@@ -35,13 +34,7 @@ try:
 except AttributeError:
     PREFIX = ''
 
-class Borehole(CreationInfoMixin('CreationInfo',
-                                 parent_prefix='creationinfo_',
-                                 used=False),
-               LiteratureSourceMixin('LiteratureSource',
-                                     parent_prefix='literaturesource_',
-                                     used=False),
-               RealQuantityMixin('longitude',
+class Borehole( RealQuantityMixin('longitude',
                                  value_nullable=False),
                RealQuantityMixin('latitude',
                                  value_nullable=False),
@@ -61,6 +54,12 @@ class Borehole(CreationInfoMixin('CreationInfo',
     """
     _sections = relationship("BoreholeSection", back_populates="_borehole",
                              cascade='all, delete-orphan', lazy='noload', order_by='BoreholeSection.topdepth_value')
+
+    _literaturesource_oid = Column(Integer, ForeignKey('literaturesource._oid'))
+    _literaturesource = relationship("LiteratureSource", uselist=False, foreign_keys=[_literaturesource_oid])
+
+    _creationinfo_oid = Column(Integer, ForeignKey('creationinfo._oid'))
+    _creationinfo = relationship("CreationInfo", uselist=False, foreign_keys=[_creationinfo_oid])
 
 
 class BoreholeSection(EpochMixin('Epoch', epoch_type='open'),
