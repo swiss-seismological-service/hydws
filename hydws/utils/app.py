@@ -81,7 +81,7 @@ class App(object):
         args, remaining_argv = c_parser.parse_known_args()
 
         defaults = {}
-        if path_default_config and config_section:
+        if os.path.isfile(path_default_config) and config_section:
             config_parser = configparser.ConfigParser(**kwargs)
             config_parser.read(args.config_file)
             env_dict = None
@@ -101,6 +101,10 @@ class App(object):
                 import warnings
                 warnings.warn(
                     "Exception while parsing config file: {}.".format(err))
+        else:
+            import warnings
+            warnings.warn(
+                "Config file: {} does not exist".format(path_default_config))
 
         self.parser = self.build_parser(parents=[c_parser])
         # XXX(damb): Make sure that the default logger has an argument

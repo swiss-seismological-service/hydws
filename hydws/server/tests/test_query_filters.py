@@ -150,7 +150,9 @@ class DynamicQueryTestCase(unittest.TestCase):
         limit=10
         dyn_f.format_results(limit=limit)
 
-        mock_query.format_results.assert_called_with(limit=limit)
+        mock_query.limit.assert_called_with(limit)
+        self.assertFalse(mock_query.offset.called)
+        self.assertFalse(mock_query.order_by.called)
 
     def test_return_all(self):
         """Check return_all() called with correct params."""
