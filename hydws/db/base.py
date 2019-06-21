@@ -37,7 +37,7 @@ ORMBase = declarative_base(cls=Base)
 
 
 # ----------------------------------------------------------------------------
-# XXX(damb): Within the mixins below the QML type *ResourceReference* (i.e. an
+# XXX(damb): Within the mixins below the QML type *ResourceReference* (i.e. a
 # URI) is implemented as sqlalchemy.String
 
 class AutoName(enum.Enum):
@@ -46,6 +46,7 @@ class AutoName(enum.Enum):
 
 
 class EBibtexEntryType(AutoName):
+
     ARTICLE = enum.auto()
     BOOK = enum.auto()
     BOOKLET = enum.auto()
@@ -60,7 +61,6 @@ class EBibtexEntryType(AutoName):
     PROCEEDINGS = enum.auto()
     TECHREPORT = enum.auto()
     UNPUBLISHED = enum.auto()
-
 
 
 class ResourceIdentifier(ORMBase):
@@ -87,13 +87,18 @@ class CreationInfo(ORMBase):
     agencyid = Column(f'{PREFIX}agencyid', String)
 
     _authoruri_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
-    _authoruri = relationship("ResourceIdentifier", foreign_keys=[_authoruri_oid])
+    _authoruri = relationship("ResourceIdentifier",
+                              foreign_keys=[_authoruri_oid])
 
     _agencyuri_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
-    _agencyuri = relationship("ResourceIdentifier", foreign_keys=[_agencyuri_oid])
+    _agencyuri = relationship("ResourceIdentifier",
+                              foreign_keys=[_agencyuri_oid])
 
-    _copyrightowneruri_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
-    _copyrightowneruri = relationship("ResourceIdentifier", foreign_keys=[_copyrightowneruri_oid])
+    _copyrightowneruri_oid = Column(Integer,
+                                    ForeignKey('resourceidentifier._oid'))
+    _copyrightowneruri = relationship("ResourceIdentifier",
+                                      foreign_keys=[_copyrightowneruri_oid])
+
 
 class DomTypeURI(ORMBase):
 
@@ -102,14 +107,15 @@ class DomTypeURI(ORMBase):
     _uri_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
     _uri = relationship("ResourceIdentifier", foreign_keys=[_uri_oid])
 
+
 class LanguageCodeURI(ORMBase):
 
-    #_literaturesource_oid = Column(Integer, ForeignKey('literaturesource._oid'))
     language = Column(f'{PREFIX}language', String)
     code = Column(f'{PREFIX}code', String)
 
     _uri_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
     _uri = relationship("ResourceIdentifier", foreign_keys=[_uri_oid])
+
 
 class CountryCodeURI(ORMBase):
 
@@ -123,10 +129,6 @@ class CountryCodeURI(ORMBase):
 
 class Author(ORMBase):
 
-    #_literaturesource_oid = Column(Integer, ForeignKey('literaturesource._oid'))
-
-    #_creationinfo_oid = Column(Integer, ForeignKey('creationinfo._oid'))
-
     # XXX(damb): Unfortunately, the constraint that this value must be
     # positive must be defined by means of __table_args__
     # (see: https://docs.sqlalchemy.org/en/13/core/constraints.html#
@@ -138,10 +140,13 @@ class Author(ORMBase):
     _person = relationship("Person", foreign_keys=[_person_oid])
 
     _affiliation_oid = Column(Integer, ForeignKey('personalaffiliation._oid'))
-    _affiliation = relationship("PersonalAffiliation", foreign_keys=[_affiliation_oid])
+    _affiliation = relationship(
+        "PersonalAffiliation", foreign_keys=[_affiliation_oid])
 
-    _alternateaffiliation_oid = Column(Integer, ForeignKey('personalaffiliation._oid'))
-    _alternateaffiliation = relationship("PersonalAffiliation", foreign_keys=[_alternateaffiliation_oid])
+    _alternateaffiliation_oid = Column(
+        Integer, ForeignKey('personalaffiliation._oid'))
+    _alternateaffiliation = relationship(
+        "PersonalAffiliation", foreign_keys=[_alternateaffiliation_oid])
 
     _mbox_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
     _mbox = relationship("ResourceIdentifier", foreign_keys=[_mbox_oid])
@@ -149,19 +154,22 @@ class Author(ORMBase):
     _comment_oid = Column(Integer, ForeignKey('comment._oid'))
     _comment = relationship("Comment", foreign_keys=[_comment_oid])
 
+
 class Person(ORMBase):
 
-    #_author_oid = Column(Integer, ForeignKey('author._oid'))
     name = Column(f'{PREFIX}name', String)
     givenname = Column(f'{PREFIX}givenname', String)
     familyname = Column(f'{PREFIX}familyname', String)
     title = Column(f'{PREFIX}title', String)
 
-    _alternatepersonid_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
-    _alternatepersonid = relationship("ResourceIdentifier", foreign_keys=[_alternatepersonid_oid])
+    _alternatepersonid_oid = Column(
+        Integer, ForeignKey('resourceidentifier._oid'))
+    _alternatepersonid = relationship(
+        "ResourceIdentifier", foreign_keys=[_alternatepersonid_oid])
 
     _personid_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
-    _personid = relationship("ResourceIdentifier", foreign_keys=[_personid_oid])
+    _personid = relationship(
+        "ResourceIdentifier", foreign_keys=[_personid_oid])
 
     _mbox_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
     _mbox = relationship("ResourceIdentifier", foreign_keys=[_mbox_oid])
@@ -170,19 +178,23 @@ class Person(ORMBase):
     _phone = relationship("ResourceIdentifier", foreign_keys=[_phone_oid])
 
     _homepage_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
-    _homepage = relationship("ResourceIdentifier", foreign_keys=[_homepage_oid])
+    _homepage = relationship(
+        "ResourceIdentifier", foreign_keys=[_homepage_oid])
 
-    _workplacehomepage_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
-    _workplacehomepage = relationship("ResourceIdentifier", foreign_keys=[_workplacehomepage_oid])
+    _workplacehomepage_oid = Column(
+        Integer, ForeignKey('resourceidentifier._oid'))
+    _workplacehomepage = relationship(
+        "ResourceIdentifier", foreign_keys=[_workplacehomepage_oid])
+
 
 class PersonalAffiliation(ORMBase):
 
-    #_author_oid = Column(Integer, ForeignKey('author._oid'))
     department = Column(f'{PREFIX}department', String)
     function = Column(f'{PREFIX}function', String)
 
     _institution_oid = Column(Integer, ForeignKey('institution._oid'))
-    _institution = relationship("Institution", foreign_keys=[_institution_oid])
+    _institution = relationship(
+        "Institution", foreign_keys=[_institution_oid])
 
     _comment_oid = Column(Integer, ForeignKey('comment._oid'))
     _comment= relationship("Comment", foreign_keys=[_comment_oid])
@@ -196,11 +208,12 @@ class Comment(ORMBase):
     _id = relationship("ResourceIdentifier",  foreign_keys=[_id_oid])
 
     _creationinfo_oid = Column(Integer, ForeignKey('creationinfo._oid'))
-    _creationinfo = relationship("CreationInfo", foreign_keys=[_creationinfo_oid])
+    _creationinfo = relationship(
+        "CreationInfo", foreign_keys=[_creationinfo_oid])
 
 
 class Institution(ORMBase):
-    #_personalaffiliation_oid = Column(Integer, ForeignKey('personalaffiliation._oid'))
+
     name = Column(f'{PREFIX}name', String)
 
     _identifier_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
@@ -218,8 +231,9 @@ class Institution(ORMBase):
     _mbox_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
     _mbox = relationship("ResourceIdentifier", foreign_keys=[_mbox_oid])
 
+
 class PostalAddress(ORMBase):
-    #_insttution_oid = Column(Integer, ForeignKey('institution._oid'))
+
     streetaddress = Column(f'{PREFIX}streetaddress', String)
     locality = Column(f'{PREFIX}locality', String)
     postalcode = Column(f'{PREFIX}postalcode', String)
@@ -229,16 +243,12 @@ class PostalAddress(ORMBase):
 
 
 class Creator(ORMBase):
-    #_literaturesource_oid = Column(Integer, ForeignKey('literaturesource._oid'))
-
 
     _person_oid = Column(Integer, ForeignKey('person._oid'))
     _person = relationship("Person", foreign_keys=[_person_oid])
 
-
     _affiliation_oid = Column(Integer, ForeignKey('personalaffiliation._oid'))
     _affiliation = relationship("PersonalAffiliation", foreign_keys=[_affiliation_oid])
-
 
     _alternateaffiliation_oid = Column(Integer, ForeignKey('personalaffiliation._oid'))
     _alternateaffiliation = relationship("PersonalAffiliation", foreign_keys=[_alternateaffiliation_oid])
@@ -250,14 +260,12 @@ class Creator(ORMBase):
     _comment = relationship("Comment", foreign_keys=[_comment_oid])
 
 
-
 class LiteratureSource(ORMBase):
+
     """
     `SQLAlchemy <https://www.sqlalchemy.org/>`_ mixin emulating type
     :code:`LiteratureSource` from `QuakeML <https://quake.ethz.ch/quakeml/>`_.
     """
-    #_borehole_oid = Column(Integer, ForeignKey('borehole._oid'))
-
 
     _identifier_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
     _identifier = relationship("ResourceIdentifier", foreign_keys=[_identifier_oid])
@@ -292,7 +300,6 @@ class LiteratureSource(ORMBase):
     publicationstatus = Column(f'{PREFIX}publicationstatus', String)
 
 
-
 def PublicIDMixin(name='', parent_prefix=None, column_prefix=None):
     """
     `SQLAlchemy <https://www.sqlalchemy.org/>`_ mixin providing a general
@@ -316,7 +323,6 @@ def PublicIDMixin(name='', parent_prefix=None, column_prefix=None):
         return Column(f'{column_prefix}publicid', String, nullable=False)
 
     return type(name, (object,), {f'{parent_prefix}publicid': _publicid})
-
 
 def EpochMixin(name, epoch_type=None, parent_prefix=None):
     """
