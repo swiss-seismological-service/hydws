@@ -81,7 +81,8 @@ class App(object):
         args, remaining_argv = c_parser.parse_known_args()
 
         defaults = {}
-        if os.path.isfile(path_default_config) and config_section:
+        if (path_default_config is not None and
+                os.path.isfile(path_default_config) and config_section):
             config_parser = configparser.ConfigParser(**kwargs)
             config_parser.read(args.config_file)
             env_dict = None
