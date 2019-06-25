@@ -22,17 +22,20 @@ _name = 'hydws'
 _description = 'REST webservice allowing access to hydraulic data.'
 _authors = [
     'Daniel Armbruster',
-    'Lukas Heiniger', ]
+    'Lukas Heiniger',
+    'Laura Sarson', ]
 _authors_email = [
     'daniel.armbruster@sed.ethz.ch',
-    'lukas.heiniger@sed.ethz.ch', ]
+    'lukas.heiniger@sed.ethz.ch', 
+    'laura.sarson@sed.ethz.ch']
 
 _install_requires = [
     'Flask>=1.0.2',
     'Flask-RESTful>=0.3.7',
     'Flask-SQLAlchemy>=2.3.2',
     'marshmallow>=3.0.0rc5',
-    'webargs>=5.3.0', ]
+    'webargs>=5.3.0', 
+    'Flask-Migrate>=2.4.0',]
 
 _data_files = [
     ('', ['LICENSE'])]

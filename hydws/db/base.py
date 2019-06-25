@@ -1,13 +1,26 @@
 """
-General purpose datamodel ORM facilities.
+.. module:: base
+   :synopsis: HYDWS datamodel ORM entity de-/serialization facilities.
+
+.. moduleauthor:: Laura Sarson <laura.sarson@sed.ethz.ch>
+
 """
+
 import datetime
 import enum
 import functools
 
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy import (Column, Boolean, Integer, Float, String, DateTime,
                         Enum)
+from sqlalchemy import Column, String, Boolean, Integer, ForeignKey
 from sqlalchemy.ext.declarative import declared_attr, declarative_base
+from hydws.server import settings
+
+try:
+    PREFIX = settings.HYDWS_PREFIX
+except AttributeError:
+    PREFIX = None
 
 
 class Base(object):
@@ -15,7 +28,7 @@ class Base(object):
     @declared_attr
     def __tablename__(cls):
         return cls.__name__.lower()
-
+    # (sarsonl) sholud this have prefix?
     _oid = Column(Integer, primary_key=True)
 
 
@@ -23,7 +36,7 @@ ORMBase = declarative_base(cls=Base)
 
 
 # ----------------------------------------------------------------------------
-# XXX(damb): Within the mixins below the QML type *ResourceReference* (i.e. an
+# XXX(damb): Within the mixins below the QML type *ResourceReference* (i.e. a
 # URI) is implemented as sqlalchemy.String
 
 class AutoName(enum.Enum):
@@ -32,6 +45,7 @@ class AutoName(enum.Enum):
 
 
 class EBibtexEntryType(AutoName):
+
     ARTICLE = enum.auto()
     BOOK = enum.auto()
     BOOKLET = enum.auto()
@@ -48,601 +62,299 @@ class EBibtexEntryType(AutoName):
     UNPUBLISHED = enum.auto()
 
 
-def _create_used(column_prefix=None):
-    @declared_attr
-    def _used(cls):
-        return Column('%sused' % column_prefix, Boolean, nullable=False,
-                      default=False)
+class ResourceIdentifier(ORMBase):
 
-    return {'{}{}'.format(column_prefix, 'used'): _used}
+    resourceid = Column(f'{PREFIX}resourceid', String)
 
 
-def _create_resourceidentifier_map(column_prefix=None, used=True):
+class ResourceLocator(ORMBase):
 
-    if not column_prefix:
-        column_prefix = ''
+    resourcelocator = Column(f'{PREFIX}resourcelocator', String)
 
-    @declared_attr
-    def _resourceid(cls):
-        return Column('%sresourceid' % column_prefix, String)
-    func_map = [('resourceid', _resourceid), ]
 
-    if used:
-        func_map.extend(_create_used(column_prefix=column_prefix).items())
-
-    return {'{}{}'.format(column_prefix, attr_name): attr
-            for attr_name, attr in func_map}
-
-
-def _create_resourcelocator_map(column_prefix=None, used=True):
-
-    if not column_prefix:
-        column_prefix = ''
-
-    @declared_attr
-    def _resourcelocator(cls):
-        return Column('%sresourcelocator' % column_prefix, String)
-    func_map = [('resourcelocator', _resourcelocator), ]
-
-    if used:
-        func_map.extend(_create_used(column_prefix=column_prefix).items())
-
-    return {'{}{}'.format(column_prefix, attr_name): attr
-            for attr_name, attr in func_map}
-
-
-def _create_creationinfo_map(column_prefix=None, used=True):
-
-    if not column_prefix:
-        column_prefix = ''
-
-    @declared_attr
-    def _author(cls):
-        return Column('%sauthor' % column_prefix, String)
-    func_map = [('author', _author), ]
-    func_map.extend(
-        _create_resourceidentifier_map(
-            column_prefix='%sauthoruri_' % column_prefix,
-            used=used).items())
-
-    @declared_attr
-    def _agencyid(cls):
-        return Column('%sagencyid' % column_prefix, String)
-    func_map.append(('agencyid', _agencyid))
-    func_map.extend(
-        _create_resourceidentifier_map(
-            column_prefix='%sagencyuri_' % column_prefix,
-            used=used).items())
-
-    @declared_attr
-    def _creationtime(cls):
-        return Column('%screationtime' % column_prefix, DateTime,
-                      default=datetime.datetime.utcnow())
-    func_map.append(('creationtime', _creationtime))
-
-    @declared_attr
-    def _version(cls):
-        return Column('%sversion' % column_prefix, String)
-    func_map.append(('version', _version))
-
-    @declared_attr
-    def _copyrightowner(cls):
-        return Column('%scopyrightowner' % column_prefix, String)
-    func_map.append(('copyrightowner', _copyrightowner))
-    func_map.extend(
-        _create_resourceidentifier_map(
-            column_prefix='%scopyrightowneruri_' % column_prefix,
-            used=used).items())
-
-    @declared_attr
-    def _license(cls):
-        return Column('%slicense' % column_prefix, String)
-    func_map.append(('license', _license))
-
-    if used:
-        func_map.extend(_create_used(column_prefix=column_prefix).items())
-
-    return {'{}{}'.format(column_prefix, attr_name): attr
-            for attr_name, attr in func_map}
-
-
-def _create_domtypeuri_map(column_prefix=None, used=True):
-
-    if not column_prefix:
-        column_prefix = ''
-
-    func_map = []
-    func_map.extend(
-        _create_resourceidentifier_map(
-            column_prefix='%suri_' % column_prefix,
-            used=False).items())
-
-    @declared_attr
-    def _type(cls):
-        return Column('%stype' % column_prefix, String)
-    func_map.append(('type', _type))
-
-    if used:
-        func_map.extend(_create_used(column_prefix=column_prefix).items())
-
-    return {'{}{}'.format(column_prefix, attr_name): attr
-            for attr_name, attr in func_map}
-
-
-def _create_languagecodeuri_map(column_prefix=None, used=True):
-
-    if not column_prefix:
-        column_prefix = ''
-
-    func_map = []
-    func_map.extend(
-        _create_resourceidentifier_map(
-            column_prefix='%suri_' % column_prefix,
-            used=False).items())
-
-    @declared_attr
-    def _code(cls):
-        return Column('%scode' % column_prefix, String)
-    func_map.append(('code', _code))
-
-    @declared_attr
-    def _language(cls):
-        return Column('%slanguage' % column_prefix, String)
-    func_map.append(('language', _language))
-
-    if used:
-        func_map.extend(_create_used(column_prefix=column_prefix).items())
-
-    return {'{}{}'.format(column_prefix, attr_name): attr
-            for attr_name, attr in func_map}
-
-
-def _create_countrycodeuri_map(column_prefix=None, used=True):
-
-    if not column_prefix:
-        column_prefix = ''
-
-    func_map = []
-    func_map.extend(
-        _create_resourceidentifier_map(
-            column_prefix='%suri_' % column_prefix,
-            used=False).items())
-
-    @declared_attr
-    def _code(cls):
-        return Column('%scode' % column_prefix, String)
-    func_map.append(('code', _code))
-
-    @declared_attr
-    def _country(cls):
-        return Column('%scountry' % column_prefix, String)
-    func_map.append(('country', _country))
-
-    if used:
-        func_map.extend(_create_used(column_prefix=column_prefix).items())
-
-    return {'{}{}'.format(column_prefix, attr_name): attr
-            for attr_name, attr in func_map}
-
-
-def _create_author_map(column_prefix=None, used=True):
-
-    if not column_prefix:
-        column_prefix = ''
-
-    func_map = []
-    func_map.extend(
-        _create_person_map(
-            column_prefix='%sperson_' % column_prefix,
-            used=False).items())
-
-    func_map.extend(
-        _create_personalaffiliatation_map(
-            column_prefix='%saffiliation_' % column_prefix,
-            used=used).items())
-
-    func_map.extend(
-        _create_personalaffiliatation_map(
-            column_prefix='%salternateaffiliation_' % column_prefix,
-            used=used).items())
-
-    func_map.extend(
-        _create_resourceidentifier_map(
-            column_prefix='%smbox_' % column_prefix,
-            used=used).items())
-
-    func_map.extend(
-        _create_comment_map(
-            column_prefix='%scomment_' % column_prefix,
-            used=used).items())
-
-    @declared_attr
-    def _positioninauthorlist(cls):
-        # XXX(damb): Unfortunately, the constraint that this value must be
-        # positive must be defined by means of __table_args__
-        # (see: https://docs.sqlalchemy.org/en/13/core/constraints.html#
-        #  setting-up-constraints-when-using-the-declarative-orm-extension)
-        return Column('%spositioninauthorlist' % column_prefix, Integer)
-
-    if used:
-        func_map.extend(_create_used(column_prefix=column_prefix).items())
-
-    return {'{}{}'.format(column_prefix, attr_name): attr
-            for attr_name, attr in func_map}
-
-
-def _create_person_map(column_prefix=None, used=True):
-
-    if not column_prefix:
-        column_prefix = ''
-
-    @declared_attr
-    def _name(cls):
-        return Column('%sname' % column_prefix, String)
-    func_map = [('name', _name), ]
-
-    @declared_attr
-    def _givenname(cls):
-        return Column('%sgivenname' % column_prefix, String)
-    func_map.append(('givenname', _givenname))
-
-    @declared_attr
-    def _familyname(cls):
-        return Column('%sfamilyname' % column_prefix, String)
-    func_map.append(('familyname', _familyname))
-
-    @declared_attr
-    def _title(cls):
-        return Column('%stitle' % column_prefix, String)
-    func_map.append(('title', _title))
-
-    func_map.extend(
-        _create_resourceidentifier_map(
-            column_prefix='%spersonid_' % column_prefix,
-            used=used).items())
-
-    func_map.extend(
-        _create_resourceidentifier_map(
-            column_prefix='%salternatepersonid_' % column_prefix,
-            used=used).items())
-
-    func_map.extend(
-        _create_resourceidentifier_map(
-            column_prefix='%smbox_' % column_prefix,
-            used=used).items())
-
-    func_map.extend(
-        _create_resourceidentifier_map(
-            column_prefix='%sphone_' % column_prefix,
-            used=used).items())
-
-    func_map.extend(
-        _create_resourcelocator_map(
-            column_prefix='%shomepage_' % column_prefix,
-            used=used).items())
-
-    func_map.extend(
-        _create_resourcelocator_map(
-            column_prefix='%sworkplacehomepage_' % column_prefix,
-            used=used).items())
-
-    if used:
-        func_map.extend(_create_used(column_prefix=column_prefix).items())
-
-    return {'{}{}'.format(column_prefix, attr_name): attr
-            for attr_name, attr in func_map}
-
-
-def _create_personalaffiliatation_map(column_prefix=None, used=True):
-
-    if not column_prefix:
-        column_prefix = ''
-
-    func_map = []
-    func_map.extend(
-        _create_institution_map(
-            column_prefix='%sinstutution_' % column_prefix,
-            used=used).items())
-
-    @declared_attr
-    def _department(cls):
-        return Column('%sdepartment' % column_prefix, String)
-    func_map.append(('department', _department))
-
-    @declared_attr
-    def _function(cls):
-        return Column('%sfunction' % column_prefix, String)
-    func_map.append(('function', _function))
-
-    func_map.extend(
-        _create_comment_map(
-            column_prefix='%scomment_' % column_prefix,
-            used=used).items())
-
-    if used:
-        func_map.extend(_create_used(column_prefix=column_prefix).items())
-
-    return {'{}{}'.format(column_prefix, attr_name): attr
-            for attr_name, attr in func_map}
-
-
-def _create_comment_map(column_prefix=None, used=True):
-
-    if not column_prefix:
-        column_prefix = ''
-
-    @declared_attr
-    def _comment(cls):
-        return Column('%scomment' % column_prefix, String)
-    func_map = [('comment', _comment), ]
-
-    func_map.extend(
-        _create_resourceidentifier_map(
-            column_prefix='%sid_' % column_prefix,
-            used=used).items())
-
-    func_map.extend(
-        _create_creationinfo_map(
-            column_prefix='%screationinfo_' % column_prefix,
-            used=used).items())
-
-    if used:
-        func_map.extend(_create_used(column_prefix=column_prefix).items())
-
-    return {'{}{}'.format(column_prefix, attr_name): attr
-            for attr_name, attr in func_map}
-
-
-def _create_institution_map(column_prefix=None, used=True):
-
-    if not column_prefix:
-        column_prefix = ''
-
-    @declared_attr
-    def _name(cls):
-        return Column('%sname' % column_prefix, String)
-    func_map = [('name', _name), ]
-
-    func_map.extend(
-        _create_resourceidentifier_map(
-            column_prefix='%sidentifier_' % column_prefix,
-            used=used).items())
-
-    func_map.extend(
-        _create_resourceidentifier_map(
-            column_prefix='%smbox_' % column_prefix,
-            used=used).items())
-
-    func_map.extend(
-        _create_resourceidentifier_map(
-            column_prefix='%sphone_' % column_prefix,
-            used=used).items())
-
-    func_map.extend(
-        _create_resourcelocator_map(
-            column_prefix='%shomepage_' % column_prefix,
-            used=used).items())
-
-    func_map.extend(
-        _create_postaladdress_map(
-            column_prefix='%spostaladdress_' % column_prefix,
-            used=used).items())
-
-    if used:
-        func_map.extend(_create_used(column_prefix=column_prefix).items())
-
-    return {'{}{}'.format(column_prefix, attr_name): attr
-            for attr_name, attr in func_map}
-
-
-def _create_postaladdress_map(column_prefix=None, used=True):
-
-    if not column_prefix:
-        column_prefix = ''
-
-    @declared_attr
-    def _streetaddress(cls):
-        return Column('%sstreetaddress' % column_prefix, String)
-    func_map = [('streetaddress', _streetaddress), ]
-
-    @declared_attr
-    def _locality(cls):
-        return Column('%slocality' % column_prefix, String)
-    func_map.append(('locality', _locality))
-
-    @declared_attr
-    def _postalcode(cls):
-        return Column('%spostalcode' % column_prefix, String)
-    func_map.append(('postalcode', _postalcode))
-
-    func_map.extend(
-        _create_countrycodeuri_map(
-            column_prefix='%scountry_' % column_prefix,
-            used=used).items())
-
-    if used:
-        func_map.extend(_create_used(column_prefix=column_prefix).items())
-
-    return {'{}{}'.format(column_prefix, attr_name): attr
-            for attr_name, attr in func_map}
-
-
-def _create_literaturesource_map(column_prefix=None, used=True):
-
-    if not column_prefix:
-        column_prefix = ''
-
-    func_map = []
-    func_map.extend(
-        _create_resourceidentifier_map(
-            column_prefix='%sidentifier_' % column_prefix,
-            used=used).items())
-
-    # QuakeML: DOMTypeURI
-    func_map.extend(
-        _create_domtypeuri_map(
-            column_prefix='%stype_' % column_prefix,
-            used=used).items())
-
-    # QuakeML: BibtexEntryType
-    @declared_attr
-    def _bibtextype(cls):
-        return Column('%sbibtextype' % column_prefix, Enum(EBibtexEntryType))
-    func_map.append(('bibtextype', _bibtextype))
-
-    if used:
-        func_map.extend(_create_used(
-            column_prefix='%sbibtextype_' % column_prefix).items())
-
-    # QuakeML: LanguageCodeURI
-    func_map.extend(
-        _create_languagecodeuri_map(
-            column_prefix='%stype_' % column_prefix,
-            used=used).items())
-
-    # QuakeML: Author
-    func_map.extend(
-        _create_author_map(
-            column_prefix='%screator_' % column_prefix,
-            used=used).items())
-
-    @declared_attr
-    def _title(cls):
-        return Column('%stitle' % column_prefix, String)
-    func_map.append(('title', _title))
-
-    @declared_attr
-    def _author(cls):
-        return Column('%sauthor' % column_prefix, String)
-    func_map.append(('author', _author))
-
-    @declared_attr
-    def _editor(cls):
-        return Column('%seditor' % column_prefix, String)
-    func_map.append(('editor', _editor))
-
-    @declared_attr
-    def _bibliographiccitation(cls):
-        return Column('%sbibliographiccitation' % column_prefix, String)
-    func_map.append(('bibliographiccitation', _bibliographiccitation))
-
-    @declared_attr
-    def _date(cls):
-        return Column('%sdate' % column_prefix, DateTime)
-    func_map.append(('date', _date))
-
-    @declared_attr
-    def _booktitle(cls):
-        return Column('%sbooktitle' % column_prefix, String)
-    func_map.append(('booktitle', _booktitle))
-
-    @declared_attr
-    def _volume(cls):
-        return Column('%svolume' % column_prefix, String)
-    func_map.append(('volume', _volume))
-
-    @declared_attr
-    def _number(cls):
-        return Column('%snumber' % column_prefix, String)
-    func_map.append(('number', _number))
-
-    @declared_attr
-    def _series(cls):
-        return Column('%sseries' % column_prefix, String)
-    func_map.append(('series', _series))
-
-    @declared_attr
-    def _issue(cls):
-        return Column('%sissue' % column_prefix, String)
-    func_map.append(('issue', _issue))
-
-    @declared_attr
-    def _year(cls):
-        return Column('%syear' % column_prefix, String)
-    func_map.append(('year', _year))
-
-    @declared_attr
-    def _edition(cls):
-        return Column('%sedition' % column_prefix, String)
-    func_map.append(('edition', _edition))
-
-    @declared_attr
-    def _startpage(cls):
-        return Column('%sstartpage' % column_prefix, String)
-    func_map.append(('startpage', _startpage))
-
-    @declared_attr
-    def _endpage(cls):
-        return Column('%sendpage' % column_prefix, String)
-    func_map.append(('endpage', _endpage))
-
-    @declared_attr
-    def _publisher(cls):
-        return Column('%spublisher' % column_prefix, String)
-    func_map.append(('publisher', _publisher))
-
-    @declared_attr
-    def _address(cls):
-        return Column('%saddress' % column_prefix, String)
-    func_map.append(('address', _address))
-
-    @declared_attr
-    def _rights(cls):
-        return Column('%srights' % column_prefix, String)
-    func_map.append(('rights', _rights))
-
-    @declared_attr
-    def _rightsholder(cls):
-        return Column('%srightsholder' % column_prefix, String)
-    func_map.append(('rightsholder', _rightsholder))
-
-    @declared_attr
-    def _accessrights(cls):
-        return Column('%saccessrights' % column_prefix, String)
-    func_map.append(('accessrights', _accessrights))
-
-    @declared_attr
-    def _license(cls):
-        return Column('%slicense' % column_prefix, String)
-    func_map.append(('license', _license))
-
-    @declared_attr
-    def _publicationstatus(cls):
-        return Column('%spublicationstatus' % column_prefix, String)
-    func_map.append(('publicationstatus', _publicationstatus))
-
-    if used:
-        func_map.extend(_create_used(column_prefix=column_prefix).items())
-
-    return {'{}{}'.format(column_prefix, attr_name): attr
-            for attr_name, attr in func_map}
-
-
-def CreationInfoMixin(name, column_prefix=None, used=True):
+class CreationInfo(ORMBase):
     """
     `SQLAlchemy <https://www.sqlalchemy.org/>`_ mixin emulating type
     :code:`CreationInfo` from `QuakeML <https://quake.ethz.ch/quakeml/>`_.
     """
-    if not column_prefix:
-        column_prefix = '%s_' % name
+    creationtime = Column(f'{PREFIX}creationtime', DateTime)
+    version = Column(f'{PREFIX}version', String)
+    copyrightowner = Column(f'{PREFIX}copyrightowner', String)
+    license = Column(f'{PREFIX}license', String)
+    author = Column(f'{PREFIX}author', String)
+    agencyid = Column(f'{PREFIX}agencyid', String)
+    agencyid = Column(f'{PREFIX}agencyid', String)
 
-    return type(name, (object,),
-                _create_creationinfo_map(column_prefix, used))
+    _authoruri_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
+    _authoruri = relationship("ResourceIdentifier",
+                              foreign_keys=[_authoruri_oid])
+
+    _agencyuri_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
+    _agencyuri = relationship("ResourceIdentifier",
+                              foreign_keys=[_agencyuri_oid])
+
+    _copyrightowneruri_oid = Column(Integer,
+                                    ForeignKey('resourceidentifier._oid'))
+    _copyrightowneruri = relationship("ResourceIdentifier",
+                                      foreign_keys=[_copyrightowneruri_oid])
 
 
-def LiteratureSourceMixin(name, column_prefix=None, used=True):
+class DomTypeURI(ORMBase):
+
+    type = Column(f'{PREFIX}type', String)
+
+    _uri_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
+    _uri = relationship("ResourceIdentifier", uselist=False, backref=backref("_domtypeuri", uselist=False), foreign_keys=[_uri_oid])
+
+
+class LanguageCodeURI(ORMBase):
+
+    language = Column(f'{PREFIX}language', String)
+    code = Column(f'{PREFIX}code', String)
+
+    _uri_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
+    _uri = relationship("ResourceIdentifier", uselist=False, backref=backref("_languagecodeuri", uselist=False), foreign_keys=[_uri_oid])
+
+
+class CountryCodeURI(ORMBase):
+
+    _postaladdress_oid = Column(Integer, ForeignKey('postaladdress._oid'))
+    code = Column(f'{PREFIX}code', String)
+    country = Column(f'{PREFIX}country', String)
+
+    _uri_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
+    _uri = relationship("ResourceIdentifier", uselist=False, backref=backref(" _countrycodeuri", uselist=False), foreign_keys=[_uri_oid])
+
+
+class Author(ORMBase):
+
+    # XXX(damb): Unfortunately, the constraint that this value must be
+    # positive must be defined by means of __table_args__
+    # (see: https://docs.sqlalchemy.org/en/13/core/constraints.html#
+    #  setting-up-constraints-when-using-the-declarative-orm-extension)
+    positioninauthorlist = Column(f'{PREFIX}positioninauthorlist', Integer)
+
+    
+    _person_oid = Column(Integer, ForeignKey('person._oid'))
+    _person = relationship("Person", uselist=False, backref=backref("_author", uselist=False), foreign_keys=[_person_oid])
+
+    _affiliation_oid = Column(Integer, ForeignKey('personalaffiliation._oid'))
+    _affiliation = relationship(
+        "PersonalAffiliation", uselist=False, backref=backref("_author_primaryaffiliation", uselist=False), foreign_keys=[_affiliation_oid])
+
+    _alternateaffiliation_oid = Column(
+        Integer, ForeignKey('personalaffiliation._oid'))
+    _alternateaffiliation = relationship(
+        "PersonalAffiliation", uselist=False, backref=backref("_author_alternateaffiliation", uselist=False), foreign_keys=[_alternateaffiliation_oid])
+
+    _mbox_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
+    _mbox = relationship("ResourceIdentifier", uselist=False, backref=backref("_author_mbox", uselist=False), foreign_keys=[_mbox_oid])
+
+    _comment_oid = Column(Integer, ForeignKey('comment._oid'))
+    _comment = relationship("Comment", uselist=False, backref=backref("_author_comment", uselist=False), foreign_keys=[_comment_oid])
+
+
+class Person(ORMBase):
+
+    name = Column(f'{PREFIX}name', String)
+    givenname = Column(f'{PREFIX}givenname', String)
+    familyname = Column(f'{PREFIX}familyname', String)
+    title = Column(f'{PREFIX}title', String)
+
+    _alternatepersonid_oid = Column(
+        Integer, ForeignKey('resourceidentifier._oid'))
+    _alternatepersonid = relationship(
+        "ResourceIdentifier", uselist=False, backref=backref("person_alternate", uselist=False), foreign_keys=[_alternatepersonid_oid])
+
+    _personid_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
+    _personid = relationship(
+        "ResourceIdentifier", uselist=False, backref=backref("_person_primary", uselist=False), foreign_keys=[_personid_oid])
+
+    _mbox_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
+    _mbox = relationship("ResourceIdentifier", uselist=False, backref=backref("_person_mbox", uselist=False), foreign_keys=[_mbox_oid])
+
+    _phone_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
+    _phone = relationship("ResourceIdentifier", uselist=False, backref=backref("_person_phone", uselist=False), foreign_keys=[_phone_oid])
+
+    _homepage_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
+    _homepage = relationship(
+        "ResourceIdentifier", uselist=False, backref=backref("_person_homepage", uselist=False), foreign_keys=[_homepage_oid])
+
+    _workplacehomepage_oid = Column(
+        Integer, ForeignKey('resourceidentifier._oid'))
+    _workplacehomepage = relationship(
+        "ResourceIdentifier", uselist=False, backref=backref("_person_workplacehomepage", uselist=False), foreign_keys=[_workplacehomepage_oid])
+
+
+class PersonalAffiliation(ORMBase):
+
+    department = Column(f'{PREFIX}department', String)
+    function = Column(f'{PREFIX}function', String)
+
+    _institution_oid = Column(Integer, ForeignKey('institution._oid'))
+    _institution = relationship(
+        "Institution", uselist=False, backref=backref("_personalaffiliation1", uselist=False), foreign_keys=[_institution_oid])
+
+    _comment_oid = Column(Integer, ForeignKey('comment._oid'))
+    _comment= relationship("Comment", uselist=False, backref=backref("_personalaffliation", uselist=False), foreign_keys=[_comment_oid])
+
+
+class Comment(ORMBase):
+
+    comment = Column(f'{PREFIX}comment', String)
+
+    _id_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
+    _id = relationship("ResourceIdentifier",  foreign_keys=[_id_oid])
+
+    _creationinfo_oid = Column(Integer, ForeignKey('creationinfo._oid'))
+    _creationinfo = relationship(
+        "CreationInfo", uselist=False, backref=backref("_comment", uselist=False), foreign_keys=[_creationinfo_oid])
+
+
+class Institution(ORMBase):
+
+    name = Column(f'{PREFIX}name', String)
+
+    _identifier_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
+    _identifier = relationship("ResourceIdentifier", uselist=False, backref=backref("_institution", uselist=False), foreign_keys=[_identifier_oid])
+
+    _phone_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
+    _phone = relationship("ResourceIdentifier", uselist=False, backref=backref("_institution_phone", uselist=False), foreign_keys=[_phone_oid])
+
+    _homepage_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
+    _homepage = relationship("ResourceIdentifier", uselist=False, backref=backref("_institution_homepage", uselist=False), foreign_keys=[_homepage_oid])
+
+    _postaladdress_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
+    _postaladdress = relationship("ResourceIdentifier", uselist=False, backref=backref("_institution_postaladdress", uselist=False), foreign_keys=[_postaladdress_oid])
+
+    _mbox_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
+    _mbox = relationship("ResourceIdentifier", uselist=False, backref=backref("_institution_mbox", uselist=False), foreign_keys=[_mbox_oid])
+
+
+class PostalAddress(ORMBase):
+
+    streetaddress = Column(f'{PREFIX}streetaddress', String)
+    locality = Column(f'{PREFIX}locality', String)
+    postalcode = Column(f'{PREFIX}postalcode', String)
+
+    _country_oid = Column(Integer, ForeignKey('countrycodeuri._oid'))
+    _country= relationship("CountryCodeURI", uselist=False, backref=backref("_postaladdress", uselist=False), foreign_keys=[_country_oid])
+
+
+class Creator(ORMBase):
+
+    _person_oid = Column(Integer, ForeignKey('person._oid'))
+    _person = relationship("Person", uselist=False, backref=backref("_creator", uselist=False), foreign_keys=[_person_oid])
+
+    _affiliation_oid = Column(Integer, ForeignKey('personalaffiliation._oid'))
+    _affiliation = relationship("PersonalAffiliation", uselist=False, backref=backref("_creator_primaryaffiliation", uselist=False), foreign_keys=[_affiliation_oid])
+
+    _alternateaffiliation_oid = Column(Integer, ForeignKey('personalaffiliation._oid'))
+    _alternateaffiliation = relationship("PersonalAffiliation", uselist=False, backref=backref("_creator_alternateaffiliation", uselist=False), foreign_keys=[_alternateaffiliation_oid])
+
+    _mbox_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
+    _mbox = relationship("ResourceIdentifier", uselist=False, backref=backref("_creator_mbox", uselist=False), foreign_keys=[_mbox_oid])
+
+    _comment_oid = Column(Integer, ForeignKey('comment._oid'))
+    _comment = relationship("Comment", uselist=False, backref=backref("_creator", uselist=False), foreign_keys=[_comment_oid])
+
+
+class LiteratureSource(ORMBase):
+
     """
     `SQLAlchemy <https://www.sqlalchemy.org/>`_ mixin emulating type
     :code:`LiteratureSource` from `QuakeML <https://quake.ethz.ch/quakeml/>`_.
     """
-    if not column_prefix:
-        column_prefix = '%s_' % name
 
-    return type(name, (object,),
-                _create_literaturesource_map(column_prefix, used))
+    _identifier_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
+    _identifier = relationship("ResourceIdentifier", uselist=False, backref=backref("_literaturesource", uselist=False), foreign_keys=[_identifier_oid])
+
+    _creator_oid = Column(Integer, ForeignKey('author._oid'))
+    _creator = relationship("Author", uselist=False, backref=backref("_literaturesource", uselist=False), foreign_keys=[_creator_oid])
+
+    _type_oid = Column(Integer, ForeignKey('languagecodeuri._oid'))
+    _type = relationship("LanguageCodeURI", uselist=False, backref=backref("_literaturesource", uselist=False), foreign_keys=[_type_oid])
+
+    bibtextype = Column(f'{PREFIX}bibtextype', Enum(EBibtexEntryType))
+    title = Column(f'{PREFIX}title', String)
+    author = Column(f'{PREFIX}author', String)
+    editor = Column(f'{PREFIX}editor', String)
+    bibliographiccitation = Column(f'{PREFIX}bibliographiccitation', String)
+    date = Column(f'{PREFIX}date', DateTime)
+    booktitle = Column(f'{PREFIX}booktitle', String)
+    volume = Column(f'{PREFIX}volume', String)
+    number = Column(f'{PREFIX}number', String)
+    series = Column(f'{PREFIX}series', String)
+    issue = Column(f'{PREFIX}issue', String)
+    year = Column(f'{PREFIX}year', String)
+    edition = Column(f'{PREFIX}edition', String)
+    startpage = Column(f'{PREFIX}startpage', String)
+    endpage = Column(f'{PREFIX}endpage', String)
+    publisher = Column(f'{PREFIX}publisher', String)
+    address = Column(f'{PREFIX}address', String)
+    rights = Column(f'{PREFIX}rights', String)
+    rightsholder = Column(f'{PREFIX}rightsholder', String)
+    accessrights =  Column(f'{PREFIX}accessrights', String)
+    license = Column(f'{PREFIX}license', String)
+    publicationstatus = Column(f'{PREFIX}publicationstatus', String)
 
 
-def PublicIDMixin(name='', column_prefix=None):
+class RealQuantity(ORMBase):
+    """
+    Mixin factory for common :code:`Quantity` types from
+    `QuakeML <https://quake.ethz.ch/quakeml/>`_.
+
+    Quantity types provide the fields:
+        - `value`
+        - `uncertainty`
+        - `loweruncertainty`
+        - `upperuncertainty`
+        - `confidencelevel`.
+
+    Note, that a `column_prefix` may be prepended.
+
+    :param str name: Name of the class returned
+    :param str quantity_type: Type of the quantity to be returned. Valid values
+        are :code:`int`, :code:`real` or rather :code:`float` and :code:`time`.
+    :param column_prefix: Prefix used for DB columns. If :code:`None`, then
+        :code:`name` with an appended underscore :code:`_` is used. Capital
+        Letters are converted to lowercase.
+    :type column_prefix: str or None
+
+    The usage of :py:func:`QuantityMixin` is illustrated bellow:
+
+    .. code::
+
+        # define a ORM mapping using the Quantity mixin factory
+        class FooBar(QuantityMixin('foo', 'int'),
+                     QuantityMixin('bar', 'real'),
+                     ORMBase):
+
+            def __repr__(self):
+                return '<FooBar (foo_value=%d, bar_value=%f)>' % (
+                    self.foo_value, self.bar_value)
+
+
+        # create instance of "FooBar"
+        foobar = FooBar(foo_value=1, bar_value=2)
+
+    """
+
+    _identifier_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
+    _identifier = relationship("ResourceIdentifier", uselist=False, backref=backref("parent", uselist=False), foreign_keys=[_identifier_oid])
+
+    _creator_oid = Column(Integer, ForeignKey('author._oid'))
+    _creator = relationship("Author", uselist=False, backref=backref("parent", uselist=False), foreign_keys=[_creator_oid])
+
+    _type_oid = Column(Integer, ForeignKey('languagecodeuri._oid'))
+    _type = relationship("LanguageCodeURI", uselist=False, backref=backref("parent", uselist=False), foreign_keys=[_type_oid])
+
+    bibtextype = Column(f'{PREFIX}bibtextype', Enum(EBibtexEntryType))
+    title = Column(f'{PREFIX}title', String)
+    author = Column(f'{PREFIX}author', String)
+
+
+def PublicIDMixin(name='', parent_prefix=None, column_prefix=None):
     """
     `SQLAlchemy <https://www.sqlalchemy.org/>`_ mixin providing a general
     purpose :code:`publicID` attribute.
@@ -652,17 +364,21 @@ def PublicIDMixin(name='', column_prefix=None):
         The attribute :code:`publicID` is inherited from `QuakeML
         <https://quake.ethz.ch/quakeml/>`_.
     """
+    if not parent_prefix:
+        parent_prefix = name
     if not column_prefix:
-        column_prefix = '%s_' % name
+        column_prefix = parent_prefix
+    
+    if PREFIX:
+        column_prefix = f'{PREFIX}{column_prefix}'
 
     @declared_attr
     def _publicid(cls):
-        return Column('%spublicid' % column_prefix, String)
+        return Column(f'{column_prefix}publicid', String, nullable=False)
 
-    return type(name, (object,), {'%spublicid' % column_prefix: _publicid})
+    return type(name, (object,), {f'{parent_prefix}publicid': _publicid})
 
-
-def EpochMixin(name, epoch_type=None, column_prefix=None):
+def EpochMixin(name, epoch_type=None, parent_prefix=None):
     """
     Mixin factory for common :code:`Epoch` types from
     `QuakeML <https://quake.ethz.ch/quakeml/>`_.
@@ -698,8 +414,12 @@ def EpochMixin(name, epoch_type=None, column_prefix=None):
         my_obj = MyObject(epoch_starttime=datetime.datetime.utcnow())
 
     """
-    if column_prefix is None:
-        column_prefix = '%s_' % name
+    if not parent_prefix:
+        parent_prefix = ''
+    column_prefix = parent_prefix
+    
+    if PREFIX:
+        column_prefix = f'{PREFIX}{column_prefix}'
 
     column_prefix = column_prefix.lower()
 
@@ -716,11 +436,11 @@ def EpochMixin(name, epoch_type=None, column_prefix=None):
             elif boundery is Boundery.RIGHT:
                 name = 'endtime'
             else:
-                raise ValueError('Invalid boundery: {!r}.'.format(boundery))
+                raise ValueError(f'Invalid boundery: {boundery!r}.')
 
             @declared_attr
             def _datetime(cls):
-                return Column('%s%s' % (column_prefix, name), DateTime,
+                return Column(f'{column_prefix}{name}', DateTime,
                               **kwargs)
 
             return _datetime
@@ -746,21 +466,20 @@ def EpochMixin(name, epoch_type=None, column_prefix=None):
                                                  column_prefix,
                                                  nullable=False)))
     else:
-        raise ValueError('Invalid epoch_type: {!r}.'.format(epoch_type))
+        raise ValueError(f'Invalid epoch_type: {epoch_type!r}.')
 
     def __dict__(func_map, attr_prefix):
-        return {'{}{}'.format(attr_prefix, attr_name): attr
+        return {f'{attr_prefix}{attr_name}': attr
                 for attr_name, attr in func_map}
 
-    return type(name, (object,), __dict__(_func_map, column_prefix))
+    return type(name, (object,), __dict__(_func_map, parent_prefix))
 
 
-UniqueEpochMixin = EpochMixin('Epoch', column_prefix='')
-UniqueOpenEpochMixin = EpochMixin('Epoch', epoch_type='open',
-                                  column_prefix='')
+UniqueEpochMixin = EpochMixin('Epoch')
+UniqueOpenEpochMixin = EpochMixin('Epoch', epoch_type='open')
 
 
-def QuantityMixin(name, quantity_type, column_prefix=None):
+def QuantityMixin(name, quantity_type, column_prefix=None, value_nullable=True):
     """
     Mixin factory for common :code:`Quantity` types from
     `QuakeML <https://quake.ethz.ch/quakeml/>`_.
@@ -802,9 +521,13 @@ def QuantityMixin(name, quantity_type, column_prefix=None):
     """
 
     if column_prefix is None:
-        column_prefix = '%s_' % name
-
+        column_prefix = f'{name}_'
+    if PREFIX:
+        column_prefix = f'{PREFIX}{column_prefix}'
     column_prefix = column_prefix.lower()
+
+    # Name attribute differently to column key.
+    attr_prefix = f'{name}_'.lower()
 
     def create_value(quantity_type, column_prefix):
 
@@ -812,9 +535,8 @@ def QuantityMixin(name, quantity_type, column_prefix=None):
 
             @declared_attr
             def _value(cls):
-                return Column('%svalue' % column_prefix, sql_type,
-                              nullable=False)
-
+                return Column(f'{column_prefix}value', sql_type,
+                              nullable=value_nullable)
             return _value
 
         if 'int' == quantity_type:
@@ -824,23 +546,23 @@ def QuantityMixin(name, quantity_type, column_prefix=None):
         elif 'time' == quantity_type:
             return _make_value(DateTime, column_prefix)
 
-        raise ValueError('Invalid quantity_type: {}'.format(quantity_type))
+        raise ValueError(f'Invalid quantity_type: {quantity_type}')
 
     @declared_attr
     def _uncertainty(cls):
-        return Column('%suncertainty' % column_prefix, Float)
+        return Column(f'{column_prefix}uncertainty', Float)
 
     @declared_attr
     def _lower_uncertainty(cls):
-        return Column('%sloweruncertainty' % column_prefix, Float)
+        return Column(f'{column_prefix}loweruncertainty', Float)
 
     @declared_attr
     def _upper_uncertainty(cls):
-        return Column('%supperuncertainty' % column_prefix, Float)
+        return Column(f'{column_prefix}upperuncertainty', Float)
 
     @declared_attr
     def _confidence_level(cls):
-        return Column('%sconfidencelevel' % column_prefix, Float)
+        return Column(f'{column_prefix}confidencelevel', Float)
 
     _func_map = (('value', create_value(quantity_type, column_prefix)),
                  ('uncertainty', _uncertainty),
@@ -850,10 +572,10 @@ def QuantityMixin(name, quantity_type, column_prefix=None):
 
     def __dict__(func_map, attr_prefix):
 
-        return {'{}{}'.format(attr_prefix, attr_name): attr
+        return {f'{attr_prefix}{attr_name}': attr
                 for attr_name, attr in func_map}
 
-    return type(name, (object,), __dict__(_func_map, column_prefix))
+    return type(name, (object,), __dict__(_func_map, attr_prefix))
 
 
 FloatQuantityMixin = functools.partial(QuantityMixin,

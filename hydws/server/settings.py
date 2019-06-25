@@ -11,7 +11,8 @@ HYDWS_DEFAULT_SERVER_PORT = 5000
 # ----------------------------------------------------------------------------
 # service specific configuration parameters
 HYDWS_PATH_BOREHOLES = '/boreholes'
-
+HYDWS_PATH_SECTIONS = '/sections'
+HYDWS_PATH_HYDRAULICS='/hydraulics'
 FDSN_DEFAULT_NO_CONTENT_ERROR_CODE = 204
 FDSN_NO_CONTENT_CODES = (FDSN_DEFAULT_NO_CONTENT_ERROR_CODE, 404)
 HYDWS_SERVICE_DOCUMENTATION_URI = 'http://URL/to/hydws/docs/'
@@ -20,8 +21,10 @@ HYDWS_DEFAULT_OFORMAT = 'json'
 HYDWS_OFORMATS = (HYDWS_DEFAULT_OFORMAT, 'xml')
 
 HYDWS_DEFAULT_LEVEL = 'section'
-HYDWS_LEVELS = (HYDWS_DEFAULT_LEVEL, 'borehole')
+HYDWS_SECTION_LEVELS = (HYDWS_DEFAULT_LEVEL, 'borehole')
+HYDWS_HYDRAULIC_LEVELS = (HYDWS_DEFAULT_LEVEL, 'borehole', 'hydraulic')
 
+HYDWS_PREFIX = 'm_'
 MIMETYPE_JSON = 'application/json'
 MIMETYPE_TEXT = 'text/plain'
 ERROR_MIMETYPE = MIMETYPE_TEXT
