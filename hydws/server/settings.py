@@ -10,6 +10,7 @@ HYDWS_DEFAULT_SERVER_PORT = 5000
 
 # ----------------------------------------------------------------------------
 # service specific configuration parameters
+HYDWS_PATH_BASE = '/hydws'
 HYDWS_PATH_BOREHOLES = '/boreholes'
 HYDWS_PATH_SECTIONS = '/sections'
 HYDWS_PATH_HYDRAULICS='/hydraulics'

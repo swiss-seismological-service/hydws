@@ -32,7 +32,9 @@ def create_app(config_dict={}):
     from hydws.server.v1 import blueprint as api_v1_bp, API_VERSION_V1
     app.register_blueprint(
         api_v1_bp,
-        url_prefix='/v{version}'.format(version=API_VERSION_V1))
+        url_prefix='{prefix}/v{version}'.format(
+            prefix=settings.HYDWS_PATH_BASE,
+            version=API_VERSION_V1))
 
     @app.before_request
     def before_request():
