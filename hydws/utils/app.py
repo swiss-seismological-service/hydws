@@ -89,8 +89,8 @@ class App(object):
             interpolation = kwargs.get('interpolation',
                                        configparser.BasicInterpolation())
             if (interpolation and
-                    isinstance(interpolation,
-                               configparser.BasicInterpolation)):
+                isinstance(interpolation,
+                           configparser.BasicInterpolation)):
                 # filter out variables containing a '%'; else interpolation
                 # fails
                 env_dict = {k: v for k, v in os.environ.items()
@@ -102,10 +102,6 @@ class App(object):
                 import warnings
                 warnings.warn(
                     "Exception while parsing config file: {}.".format(err))
-        else:
-            import warnings
-            warnings.warn(
-                "Config file: {} does not exist".format(path_default_config))
 
         self.parser = self.build_parser(parents=[c_parser])
         # XXX(damb): Make sure that the default logger has an argument
