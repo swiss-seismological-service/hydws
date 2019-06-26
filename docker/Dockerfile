@@ -48,7 +48,7 @@ RUN mod_wsgi-express module-config | tail -n 1 > \
 RUN a2enmod wsgi
 
 # Get the source from GitLab:master
-RUN git clone https://gitlab.seismo.ethz.ch/armdanie/hydws.git /var/www/hydws
+RUN git clone https://gitlab.seismo.ethz.ch/sed-infra/hydws.git /var/www/hydws
 
 # Install the services
 WORKDIR /var/www/hydws
