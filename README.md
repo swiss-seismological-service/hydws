@@ -23,7 +23,6 @@ hydws-db-init <db_url>
 Run the above command. To be run locally with a sqlite db, db_url=sqlite:///<absolute_path>/<name_db_file>
 
 The database now contains tables ready for population.
-A postgresql database served with Apache2 and wsgi will be used for production, and the setup for this is handled with Docker.
 
 ## Setup with Docker
 
