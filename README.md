@@ -28,7 +28,73 @@ The database now contains tables ready for population.
 
 ## Setup with Docker
 
-<Docker setup here>
+A basic knowledge about [Docker](https://docs.docker.com/engine/) and how
+this kind of application containers work is required. For more information
+about operating system support (which includes Linux, macOS and specific
+versions of Windows) and on how to install Docker, please refer to the official
+[Docker website](https://www.docker.com/products/docker).
+
+**Features provided**:
+
+* based on [baseimage](https://hub.docker.com/r/phusion/baseimage/)
+* `apache2` + [mod_wsgi](https://github.com/GrahamDumpleton/mod_wsgi) for
+  for Python 3.6
+* powered by [PostgreSQL](https://www.postgresql.org/)
+* logging (file based)
+
+**Introduction**:
+
+To construct a Docker image with the appropriate configuration it is
+recommended to build your image from a Dockerfile. After cloning the repository
+change into the `docker/` directory and modify the configuration.
+
+```
+$ cd docker
+```
+
+**Configuration**:
+
+Before building and running the container adjust the variables defined within
+`.env` configuration file according to your needs. Make sure to pick a proper
+username and password for the internally used PostgreSQL database and write
+these down for later.
+
+**Building**:
+
+Once you environment variables are configured you are ready to build the
+container image.
+
+```
+$ docker build -t hydws:1.0 .
+```
+
+**Compose Configuration**:
+
+In case you want to manage your own volumes now is the time. The configuration
+provided relies on named docker volumes.
+
+**Deployment**:
+
+The container should be run using the provided `docker-compose.yml`
+configuration file.
+
+```
+$ docker-compose up -d
+```
+
+When deploying for the first time you are required to initialize the database.
+This will create the database schema:
+
+```
+$ docker exec <container_name> \
+  hydws-db-init \
+  --logging-conf /var/www/hydws/config/logging.conf \
+  postgresql://user:pass@hydws-psql:5432/hydws
+```
+
+When the containers are running the service is now available under
+`http://localhost:8080`.
+
 
 ## Test local installation
 
