@@ -33,8 +33,8 @@ _install_requires = [
     'Flask>=1.0.2',
     'Flask-RESTful>=0.3.7',
     'Flask-SQLAlchemy>=2.3.2',
-    'marshmallow>=3.0.0rc5',
-    'webargs>=5.3.0', 
+    'marshmallow==3.0.0rc5',
+    'webargs==5.3.1',
     'Flask-Migrate>=2.4.0',]
 
 _data_files = [
