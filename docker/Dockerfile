@@ -79,7 +79,7 @@ RUN mkdir /etc/service/apache2 && \
 RUN mkdir -p /var/www/hydws/log && chown www-data:www-data /var/www/hydws/log
 
 # Add the logging configuration
-COPY logging.conf /var/www/hydws/config/logging.conf
+COPY logging.conf /var/www/hydws/config/prod-logging.conf
 
 # Expose Apache2 default port
 EXPOSE 80
