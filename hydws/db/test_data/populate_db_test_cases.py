@@ -84,8 +84,6 @@ bh1_section2 = orm.BoreholeSection(
     casingdiameter_value=0.28, )
 
 sample1 = orm.HydraulicSample(
-    publicid='smi:ch.ethz.sed/bh/section/sample/'
-               '11111111-ea2c-4b7f-a418-628afdf8f93b',
     datetime_value=datetime.datetime(2010, 12, 9, 12, 00),
     toptemperature_value=273,
     topflow_value=42,
@@ -98,8 +96,6 @@ sample1 = orm.HydraulicSample(
     fluidph_value=7, )
 
 sample2 = orm.HydraulicSample(
-    publicid='smi:ch.ethz.sed/bh/section/'
-               'sample/11111111-ea2c-4b7f-a418-628afdf8f92j',
     datetime_value=datetime.datetime(2010, 12, 9, 13, 00),
     toptemperature_value=290,
     topflow_value=52,
@@ -112,8 +108,6 @@ sample2 = orm.HydraulicSample(
     fluidph_value=8, )
 
 sample3 = orm.HydraulicSample(
-    publicid='smi:ch.ethz.sed/bh/section/sample/'
-               '11111111-ea2c-4b7f-a418-628afdf8f99t',
     datetime_value=datetime.datetime(2010, 12, 1, 12, 00),
     toptemperature_value=273,
     topflow_value=42,
