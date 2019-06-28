@@ -6,11 +6,10 @@
 
 """
 
-from operator import itemgetter
 from sqlalchemy import Column, String, Boolean, Integer, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy import select, func
+from sqlalchemy import select
 
 
 from hydws.db.base import (ORMBase, RealQuantityMixin, LiteratureSource, CreationInfo,
@@ -53,13 +52,17 @@ class Borehole( RealQuantityMixin('longitude',
         <https://quake.ethz.ch/quakeml>`_ quantities.
     """
     _sections = relationship("BoreholeSection", back_populates="_borehole",
-                             cascade='all, delete-orphan', lazy='noload', order_by='BoreholeSection.topdepth_value')
+                             cascade='all, delete-orphan', lazy='noload',
+                             order_by='BoreholeSection.topdepth_value')
 
-    _literaturesource_oid = Column(Integer, ForeignKey('literaturesource._oid'))
-    _literaturesource = relationship("LiteratureSource", uselist=False, foreign_keys=[_literaturesource_oid])
+    _literaturesource_oid = Column(Integer,
+                                   ForeignKey('literaturesource._oid'))
+    _literaturesource = relationship("LiteratureSource", uselist=False,
+                                     foreign_keys=[_literaturesource_oid])
 
     _creationinfo_oid = Column(Integer, ForeignKey('creationinfo._oid'))
-    _creationinfo = relationship("CreationInfo", uselist=False, foreign_keys=[_creationinfo_oid])
+    _creationinfo = relationship("CreationInfo", uselist=False,
+                                 foreign_keys=[_creationinfo_oid])
 
 
 class BoreholeSection(EpochMixin('Epoch', epoch_type='open'),
@@ -108,7 +111,6 @@ class HydraulicSample(TimeQuantityMixin('datetime', value_nullable=False),
                       RealQuantityMixin('fluiddensity'),
                       RealQuantityMixin('fluidviscosity'),
                       RealQuantityMixin('fluidph'),
-                      PublicIDMixin(),
                       ORMBase):
     """
     Represents an hydraulics sample. The definition is based on `QuakeML

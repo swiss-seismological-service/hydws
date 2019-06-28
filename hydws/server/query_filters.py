@@ -59,18 +59,26 @@ FILTER_SECTIONS = [
     [('toplongitude_value', 'ge', 'minlongitude'),
      ('bottomlongitude_value', 'ge', 'minlongitude')],
     [('toplongitude_value', 'le', 'maxlongitude'),
-     ('longitude_valuee', 'le', 'maxlongitude')]]
+     ('longitude_value', 'le', 'maxlongitude')],
+    ('casingdiameter_value', 'ge', 'mincasingdiameter'),
+    ('casingdiameter_value', 'le', 'maxcasingdiameter'),
+    ('holediameter_value', 'ge', 'minholediameter'),
+    ('holediameter_value', 'le', 'maxholediameter'),
+    ('topdepth_value', 'ge', 'mintopdepth'),
+    ('topdepth_value', 'le', 'maxtopdepth'),
+    ('bottomdepth_value', 'ge', 'minbottomdepth'),
+    ('bottomdepth_value', 'le', 'maxbottomdepth'),
+    ('topclosed_value', 'eq', 'topclosed'),
+    ('bottomclosed_value', 'eq', 'bottomclosed'),
+    ('casingtype_value', 'eq', 'casingtype'),
+    ('sectiontype_value', 'eq', 'sectiontype')]
+
 
 FILTER_BOREHOLES = [
     ('latitude_value', 'ge', 'minlatitude'),
     ('latitude_value', 'le', 'maxlatitude'),
     ('longitude_value', 'ge', 'minlongitude'),
     ('longitude_value', 'le', 'maxlongitude')]
-
-
-#class InvalidOperator(ErrorWithTraceback):
-#    def __init__(self,*args,**kwargs):
-#        Exception.__init__(self,*args,**kwargs)
 
 
 class DynamicQuery(object):
@@ -95,7 +103,7 @@ class DynamicQuery(object):
 
         :rtype: list
         """
-        try: 
+        try:
             return self.query.all()
         except NoResultFound as err:
             return None
@@ -106,7 +114,7 @@ class DynamicQuery(object):
 
         :rtype: dict
         """
-        #MultipleResultsFound from sqlalchemy.orm.exc
+        # TODO (sarsonl) MultipleResultsFound from sqlalchemy.orm.exc
         return self.query.one_or_none()
 
     def format_results(self, order_column=None, limit=None, offset=None):
@@ -139,7 +147,7 @@ class DynamicQuery(object):
         """
         obj_methods = [op, f"{op}_", f"__{op}__"]
         existing_methods = [m for m in obj_methods
-                                if hasattr(obj, m)]
+                            if hasattr(obj, m)]
         if existing_methods:
             return existing_methods[0]
         else:
@@ -161,7 +169,7 @@ class DynamicQuery(object):
         :type filter_level: matches type of values stored in column.
 
         :return: Method to evaluate ORM column
-            e.g. getattr(col, operator)(param value)
+            e.g. column_value >= 22
         :type: Column evaluation method.
         """
 
@@ -211,7 +219,8 @@ class DynamicQuery(object):
                     self.query = self.query.filter(or_(*filt_list))
 
                 else:
-                    filt = self.get_filter( filter_clause, filter_name, query_params,orm_class)
+                    filt = self.get_filter(
+                        filter_clause, filter_name, query_params,orm_class)
                     if filt is None:
                         continue
 
@@ -242,7 +251,7 @@ class DynamicQuery(object):
             return None
 
     def get_query_param(self, filter_clause, query_params):
-            
+
         try:
             key, op, param_name = filter_clause
         except ValueError as err:
@@ -259,8 +268,10 @@ class DynamicQuery(object):
         except AttributeError:
            raise Exception(f"Invalid filter column: {key}")
 
+	    # (sarsonl) Currently 'in' is unused and untested.
+	    # Still requires handling for the backref quantities
         if op == "in":
-            if isinstance(value, list):
+            if isinstance(param_value, list):
                 filt = column.in_(param_value)
             else:
                 filt = column.in_(param_value.split(","))

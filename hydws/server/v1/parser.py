@@ -49,11 +49,11 @@ class FDSNWSDateTime(fields.DateTime):
     <http://www.fdsn.org/webservices/FDSN-WS-Specifications-1.1.pdf>`_.
     """
 
-    #SERIALIZATION_FUNCS = fields.DateTime.SERIALIZATION_FUNCS.copy()
+    SERIALIZATION_FUNCS = fields.DateTime.SERIALIZATION_FUNCS.copy()
 
     DESERIALIZATION_FUNCS = fields.DateTime.DESERIALIZATION_FUNCS.copy()
 
-    #SERIALIZATION_FUNCS['fdsnws'] = fdsnws_isoformat
+    SERIALIZATION_FUNCS['fdsnws'] = fdsnws_isoformat
     DESERIALIZATION_FUNCS['fdsnws'] = from_fdsnws_datetime
 
 
@@ -127,8 +127,6 @@ class TimeConstraintsSchemaMixin(Schema):
                     'endtime must be greater than starttime')
 
 
-    
-
 class LocationConstraintsSchemaMixin(Schema):
     """
     Query parameters for boreholes, location specific.
@@ -166,6 +164,25 @@ class LocationConstraintsSchemaMixin(Schema):
             raise ValidationError('maxlongitude must be greater than'
                                   'minlongitude')
 
+
+class SectionSchemaMixin(TimeConstraintsSchemaMixin, Schema):
+    """
+    Query parameters for section data.
+    """
+    maxcasingdiameter = fields.Float()
+    mincasingdiameter = fields.Float()
+    maxholediameter = fields.Float()
+    minholediameter = fields.Float()
+    maxtopdepth = fields.Float()
+    mintopdepth = fields.Float()
+    maxbottomdepth = fields.Float()
+    minbottomdepth = fields.Float()
+    topclosed = fields.Boolean()
+    bottomclosed = fields.Boolean()
+    casingtype = fields.String()
+    sectiontype = fields.String()
+
+
 class HydraulicsSchemaMixin(TimeConstraintsSchemaMixin, Schema):
     """
     Query parameters for hydraulics data.
@@ -193,10 +210,14 @@ class HydraulicsSchemaMixin(TimeConstraintsSchemaMixin, Schema):
 
 
 class BoreholeHydraulicSampleListResourceSchema(HydraulicsSchemaMixin,
+                                                SectionSchemaMixin,
                                                 GeneralSchema):
     """
-    Handle optional query parameters for call returning section and hydraulics
-    data for specified borehole id.
+    Hydraulic params are not allowed if section in
+    (borehole, section), and section params are not allowed
+    if level = borehole
+
+    :raises: ValidationError.
     """
     level = LevelHydraulic()
 
@@ -211,6 +232,13 @@ class BoreholeHydraulicSampleListResourceSchema(HydraulicsSchemaMixin,
                 raise ValidationError(
                     'Hydraulic query parameters not allowed: {}'.\
                     format(hydraulic_params))
+
+        if data.get('level') == 'borehole':
+            section_params = SectionSchemaMixin().dump(data)
+            if section_params:
+                raise ValidationError(
+                    'Section query parameters not allowed: {}'.\
+                    format(section_params))
 
 
 class BoreholeListResourceSchema(TimeConstraintsSchemaMixin,
@@ -231,4 +259,3 @@ class SectionHydraulicSampleListResourceSchema(HydraulicsSchemaMixin,
     data for specified borehole id and section id.
     """
     pass
-

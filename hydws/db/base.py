@@ -5,15 +5,12 @@
 .. moduleauthor:: Laura Sarson <laura.sarson@sed.ethz.ch>
 
 """
-
-import datetime
 import enum
 import functools
 
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import (Column, Boolean, Integer, Float, String, DateTime,
-                        Enum)
-from sqlalchemy import Column, String, Boolean, Integer, ForeignKey
+                        Enum, ForeignKey)
 from sqlalchemy.ext.declarative import declared_attr, declarative_base
 from hydws.server import settings
 
@@ -28,8 +25,8 @@ class Base(object):
     @declared_attr
     def __tablename__(cls):
         return cls.__name__.lower()
-    # (sarsonl) sholud this have prefix?
-    _oid = Column(Integer, primary_key=True)
+    # (sarsonl) should this have prefix?
+    _oid = Column(Integer, primary_key=True, nullable=False)
 
 
 ORMBase = declarative_base(cls=Base)
@@ -86,17 +83,17 @@ class CreationInfo(ORMBase):
     agencyid = Column(f'{PREFIX}agencyid', String)
 
     _authoruri_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
-    _authoruri = relationship("ResourceIdentifier",
-                              foreign_keys=[_authoruri_oid])
+    _authoruri = relationship(
+        "ResourceIdentifier", foreign_keys=[_authoruri_oid])
 
     _agencyuri_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
-    _agencyuri = relationship("ResourceIdentifier",
-                              foreign_keys=[_agencyuri_oid])
+    _agencyuri = relationship(
+        "ResourceIdentifier", foreign_keys=[_agencyuri_oid])
 
     _copyrightowneruri_oid = Column(Integer,
                                     ForeignKey('resourceidentifier._oid'))
-    _copyrightowneruri = relationship("ResourceIdentifier",
-                                      foreign_keys=[_copyrightowneruri_oid])
+    _copyrightowneruri = relationship(
+        "ResourceIdentifier", foreign_keys=[_copyrightowneruri_oid])
 
 
 class DomTypeURI(ORMBase):
@@ -104,7 +101,10 @@ class DomTypeURI(ORMBase):
     type = Column(f'{PREFIX}type', String)
 
     _uri_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
-    _uri = relationship("ResourceIdentifier", uselist=False, backref=backref("_domtypeuri", uselist=False), foreign_keys=[_uri_oid])
+    _uri = relationship(
+        "ResourceIdentifier",
+        backref=backref("_domtypeuri", uselist=False),
+        foreign_keys=[_uri_oid])
 
 
 class LanguageCodeURI(ORMBase):
@@ -113,7 +113,10 @@ class LanguageCodeURI(ORMBase):
     code = Column(f'{PREFIX}code', String)
 
     _uri_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
-    _uri = relationship("ResourceIdentifier", uselist=False, backref=backref("_languagecodeuri", uselist=False), foreign_keys=[_uri_oid])
+    _uri = relationship(
+        "ResourceIdentifier",
+        backref=backref("_languagecodeuri", uselist=False),
+        foreign_keys=[_uri_oid])
 
 
 class CountryCodeURI(ORMBase):
@@ -123,7 +126,10 @@ class CountryCodeURI(ORMBase):
     country = Column(f'{PREFIX}country', String)
 
     _uri_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
-    _uri = relationship("ResourceIdentifier", uselist=False, backref=backref(" _countrycodeuri", uselist=False), foreign_keys=[_uri_oid])
+    _uri = relationship(
+        "ResourceIdentifier",
+        backref=backref(" _countrycodeuri", uselist=False),
+        foreign_keys=[_uri_oid])
 
 
 class Author(ORMBase):
@@ -134,24 +140,36 @@ class Author(ORMBase):
     #  setting-up-constraints-when-using-the-declarative-orm-extension)
     positioninauthorlist = Column(f'{PREFIX}positioninauthorlist', Integer)
 
-    
     _person_oid = Column(Integer, ForeignKey('person._oid'))
-    _person = relationship("Person", uselist=False, backref=backref("_author", uselist=False), foreign_keys=[_person_oid])
+    _person = relationship(
+        "Person",
+        backref=backref("_author", uselist=False),
+        foreign_keys=[_person_oid])
 
     _affiliation_oid = Column(Integer, ForeignKey('personalaffiliation._oid'))
     _affiliation = relationship(
-        "PersonalAffiliation", uselist=False, backref=backref("_author_primaryaffiliation", uselist=False), foreign_keys=[_affiliation_oid])
+        "PersonalAffiliation",
+        backref=backref("_author_primaryaffiliation", uselist=False),
+        foreign_keys=[_affiliation_oid])
 
     _alternateaffiliation_oid = Column(
         Integer, ForeignKey('personalaffiliation._oid'))
     _alternateaffiliation = relationship(
-        "PersonalAffiliation", uselist=False, backref=backref("_author_alternateaffiliation", uselist=False), foreign_keys=[_alternateaffiliation_oid])
+        "PersonalAffiliation",
+        backref=backref("_author_alternateaffiliation", uselist=False),
+        foreign_keys=[_alternateaffiliation_oid])
 
     _mbox_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
-    _mbox = relationship("ResourceIdentifier", uselist=False, backref=backref("_author_mbox", uselist=False), foreign_keys=[_mbox_oid])
+    _mbox = relationship(
+        "ResourceIdentifier",
+        backref=backref("_author_mbox", uselist=False),
+        foreign_keys=[_mbox_oid])
 
     _comment_oid = Column(Integer, ForeignKey('comment._oid'))
-    _comment = relationship("Comment", uselist=False, backref=backref("_author_comment", uselist=False), foreign_keys=[_comment_oid])
+    _comment = relationship(
+        "Comment",
+        backref=backref("_author_comment", uselist=False),
+        foreign_keys=[_comment_oid])
 
 
 class Person(ORMBase):
@@ -164,26 +182,40 @@ class Person(ORMBase):
     _alternatepersonid_oid = Column(
         Integer, ForeignKey('resourceidentifier._oid'))
     _alternatepersonid = relationship(
-        "ResourceIdentifier", uselist=False, backref=backref("person_alternate", uselist=False), foreign_keys=[_alternatepersonid_oid])
+        "ResourceIdentifier",
+        backref=backref("person_alternate", uselist=False),
+        foreign_keys=[_alternatepersonid_oid])
 
     _personid_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
     _personid = relationship(
-        "ResourceIdentifier", uselist=False, backref=backref("_person_primary", uselist=False), foreign_keys=[_personid_oid])
+        "ResourceIdentifier",
+        backref=backref("_person_primary", uselist=False),
+        foreign_keys=[_personid_oid])
 
     _mbox_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
-    _mbox = relationship("ResourceIdentifier", uselist=False, backref=backref("_person_mbox", uselist=False), foreign_keys=[_mbox_oid])
+    _mbox = relationship(
+        "ResourceIdentifier",
+        backref=backref("_person_mbox", uselist=False),
+        foreign_keys=[_mbox_oid])
 
     _phone_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
-    _phone = relationship("ResourceIdentifier", uselist=False, backref=backref("_person_phone", uselist=False), foreign_keys=[_phone_oid])
+    _phone = relationship(
+        "ResourceIdentifier",
+        backref=backref("_person_phone", uselist=False),
+        foreign_keys=[_phone_oid])
 
     _homepage_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
     _homepage = relationship(
-        "ResourceIdentifier", uselist=False, backref=backref("_person_homepage", uselist=False), foreign_keys=[_homepage_oid])
+        "ResourceIdentifier",
+        backref=backref("_person_homepage", uselist=False),
+        foreign_keys=[_homepage_oid])
 
     _workplacehomepage_oid = Column(
         Integer, ForeignKey('resourceidentifier._oid'))
     _workplacehomepage = relationship(
-        "ResourceIdentifier", uselist=False, backref=backref("_person_workplacehomepage", uselist=False), foreign_keys=[_workplacehomepage_oid])
+        "ResourceIdentifier",
+        backref=backref("_person_workplacehomepage", uselist=False),
+        foreign_keys=[_workplacehomepage_oid])
 
 
 class PersonalAffiliation(ORMBase):
@@ -193,10 +225,15 @@ class PersonalAffiliation(ORMBase):
 
     _institution_oid = Column(Integer, ForeignKey('institution._oid'))
     _institution = relationship(
-        "Institution", uselist=False, backref=backref("_personalaffiliation1", uselist=False), foreign_keys=[_institution_oid])
+        "Institution",
+        backref=backref("_personalaffiliation1", uselist=False),
+        foreign_keys=[_institution_oid])
 
     _comment_oid = Column(Integer, ForeignKey('comment._oid'))
-    _comment= relationship("Comment", uselist=False, backref=backref("_personalaffliation", uselist=False), foreign_keys=[_comment_oid])
+    _comment= relationship(
+        "Comment",
+        backref=backref("_personalaffliation", uselist=False),
+        foreign_keys=[_comment_oid])
 
 
 class Comment(ORMBase):
@@ -204,11 +241,14 @@ class Comment(ORMBase):
     comment = Column(f'{PREFIX}comment', String)
 
     _id_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
-    _id = relationship("ResourceIdentifier",  foreign_keys=[_id_oid])
+    _id = relationship(
+        "ResourceIdentifier", foreign_keys=[_id_oid])
 
     _creationinfo_oid = Column(Integer, ForeignKey('creationinfo._oid'))
     _creationinfo = relationship(
-        "CreationInfo", uselist=False, backref=backref("_comment", uselist=False), foreign_keys=[_creationinfo_oid])
+        "CreationInfo",
+        backref=backref("_comment", uselist=False),
+        foreign_keys=[_creationinfo_oid])
 
 
 class Institution(ORMBase):
@@ -216,19 +256,35 @@ class Institution(ORMBase):
     name = Column(f'{PREFIX}name', String)
 
     _identifier_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
-    _identifier = relationship("ResourceIdentifier", uselist=False, backref=backref("_institution", uselist=False), foreign_keys=[_identifier_oid])
+    _identifier = relationship(
+        "ResourceIdentifier",
+        backref=backref("_institution", uselist=False),
+        foreign_keys=[_identifier_oid])
 
     _phone_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
-    _phone = relationship("ResourceIdentifier", uselist=False, backref=backref("_institution_phone", uselist=False), foreign_keys=[_phone_oid])
+    _phone = relationship(
+        "ResourceIdentifier",
+        backref=backref("_institution_phone", uselist=False),
+        foreign_keys=[_phone_oid])
 
     _homepage_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
-    _homepage = relationship("ResourceIdentifier", uselist=False, backref=backref("_institution_homepage", uselist=False), foreign_keys=[_homepage_oid])
+    _homepage = relationship(
+        "ResourceIdentifier",
+        backref=backref("_institution_homepage", uselist=False),
+        foreign_keys=[_homepage_oid])
 
-    _postaladdress_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
-    _postaladdress = relationship("ResourceIdentifier", uselist=False, backref=backref("_institution_postaladdress", uselist=False), foreign_keys=[_postaladdress_oid])
+    _postaladdress_oid = Column(Integer,
+                                ForeignKey('resourceidentifier._oid'))
+    _postaladdress = relationship(
+        "ResourceIdentifier",
+        backref=backref("_institution_postaladdress", uselist=False),
+        foreign_keys=[_postaladdress_oid])
 
     _mbox_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
-    _mbox = relationship("ResourceIdentifier", uselist=False, backref=backref("_institution_mbox", uselist=False), foreign_keys=[_mbox_oid])
+    _mbox = relationship(
+        "ResourceIdentifier",
+        backref=backref("_institution_mbox", uselist=False),
+        foreign_keys=[_mbox_oid])
 
 
 class PostalAddress(ORMBase):
@@ -238,25 +294,44 @@ class PostalAddress(ORMBase):
     postalcode = Column(f'{PREFIX}postalcode', String)
 
     _country_oid = Column(Integer, ForeignKey('countrycodeuri._oid'))
-    _country= relationship("CountryCodeURI", uselist=False, backref=backref("_postaladdress", uselist=False), foreign_keys=[_country_oid])
+    _country= relationship(
+        "CountryCodeURI",
+        backref=backref("_postaladdress", uselist=False),
+        foreign_keys=[_country_oid])
 
 
 class Creator(ORMBase):
 
     _person_oid = Column(Integer, ForeignKey('person._oid'))
-    _person = relationship("Person", uselist=False, backref=backref("_creator", uselist=False), foreign_keys=[_person_oid])
+    _person = relationship(
+        "Person",
+        backref=backref("_creator", uselist=False),
+        foreign_keys=[_person_oid])
 
     _affiliation_oid = Column(Integer, ForeignKey('personalaffiliation._oid'))
-    _affiliation = relationship("PersonalAffiliation", uselist=False, backref=backref("_creator_primaryaffiliation", uselist=False), foreign_keys=[_affiliation_oid])
+    _affiliation = relationship(
+        "PersonalAffiliation",
+        backref=backref("_creator_primaryaffiliation", uselist=False),
+        foreign_keys=[_affiliation_oid])
 
-    _alternateaffiliation_oid = Column(Integer, ForeignKey('personalaffiliation._oid'))
-    _alternateaffiliation = relationship("PersonalAffiliation", uselist=False, backref=backref("_creator_alternateaffiliation", uselist=False), foreign_keys=[_alternateaffiliation_oid])
+    _alternateaffiliation_oid = Column(Integer,
+                                       ForeignKey('personalaffiliation._oid'))
+    _alternateaffiliation = relationship(
+        "PersonalAffiliation",
+        backref=backref("_creator_alternateaffiliation", uselist=False),
+        foreign_keys=[_alternateaffiliation_oid])
 
     _mbox_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
-    _mbox = relationship("ResourceIdentifier", uselist=False, backref=backref("_creator_mbox", uselist=False), foreign_keys=[_mbox_oid])
+    _mbox = relationship(
+        "ResourceIdentifier",
+        backref=backref("_creator_mbox", uselist=False),
+        foreign_keys=[_mbox_oid])
 
     _comment_oid = Column(Integer, ForeignKey('comment._oid'))
-    _comment = relationship("Comment", uselist=False, backref=backref("_creator", uselist=False), foreign_keys=[_comment_oid])
+    _comment = relationship(
+        "Comment",
+        backref=backref("_creator", uselist=False),
+        foreign_keys=[_comment_oid])
 
 
 class LiteratureSource(ORMBase):
@@ -267,13 +342,22 @@ class LiteratureSource(ORMBase):
     """
 
     _identifier_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
-    _identifier = relationship("ResourceIdentifier", uselist=False, backref=backref("_literaturesource", uselist=False), foreign_keys=[_identifier_oid])
+    _identifier = relationship(
+        "ResourceIdentifier",
+        backref=backref("_literaturesource", uselist=False),
+        foreign_keys=[_identifier_oid])
 
     _creator_oid = Column(Integer, ForeignKey('author._oid'))
-    _creator = relationship("Author", uselist=False, backref=backref("_literaturesource", uselist=False), foreign_keys=[_creator_oid])
+    _creator = relationship(
+        "Author",
+        backref=backref("_literaturesource", uselist=False),
+        foreign_keys=[_creator_oid])
 
     _type_oid = Column(Integer, ForeignKey('languagecodeuri._oid'))
-    _type = relationship("LanguageCodeURI", uselist=False, backref=backref("_literaturesource", uselist=False), foreign_keys=[_type_oid])
+    _type = relationship(
+        "LanguageCodeURI",
+        backref=backref("_literaturesource", uselist=False),
+        foreign_keys=[_type_oid])
 
     bibtextype = Column(f'{PREFIX}bibtextype', Enum(EBibtexEntryType))
     title = Column(f'{PREFIX}title', String)
@@ -294,9 +378,10 @@ class LiteratureSource(ORMBase):
     address = Column(f'{PREFIX}address', String)
     rights = Column(f'{PREFIX}rights', String)
     rightsholder = Column(f'{PREFIX}rightsholder', String)
-    accessrights =  Column(f'{PREFIX}accessrights', String)
+    accessrights = Column(f'{PREFIX}accessrights', String)
     license = Column(f'{PREFIX}license', String)
     publicationstatus = Column(f'{PREFIX}publicationstatus', String)
+
 
 
 class RealQuantity(ORMBase):
