@@ -63,7 +63,7 @@ class RoutesGetTestCase(unittest.TestCase):
 
         routes.db = self.db
         with self.client as c:
-            response = c.get('/v1/boreholes?maxlatitude=10&level=section')
+            response = c.get('/hydws/v1/boreholes?maxlatitude=10&level=section')
             mock_process_request.assert_called_with(
                 self.db.session, format='json', level='section',
                 maxlatitude=10.0, nodata=204)
@@ -81,7 +81,7 @@ class RoutesGetTestCase(unittest.TestCase):
 
         routes.db = self.db
         with self.client as c:
-            response = c.get('/v1/boreholes?maxlatitude=10&level=borehole')
+            response = c.get('/hydws/v1/boreholes?maxlatitude=10&level=borehole')
             mock_process_request.assert_called_with(
                 self.db.session, format='json', level='borehole',
                 maxlatitude=10.0, nodata=204)
@@ -101,7 +101,7 @@ class RoutesGetTestCase(unittest.TestCase):
 
         routes.db = self.db
         with self.client as c:
-            response = c.get('/v1/boreholes/{}?level=borehole'.\
+            response = c.get('/hydws/v1/boreholes/{}?level=borehole'.\
                 format(bh1_publicid_encoded))
             self.assertTrue(mock_process_request.called)
             mock_process_request.assert_called_with(
@@ -123,7 +123,7 @@ class RoutesGetTestCase(unittest.TestCase):
         routes.db = self.db
         with self.client as c:
             response = c.get(
-                '/v1/boreholes/{}?starttime=2019-01-01&level=section'.\
+                '/hydws/v1/boreholes/{}?starttime=2019-01-01&level=section'.\
                     format(bh1_publicid_encoded))
             self.assertTrue(mock_process_request.called)
             mock_process_request.assert_called_with(
@@ -147,7 +147,7 @@ class RoutesGetTestCase(unittest.TestCase):
         routes.db = self.db
         with self.client as c:
             response = c.get(
-                '/v1/boreholes/{}?maxfluidph=10.0&level=hydraulic'.\
+                '/hydws/v1/boreholes/{}?maxfluidph=10.0&level=hydraulic'.\
                     format(bh1_publicid_encoded))
             self.assertTrue(mock_process_request.called)
             mock_process_request.assert_called_with(
@@ -169,7 +169,7 @@ class RoutesGetTestCase(unittest.TestCase):
         routes.db = self.db
         with self.client as c:
             response = c.get(
-                '/v1/boreholes/{}/sections/{}/hydraulics?maxfluidph=10.0'.\
+                '/hydws/v1/boreholes/{}/sections/{}/hydraulics?maxfluidph=10.0'.\
                     format(bh1_publicid_encoded,
                            sec1_publicid_encoded))
             self.assertTrue(mock_process_request.called)

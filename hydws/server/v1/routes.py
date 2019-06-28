@@ -5,14 +5,12 @@
 .. moduleauthor:: Laura Sarson <laura.sarson@sed.ethz.ch>
 
 """
-import datetime as datetime
-
 import logging
 from sqlalchemy import literal, or_
 from flask_restful import Api, Resource
-from sqlalchemy.orm.exc import NoResultFound
 from webargs.flaskparser import use_kwargs
 from sqlalchemy.orm import contains_eager, lazyload
+
 from hydws import __version__
 from hydws.db.orm import Borehole, BoreholeSection, HydraulicSample
 from hydws.server import db, settings
@@ -81,8 +79,8 @@ def boreholesection_oids(session, borehole_id=None, **query_params):
 
     """
     sec_base_query = session.query(BoreholeSection).\
-            options(lazyload(BoreholeSection._borehole)).\
-            join(Borehole)
+        options(lazyload(BoreholeSection._borehole)).\
+        join(Borehole)
     if borehole_id:
         sec_base_query = sec_base_query.filter(Borehole.publicid==borehole_id)
     sec_query = DynamicQuery(sec_base_query)
@@ -92,7 +90,7 @@ def boreholesection_oids(session, borehole_id=None, **query_params):
 
 # Note (sarsonl): Seaching for a better way of keeping parent
 # boreholes and sections without children hydraulics. This
-# is a work around where seperate calls are done to find if children
+# is a work-around where seperate calls are done to find if children
 # exist before joining the tables.
 def hydraulicsample_oids(session, borehole_id, **query_params):
     """
@@ -100,24 +98,28 @@ def hydraulicsample_oids(session, borehole_id, **query_params):
     parameters given.
     """
     hyd_base_query = session.query(HydraulicSample).\
-       options(lazyload(HydraulicSample._section).\
+        options(lazyload(HydraulicSample._section).\
                 lazyload(BoreholeSection._borehole)).\
-        join(BoreholeSection).join(Borehole).\
+                join(BoreholeSection).join(Borehole).\
         filter(Borehole.publicid==borehole_id)
     hyd_query = DynamicQuery(hyd_base_query)
 
     hyd_query.filter_level(query_params,
                            'hydraulic')
-    hyd_query.format_results(limit=query_params.get('limit'),
+    hyd_query.format_results(order_column=HydraulicSample.datetime_value,
+                             limit=query_params.get('limit'),
                              offset=query_params.get('offset'))
     hyd_list = [i._oid for i in hyd_query.return_all()]
     return hyd_list
 
-def query_with_sections(query, sec_list, keep_all_boreholes=True, **query_params):
+def query_with_sections(query, sec_list,
+                        keep_all_boreholes=True,
+                        **query_params):
     query = query.options(lazyload(Borehole._sections)).\
         join(BoreholeSection, isouter=True).\
-        options(contains_eager("_sections"))
-    if keep_all_boreholes:        
+        options(contains_eager("_sections")).\
+        order_by(BoreholeSection.topdepth_value)
+    if keep_all_boreholes:
         query = query.filter(or_(BoreholeSection._oid.in_(sec_list),
                                  Borehole._sections == None))
     else:
@@ -132,7 +134,8 @@ def query_with_sections_and_hydraulics(query, hyd_list, **query_params):
         options(contains_eager("_sections").\
         contains_eager("_hydraulics")).\
         filter(or_(HydraulicSample._oid.in_(hyd_list),
-                   BoreholeSection._hydraulics == None))
+                   BoreholeSection._hydraulics == None)).\
+        order_by(BoreholeSection.topdepth_value, HydraulicSample.datetime_value)
     return query
 
 def query_hydraulicsamples(session, section_id):
@@ -141,7 +144,6 @@ def query_hydraulicsamples(session, section_id):
         join(BoreholeSection).filter(BoreholeSection.publicid==section_id)
 
     return query
-
 
 def section_in_borehole(query, borehole_id, section_id):
     boreholesection_filter = query(Borehole).\
@@ -181,17 +183,13 @@ class BoreholeListResource(ResourceBase):
 
         return make_response(resp, settings.MIMETYPE_JSON)
 
-
     def _process_request(self, session,
                          **query_params):
-        
 
         level = query_params.get('level')
 
         if level == 'section':
             sec_list = boreholesection_oids(session, None, **query_params)
-    
-
 
         query = session.query(Borehole)
         if level == 'section':
@@ -223,7 +221,6 @@ class BoreholeHydraulicSampleListResource(ResourceBase):
     def get(self, borehole_id, **query_params):
         borehole_id = decode_publicid(borehole_id)
 
-        map_return_levels = [{'hydraulic': 'section',}]
         self.logger.debug(
             f"Received request: borehole_id={borehole_id}, "
             f"query_params={query_params}")
@@ -274,8 +271,13 @@ class BoreholeHydraulicSampleListResource(ResourceBase):
                 logging.info(f"sections with _oid exist that match query "
                              f"params: {sec_list}. Hydraulics with _oid "
                              f"exist: {hyd_list}")
+
+                limit = query_params.get('limit')
+                offset = query_params.get('offset')
+
                 query = query_with_sections_and_hydraulics(
                     query, hyd_list, **query_params)
+                logging.info(str(query))
 
             elif sec_list and not hyd_list:
                 logging.info(f"sections with _oid exist that match query "
@@ -289,9 +291,6 @@ class BoreholeHydraulicSampleListResource(ResourceBase):
         query = query.filter(Borehole.publicid==borehole_id)
         dynamic_query = DynamicQuery(query)
 
-        #if level == 'hydraulic':
-        #    dynamic_query.format_results(limit=query_params.get('limit'),
-        #                                offset=query_params.get('offset'))
         return dynamic_query.return_one()
 
 
@@ -343,10 +342,12 @@ class SectionHydraulicSampleListResource(ResourceBase):
 
         dynamic_query.filter_level(query_params,
                                    'hydraulic')
-        # (sarsonl) Explicit order_by required as not depending on relationships.
-        dynamic_query.format_results(order_column=HydraulicSample.datetime_value,
-                                     limit=query_params.get('limit'),
-                                     offset=query_params.get('offset'))
+        # (sarsonl) Explicit order_by required as hydraulic samples
+        # returned that don't depend on relationships.
+        dynamic_query.format_results(
+            order_column=HydraulicSample.datetime_value,
+            limit=query_params.get('limit'),
+            offset=query_params.get('offset'))
 
         return dynamic_query.return_all()
 
