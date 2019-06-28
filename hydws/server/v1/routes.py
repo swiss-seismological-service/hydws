@@ -117,7 +117,8 @@ def query_with_sections(query, sec_list,
                         **query_params):
     query = query.options(lazyload(Borehole._sections)).\
         join(BoreholeSection, isouter=True).\
-        options(contains_eager("_sections"))
+        options(contains_eager("_sections")).\
+        order_by(BoreholeSection.topdepth_value)
     if keep_all_boreholes:
         query = query.filter(or_(BoreholeSection._oid.in_(sec_list),
                                  Borehole._sections == None))
@@ -133,7 +134,8 @@ def query_with_sections_and_hydraulics(query, hyd_list, **query_params):
         options(contains_eager("_sections").\
         contains_eager("_hydraulics")).\
         filter(or_(HydraulicSample._oid.in_(hyd_list),
-                   BoreholeSection._hydraulics == None))
+                   BoreholeSection._hydraulics == None)).\
+        order_by(BoreholeSection.topdepth_value, HydraulicSample.datetime_value)
     return query
 
 def query_hydraulicsamples(session, section_id):
@@ -154,13 +156,6 @@ def section_in_borehole(query, borehole_id, section_id):
 
     return section_exists
 
-def limit_offset_list(full_list, limit, offset):
-    new_list = full_list
-    if offset:
-        new_list = new_list[offset:]
-    if limit:
-        new_list = new_list[:limit]
-    return new_list
 
 class BoreholeListResource(ResourceBase):
 
@@ -279,10 +274,10 @@ class BoreholeHydraulicSampleListResource(ResourceBase):
 
                 limit = query_params.get('limit')
                 offset = query_params.get('offset')
-                #hyd_list = limit_offset_list(hyd_list, limit, offset)
 
                 query = query_with_sections_and_hydraulics(
                     query, hyd_list, **query_params)
+                logging.info(str(query))
 
             elif sec_list and not hyd_list:
                 logging.info(f"sections with _oid exist that match query "
