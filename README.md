@@ -102,7 +102,7 @@ The following command should not be used for production, but instead for
 testing.
 
 A sqlite database file exists already populated with data: db_url =
-`sqlite:///<path to repo>/hydws/server/v1/data/test.db`
+`sqlite:///<path to repo>/hydws/db/test_data/test.db`
 
 ```
 hydws-test --logging-conf <path_to_logging.conf> <db_url>
