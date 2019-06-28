@@ -1,0 +1,13 @@
+stages:
+  - test
+  - build_docker
+
+tox-branch:
+    stage: test
+    image: python:3.6-alpine
+    before_script:
+      - pip install tox
+    script:
+      - tox
+    tags:
+      - docker
