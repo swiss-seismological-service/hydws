@@ -35,7 +35,8 @@ _install_requires = [
     'Flask-SQLAlchemy>=2.3.2',
     'marshmallow==3.0.0rc5',
     'webargs==5.3.1',
-    'Flask-Migrate>=2.4.0',]
+    'Flask-Migrate>=2.4.0',
+    'marshmallow-jsonschema==0.6.0']
 
 _data_files = [
     ('', ['LICENSE'])]
@@ -43,7 +44,8 @@ _data_files = [
 _entry_points = {
     'console_scripts': [
         'hydws-test = hydws.server.app:main_test',
-        'hydws-db-init = hydws.db.emerge:emerge', ]}
+        'hydws-db-init = hydws.db.emerge:emerge',
+        'hydws-data-import = hydws.db.load_data:load_data']}
 
 _extras = {
     'postgres': ['psycopg2-binary']}

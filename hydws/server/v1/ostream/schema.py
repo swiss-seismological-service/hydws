@@ -11,6 +11,7 @@ from functools import partial
 from marshmallow import (Schema, fields, post_dump, pre_load,
     validate, validates_schema, post_load)
 from hydws.db.orm import Borehole, BoreholeSection, HydraulicSample
+from hydws.server.misc import create_publicid
 
 
 VALIDATE_LATITUDE = validate.Range(min=-90., max=90.)
@@ -80,13 +81,13 @@ class SchemaBase(Schema):
         return retval
 
     @post_dump
-    def postdump(self, data):
+    def postdump(self, data, **kwargs):
         filtered_data = self.remove_empty(data)
         nested_data = self._nest_dict(filtered_data, sep='_')
         return nested_data
 
     @pre_load
-    def preload(self, data):
+    def preload(self, data, **kwargs):
         flattened_data = self._flatten_dict( data, sep='_')
         return flattened_data
 
@@ -414,7 +415,7 @@ class SectionSchema(SchemaBase):
 
 class BoreholeSchema(SchemaBase):
     """Schema implementation of a borehole."""
-    publicid = fields.String()
+    publicid = fields.String(required=True)
 
     longitude_value = RequiredLongitude()
     longitude_uncertainty = FloatPositive()
@@ -456,3 +457,35 @@ class BoreholeSchema(SchemaBase):
     @post_load
     def make_borehole(self, data):
         return Borehole(**data)
+
+
+class BoreholeAssignPublicIdSchema(BoreholeSchema):
+    """
+    Load Borehole data and assign publicid's to Borehole
+    and Section levels.
+    """
+    def __init__(self, *args, **kwargs):
+
+        self.borehole_namespace = kwargs.pop("borehole_namespace")
+        self.section_namespace = kwargs.pop("section_namespace")
+        self.overwrite = kwargs.pop("overwrite")
+        super().__init__(**kwargs)
+
+    @pre_load
+    def make_publicids(self, data, **kwargs):
+        data_bh_publicid = self.make_dict_publicid(data,
+                                                   self.borehole_namespace)
+        if 'sections' in data.keys():
+            for ind, sec in enumerate(data["sections"]):
+                sec = self.make_dict_publicid(sec, self.section_namespace)
+        return data_bh_publicid
+
+    def make_dict_publicid(self, data, namespace):
+        """
+        Assign a publicid key and generated value to a dict.
+        """
+        if (('publicid' in data.keys() and self.overwrite) or
+            ('publicid' not in data.keys())):
+            data['publicid'] = create_publicid(namespace)
+        return data
+

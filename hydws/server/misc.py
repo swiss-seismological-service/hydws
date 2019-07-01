@@ -8,7 +8,7 @@ import functools
 import re
 import sys
 import traceback
-
+from uuid import uuid4
 import marshmallow as ma
 
 from flask import make_response as _make_response
@@ -140,3 +140,8 @@ def make_response(obj, mimetype):
     response = _make_response(obj)
     response.headers['Content-Type'] = mimetype
     return response
+
+def create_publicid(namespace):
+    generated_str = uuid4()
+    return f"{namespace}{generated_str}"
+
