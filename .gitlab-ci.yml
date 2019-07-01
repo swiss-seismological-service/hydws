@@ -1,6 +1,6 @@
 stages:
   - test
-  - build_py
+  - prebuild
   - build_docker
 
 
@@ -16,7 +16,7 @@ tox-branch:
 
 
 build_sdist:
-  stage: build_py
+  stage: prebuild
   image: python:3.6-alpine
   script:
     - python3.6 setup.py sdist --formats=gztar
