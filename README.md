@@ -49,7 +49,7 @@ recommended to build your image from a Dockerfile. After cloning the repository
 change into the `docker/` directory and modify the configuration.
 
 ```
-$ cd docker
+$ cd docker/prod
 ```
 
 **Configuration**:

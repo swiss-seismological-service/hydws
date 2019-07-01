@@ -52,6 +52,7 @@ RUN git clone https://gitlab.seismo.ethz.ch/sed-infra/hydws.git /var/www/hydws
 
 # Install the services
 WORKDIR /var/www/hydws
+RUN git checkout feature/unnormalized_real_values
 RUN python3.6 -m pip install .[postgres]
 
 # Copy Apache configuration configuration
