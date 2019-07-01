@@ -1,6 +1,8 @@
 stages:
   - test
+  - build_py
   - build_docker
+
 
 tox-branch:
     stage: test
@@ -11,3 +13,41 @@ tox-branch:
       - tox
     tags:
       - docker
+
+
+build_sdist:
+  stage: build_py
+  image: python:3.6-alpine
+  script:
+    - python3.6 setup.py sdist --formats=gztar
+    - FNAME=$(python3.6 setup.py --fullname).tar.gz
+    - cp dist/${FNAME} dist/latest-sdist.tar.gz
+  artifacts:
+    paths:
+      - dist/latest-sdist.tar.gz
+
+
+build_hydws:
+  stage: build_docker
+  services:
+    - docker:dind
+  dependencies:
+    - build_sdist
+  variables:
+    IMAGE_TAG:
+      ${CI_REGISTRY}/${CI_PROJECT_PATH}/${CI_COMMIT_REF_SLUG}/hydws:latest
+  before_script:
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+  script:
+    # XXX(damb): Copy the sdist artifacts into the docker directory
+    - cp dist/latest-sdist.tar.gz docker/test
+    - docker build -t ${IMAGE_TAG} docker/test
+    - docker push ${IMAGE_TAG}
+    - docker rmi ${IMAGE_TAG}
+  only:
+    - branches
+    - tags
+  except:
+    - master
+  tags:
+    - docker
