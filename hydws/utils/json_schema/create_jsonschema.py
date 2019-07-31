@@ -56,15 +56,15 @@ if __name__ == '__main__':
     if args.version == 'v1':
         from hydws.server.v1.ostream.schema import BoreholeSchema
     else:
-        raise VersionNotImplemetedError("Version does not exist")
+        raise VersionNotImplementedError("Version does not exist")
     if args.path:
         if not isdir(args.path):
             raise PathError("Path for creation of jsonschema does not exist.")
     if isfile(jsonschema_write_to):
         if args.force:
             print("Existing file will be overwritten: {}".
-                    format(jsonschema_write_to))
+                  format(jsonschema_write_to))
         else:
-            raise FileExistsError("{} already exists and will not be overwritten".
-                    format(jsonschema_write_to))
+            raise FileExistsError("{} exists and will not be overwritten".
+                                  format(jsonschema_write_to))
     write_borehole_jsonschema(jsonschema_write_to)

@@ -1,5 +1,11 @@
 """
 setup.py for hydws
+
+To add any of the optional poject extras found in _extras, use the following:
+
+pip install hydws[validate_json] .
+
+Where validate_json is the name of the extra. This will install the dependencies associated.
 """
 
 import os
@@ -36,7 +42,7 @@ _install_requires = [
     'marshmallow==3.0.0rc5',
     'webargs==5.3.1',
     'Flask-Migrate>=2.4.0',
-    'marshmallow-jsonschema==0.6.0']
+    ]
 
 _data_files = [
     ('', ['LICENSE'])]
@@ -48,7 +54,9 @@ _entry_points = {
         'hydws-data-import = hydws.db.load_data:load_data']}
 
 _extras = {
-    'postgres': ['psycopg2-binary']}
+    'postgres': ['psycopg2-binary'],
+    'validate_json':  ['marshmallow-jsonschema==0.6.0'],
+    }
 
 
 # ----------------------------------------------------------------------------

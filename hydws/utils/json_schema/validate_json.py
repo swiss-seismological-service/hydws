@@ -108,7 +108,7 @@ import json
 from os.path import isfile
 import argparse
 from jsonschema import Draft4Validator
-from jsonschema.exceptions import ValidationError as JSVaidationError
+from jsonschema.exceptions import ValidationError as JSValidationError
 from hydws.utils.error import Error
 
 
@@ -182,7 +182,7 @@ def validate_json_file(jsonschema, infile):
             Draft4Validator(jsonschema_borehole).validate(data)
         except JSValidationError as err:
             raise ValidationFailedError(err)
-            
+
     print("No Exceptions raised: JSON validated!")
 
 

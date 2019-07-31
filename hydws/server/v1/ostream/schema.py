@@ -458,34 +458,24 @@ class BoreholeSchema(SchemaBase):
     def make_borehole(self, data):
         return Borehole(**data)
 
-
-class BoreholeAssignPublicIdSchema(BoreholeSchema):
-    """
-    Load Borehole data and assign publicid's to Borehole
-    and Section levels.
-    """
-    def __init__(self, *args, **kwargs):
-
-        self.borehole_namespace = kwargs.pop("borehole_namespace")
-        self.section_namespace = kwargs.pop("section_namespace")
-        self.overwrite = kwargs.pop("overwrite")
-        super().__init__(**kwargs)
-
     @pre_load
     def make_publicids(self, data, **kwargs):
-        data_bh_publicid = self.make_dict_publicid(data,
-                                                   self.borehole_namespace)
-        if 'sections' in data.keys():
-            for ind, sec in enumerate(data["sections"]):
-                sec = self.make_dict_publicid(sec, self.section_namespace)
-        return data_bh_publicid
+        if self.context:
+
+            data = self.make_dict_publicid(
+                data, self.context["borehole_namespace"])
+            if 'sections' in data.keys():
+                for ind, sec in enumerate(data["sections"]):
+                    sec = self.make_dict_publicid(
+                        sec, self.context["section_namespace"])
+        
+        return data
 
     def make_dict_publicid(self, data, namespace):
         """
         Assign a publicid key and generated value to a dict.
         """
-        if (('publicid' in data.keys() and self.overwrite) or
+        if (('publicid' in data.keys() and self.context["overwrite"]) or
             ('publicid' not in data.keys())):
             data['publicid'] = create_publicid(namespace)
         return data
-

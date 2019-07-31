@@ -10,14 +10,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from hydws import __version__
-from hydws.db.base import ORMBase
 from hydws.utils import url
 from hydws.utils.app import CustomParser, App, AppError
 from hydws.utils.error import Error, ExitCodes
 from hydws.server import settings
 # TODO (sarsonl) make version loading dynamic
-from hydws.server.v1.ostream.schema import (BoreholeSchema,
-                                            BoreholeAssignPublicIdSchema)
+from hydws.server.v1.ostream.schema import BoreholeSchema
 
 
 class HYDWSLoadDataApp(App):
@@ -48,24 +46,26 @@ class HYDWSLoadDataApp(App):
                             version='%(prog)s version ' + __version__)
         parser.add_argument('--assignids', action="store_true")
         parser.add_argument('--borehole_namespace', type=str,
-                                     help="If --assignids, prepend this namespace to the borehole publicid")
+                            help="If --assignids, prepend this namespace to "
+                            "the borehole publicid")
         parser.add_argument('--section_namespace', type=str,
-                                     help="If --assignids, prepend this namespace to the section publicid")
+                            help="If --assignids, prepend this namespace to "
+                            "the section publicid")
         parser.add_argument('--overwrite_publicids', action="store_true",
-                                     help="Overwrite pubic id's that exist in the input data"
-                                        " with new generated public ids")
+                            help="Overwrite pubic id's that exist in the "
+                                 "input data  with new generated public ids")
         # required arguments
         parser.add_argument('db_url', type=url, metavar='URL',
-                            help=('DB URL indicating the database dialect and '
-                                  'connection arguments. For SQlite only a '
-                                  'absolute file path is supported.'))
-        parser.add_argument('data_file', nargs="?", type=argparse.FileType("r"),
-                            help=('Path to json data that will be added to db'))
-
-
+                            help=('DB URL indicating the database dialect '
+                                  'and connection arguments. For SQlite '
+                                  'only a absolute file path is supported.'))
+        parser.add_argument('data_file', nargs="?",
+                            type=argparse.FileType("r"),
+                            help=('Path to json data that will be added to '
+                                  'the db'))
         return parser
 
-    def load_json_into_db(self, opened_file, schema, schema_args):
+    def load_json(self, opened_file, context, schema_class=BoreholeSchema):
         """
         Loads a json file and deserializes it based on BoreholeSchema.
 
@@ -77,18 +77,20 @@ class HYDWSLoadDataApp(App):
         :rtype: List or single instance of orm.Borehole
         """
         data = json.load(opened_file)
-        
+
         many = False
         if isinstance(data, list):
             many = True
-        schema_args['many'] = many
-        loaded_data = schema(**schema_args).load(data)
+
+        schema = schema_class(many=many)
+        schema.context = context
+        loaded_data = schema.load(data)
         return loaded_data, many
 
     def validate_args(self):
         if not self.args.assignids and (
                 self.args.borehole_namespace is not None or
-                self.args.section_namespace is not None or  
+                self.args.section_namespace is not None or
                 self.args.overwrite_publicids):
             raise ValueError("--borehole_namespace and --section_namespace "
                              "and --overwrite_publicids only allowed if "
@@ -104,17 +106,14 @@ class HYDWSLoadDataApp(App):
             self.logger.info('{}: Version v{}'.format(self.PROG, __version__))
             self.logger.debug('Configuration: {!r}'.format(self.args))
 
-            schema = BoreholeSchema
-            schema_args = {}
             if self.args.assignids:
-                schema_args = {
+                context = {
                     'borehole_namespace': self.args.borehole_namespace,
                     'section_namespace': self.args.section_namespace,
                     'overwrite': self.args.overwrite_publicids}
-                schema = BoreholeAssignPublicIdSchema
 
-            deserialized_data, many_boreholes = self.load_json_into_db(
-                    self.args.data_file, schema, schema_args)
+            deserialized_data, many_boreholes = self.load_json(
+                self.args.data_file, context)
 
             if self.args.data_file:
                 engine = create_engine(self.args.db_url)
@@ -128,6 +127,7 @@ class HYDWSLoadDataApp(App):
                 else:
                     session.add(deserialized_data)
 
+                session.commit()
                 self.logger.info(
                     "Data successfully imported to db.")
 
