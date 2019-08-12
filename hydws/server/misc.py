@@ -8,7 +8,7 @@ import functools
 import re
 import sys
 import traceback
-
+from uuid import uuid4
 import marshmallow as ma
 
 from flask import make_response as _make_response
@@ -30,8 +30,7 @@ _iso8601_re = re.compile(
     r'[T ](?P<hour>\d{1,2}):(?P<minute>\d{1,2})'
     r'(?::(?P<second>\d{1,2})(?:\.(?P<microsecond>\d{1,6})\d{0,6})?)?'
     # tzinfo must not be available
-    r'(?P<tzinfo>Z|(?![+-]\d{2}(?::?\d{2})?))?$'
-    )
+    r'(?P<tzinfo>Z|(?![+-]\d{2}(?::?\d{2})?))?$')
 
 
 def from_fdsnws_datetime(datestring, use_dateutil=True):
@@ -140,3 +139,7 @@ def make_response(obj, mimetype):
     response = _make_response(obj)
     response.headers['Content-Type'] = mimetype
     return response
+
+def create_publicid(publicid_uri_prefix, data_domain):
+    generated_str = uuid4()
+    return f"{publicid_uri_prefix}{data_domain}{generated_str}"
