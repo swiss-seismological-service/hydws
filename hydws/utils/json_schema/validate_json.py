@@ -105,7 +105,6 @@ using the json library.
 """
 import sys
 import json
-from os.path import isfile
 import argparse
 from jsonschema import Draft4Validator
 from jsonschema.exceptions import ValidationError as JSValidationError
@@ -161,15 +160,14 @@ def validate_json_file(jsonschema, infile):
 
     :param jsonschema: Filename of jsonschema that has been created
         to validate data against HYDWS schemas
-    :type jsonschema: String
+    :type jsonschema: File containing JSON data
     :param infile: File containing JSON data
     :type infile: Readable file object
 
     :raises: jsonschema.exceptions.ValidationError if the file
         does not match the schema.
     """
-    with open(jsonschema, 'r') as sch:
-        jsonschema_borehole = json.load(sch)
+    jsonschema_borehole = json.load(jsonschema)
     data = json.load(infile)
 
     data = flatten_dict(data)
@@ -188,7 +186,7 @@ def validate_json_file(jsonschema, infile):
 
 def parseargs():
     parser = argparse.ArgumentParser()
-    parser.add_argument("jsonschema", type=str,
+    parser.add_argument("jsonschema", type=argparse.FileType('r'),
                         help="Path to jsonschema.")
     parser.add_argument("infile", nargs="?", type=argparse.FileType('r'),
                         default=sys.stdin,
@@ -199,7 +197,4 @@ def parseargs():
 
 if __name__ == '__main__':
     args = parseargs()
-    if not isfile(args.jsonschema):
-        raise FileNotFoundError("Json schema file does not not exist: {}".
-                                format(args.jsonschema))
     validate_json_file(args.jsonschema, args.infile)

@@ -5,7 +5,6 @@ import sys
 import traceback
 import argparse
 import json
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -42,27 +41,27 @@ class HYDWSLoadDataApp(App):
             parents=parents)
 
         # optional arguments
-        parser.add_argument('--version', '-V', action='version',
-                            version='%(prog)s version ' + __version__)
-        parser.add_argument('--assignids', action="store_true")
-        parser.add_argument('--borehole_namespace', type=str,
-                            help="If --assignids, prepend this namespace to "
-                            "the borehole publicid")
-        parser.add_argument('--section_namespace', type=str,
-                            help="If --assignids, prepend this namespace to "
-                            "the section publicid")
-        parser.add_argument('--overwrite_publicids', action="store_true",
+        parser.add_argument("--version", "-V", action="version",
+                            version="%(prog)s version " + __version__)
+        parser.add_argument("--assignids", action="store_true",
+                            help="Generate public ids for boreholes and "
+                            "borehole sections")
+        parser.add_argument("--publicid_uri", type=str,
+                            help="If --assignids, prepend this URI to "
+                            "the generated borehole and borehole section "
+                            "public ids. E.g. 'smi:ch.ethz.sed/'")
+        parser.add_argument("--overwrite_publicids", action="store_true",
                             help="Overwrite pubic id's that exist in the "
                                  "input data  with new generated public ids")
         # required arguments
-        parser.add_argument('db_url', type=url, metavar='URL',
-                            help=('DB URL indicating the database dialect '
-                                  'and connection arguments. For SQlite '
-                                  'only a absolute file path is supported.'))
-        parser.add_argument('data_file', nargs="?",
+        parser.add_argument("db_url", type=url, metavar="URL",
+                            help=("DB URL indicating the database dialect "
+                                  "and connection arguments. For SQlite "
+                                  "only a absolute file path is supported."))
+        parser.add_argument("data_file", nargs="?",
                             type=argparse.FileType("r"),
-                            help=('Path to json data that will be added to '
-                                  'the db'))
+                            help=("Path to json data that will be added to "
+                                  "the db"))
         return parser
 
     def load_json(self, opened_file, context, schema_class=BoreholeSchema):
@@ -89,12 +88,10 @@ class HYDWSLoadDataApp(App):
 
     def validate_args(self):
         if not self.args.assignids and (
-                self.args.borehole_namespace is not None or
-                self.args.section_namespace is not None or
+                self.args.publicid_uri is not None or
                 self.args.overwrite_publicids):
-            raise ValueError("--borehole_namespace and --section_namespace "
-                             "and --overwrite_publicids only allowed if "
-                             "--assignids is used.")
+            raise ValueError("--publicid_uri and --overwrite_publicids "
+                             "only allowed if --assignids is used.")
 
     def run(self):
         """
@@ -108,8 +105,7 @@ class HYDWSLoadDataApp(App):
 
             if self.args.assignids:
                 context = {
-                    'borehole_namespace': self.args.borehole_namespace,
-                    'section_namespace': self.args.section_namespace,
+                    'publicid_uri': self.args.publicid_uri,
                     'overwrite': self.args.overwrite_publicids}
 
             deserialized_data, many_boreholes = self.load_json(
@@ -127,9 +123,15 @@ class HYDWSLoadDataApp(App):
                 else:
                     session.add(deserialized_data)
 
-                session.commit()
-                self.logger.info(
-                    "Data successfully imported to db.")
+                try:
+                    session.commit()
+                    self.logger.info(
+                        "Data successfully imported to db.")
+                except Exception:
+                    session.rollback()
+                    raise
+                finally:
+                    session.close()
 
         except Error as err:
             self.logger.error(err)

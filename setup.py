@@ -5,7 +5,8 @@ To add any of the optional poject extras found in _extras, use the following:
 
 pip install hydws[validate_json] .
 
-Where validate_json is the name of the extra. This will install the dependencies associated.
+Where validate_json is the name of the extra. This will install the
+dependencies associated.
 """
 
 import os
@@ -32,7 +33,7 @@ _authors = [
     'Laura Sarson', ]
 _authors_email = [
     'daniel.armbruster@sed.ethz.ch',
-    'lukas.heiniger@sed.ethz.ch', 
+    'lukas.heiniger@sed.ethz.ch',
     'laura.sarson@sed.ethz.ch']
 
 _install_requires = [
@@ -41,8 +42,7 @@ _install_requires = [
     'Flask-SQLAlchemy>=2.3.2',
     'marshmallow==3.0.0rc5',
     'webargs==5.3.1',
-    'Flask-Migrate>=2.4.0',
-    ]
+    'Flask-Migrate>=2.4.0']
 
 _data_files = [
     ('', ['LICENSE'])]
@@ -55,8 +55,7 @@ _entry_points = {
 
 _extras = {
     'postgres': ['psycopg2-binary'],
-    'validate_json':  ['marshmallow-jsonschema==0.6.0'],
-    }
+    'validate_json': ['marshmallow-jsonschema==0.6.0']}
 
 
 # ----------------------------------------------------------------------------

@@ -55,8 +55,6 @@ if __name__ == '__main__':
         args.path, "hydws_jsonschema_{}.json".format(args.version))
     if args.version == 'v1':
         from hydws.server.v1.ostream.schema import BoreholeSchema
-    else:
-        raise VersionNotImplementedError("Version does not exist")
     if args.path:
         if not isdir(args.path):
             raise PathError("Path for creation of jsonschema does not exist.")

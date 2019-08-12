@@ -35,8 +35,7 @@ class DataImportTestCase(unittest.TestCase):
            return_value=argparse.Namespace(
                db_url="sqlite:///{}/initialized.db".format(dirpath),
                assignids=True, overwrite_publicids=False,
-               borehole_namespace="borehole_namespace",
-               section_namespace="section_namespace",
+               publicid_uri="eth_uri/",
                data_file=opened_data, path_logging_conf=None, version=None))
     @patch('hydws.db.load_data.sys.exit')
     def test_data_import(self, sys_exit, parse_args):
@@ -50,11 +49,11 @@ class DataImportTestCase(unittest.TestCase):
                     lazyload(BoreholeSection._hydraulics)).one_or_none()
 
         startswith_bh_namespace = data.publicid.startswith(
-            "borehole_namespace")
+            "eth_uri/borehole/")
         self.assertTrue(startswith_bh_namespace)
 
         startswith_sec_namespace = data._sections[0].publicid.\
-            startswith("section_namespace")
+            startswith("eth_uri/borehole/section/")
         self.assertTrue(startswith_sec_namespace)
 
         session.close()
