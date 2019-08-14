@@ -126,7 +126,7 @@ Some examples demonstrate the usage with the data using db_url=test.db
 To return an array of JSON objects representing boreholes:
 
 ```
-$ curl "http://localhost:5000/v1/boreholes?&level=borehole"
+$ curl "http://localhost:5000/hydws/v1/boreholes?&level=borehole"
 
 ```
 
@@ -134,7 +134,7 @@ To return a JSON object representing a borehole with all borehole sections and
 all hydraulics:
 
 ```
-$ curl "http://localhost:5000/v1/boreholes/c21pOmNoLmV0aHouc2VkL2JoLzExMTExMTExLWU0YTAtNDY5Mi1iZjI5LTMzYjU1OTFlYjc5OA==?level=hydraulic"
+$ curl "http://localhost:5000/hydws/v1/boreholes/c21pOmNoLmV0aHouc2VkL2JoLzExMTExMTExLWU0YTAtNDY5Mi1iZjI5LTMzYjU1OTFlYjc5OA==?level=hydraulic"
 
 ```
 Note: the borehole publicid: c21pOmNoLmV0... is encoded with base64. This is
@@ -149,7 +149,7 @@ decoded borehole publicid = base64.b64decode(b'<encoded borehole publicid>')
 To return a JSON array of all hydraulics from a specific borehole and specific
 section:
 ```
-$ curl "http://localhost:5000/v1/boreholes/c21pOmNoLmV0aHouc2VkL2JoLzExMTExMTExLWU0YTAtNDY5Mi1iZjI5LTMzYjU1OTFlYjc5OA==/sections/c21pOmNoLmV0aHouc2VkL2JoL3NlY3Rpb24vMTExMTExMTEtOGQ4OS00ZjEzLTk1ZTctNTI2YWRlNzNjYzhi/hydraulics?"
+$ curl "http://localhost:5000/hydws/v1/boreholes/c21pOmNoLmV0aHouc2VkL2JoLzExMTExMTExLWU0YTAtNDY5Mi1iZjI5LTMzYjU1OTFlYjc5OA==/sections/c21pOmNoLmV0aHouc2VkL2JoL3NlY3Rpb24vMTExMTExMTEtOGQ4OS00ZjEzLTk1ZTctNTI2YWRlNzNjYzhi/hydraulics?"
 ```
 
 Note: Both the borehole publicid and section publicid are base64 encoded as
