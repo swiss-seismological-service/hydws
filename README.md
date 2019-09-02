@@ -4,29 +4,10 @@ REST webservice allowing access to hydraulic data.
 
 ## Installation
 
-The installation of the package is possible by means of invoking
+Currently, there is no bare-metal installation description available. Please,
+use the ready-to-use Docker production image.
 
-```
-pip install -e .
-```
-
-This will create sym links to the python entry points 'hydws-db-init' and
-'hydws-test'.
-
-Note, that encapsulating the installation by means of a [virtual
-environment](https://docs.python.org/3/tutorial/venv.html) is strongly
-recommended.
-
-## Initialize HYDWS
-```
-hydws-db-init <db_url>
-```
-Run the above command. To be run locally with a sqlite db,
-db_url=`sqlite:///<absolute_path>/<name_db_file>`
-
-The database now contains tables ready for population.
-
-## Setup with Docker
+## Docker Installation
 
 A basic knowledge about [Docker](https://docs.docker.com/engine/) and how
 this kind of application containers work is required. For more information
@@ -95,26 +76,6 @@ $ docker exec <container_name> \
 When the containers are running the service is now available under
 `http://localhost:8080`.
 
-
-## Test local installation
-
-The following command should not be used for production, but instead for
-testing.
-
-A sqlite database file exists already populated with data: db_url =
-`sqlite:///<path to repo>/hydws/db/test_data/test.db`
-
-```
-hydws-test --logging-conf <path_to_logging.conf> <db_url>
-```
-where logging.conf exists in the repository. By default the port used is 5000.
-
-Testing examples can be found in the Postman test collection.
-
-The full selection of hydws-test parameters can be found with:
-```
-hydws-test -h
-```
 
 ## API usage
 
