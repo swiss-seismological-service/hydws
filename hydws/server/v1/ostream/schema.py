@@ -5,12 +5,12 @@
 .. moduleauthor:: Laura Sarson <laura.sarson@sed.ethz.ch>
 
 """
-import datetime
-import logging
 from functools import partial
 from marshmallow import (Schema, fields, post_dump, pre_load,
-    validate, validates_schema, post_load)
+                         validate, validates_schema, post_load,
+                         ValidationError)
 from hydws.db.orm import Borehole, BoreholeSection, HydraulicSample
+from hydws.server.misc import create_publicid
 
 
 VALIDATE_LATITUDE = validate.Range(min=-90., max=90.)
@@ -43,7 +43,8 @@ class SchemaBase(Schema):
         Filter out fields with empty (e.g. :code:`None`, :code:`[], etc.)
         values.
         """
-        return {k: v for k, v in data.items() if v or isinstance(v, (int, float))}
+        return {k: v for k, v in data.items() if
+                v or isinstance(v, (int, float))}
 
     @classmethod
     def _flatten_dict(cls, data, sep='_'):
@@ -80,14 +81,14 @@ class SchemaBase(Schema):
         return retval
 
     @post_dump
-    def postdump(self, data):
+    def postdump(self, data, **kwargs):
         filtered_data = self.remove_empty(data)
         nested_data = self._nest_dict(filtered_data, sep='_')
         return nested_data
 
     @pre_load
-    def preload(self, data):
-        flattened_data = self._flatten_dict( data, sep='_')
+    def preload(self, data, **kwargs):
+        flattened_data = self._flatten_dict(data, sep='_')
         return flattened_data
 
 
@@ -107,41 +108,40 @@ class CreationInfoSchema(SchemaBase):
     author = fields.String()
     agencyid = fields.String()
 
-
     authoruri = fields.Nested(ResourceIdentifierSchema, many=False,
-                               attribute='_authoruri')
+                              attribute='_authoruri')
     agencyuri = fields.Nested(ResourceIdentifierSchema, many=False,
-                               attribute='_agencyuri')
+                              attribute='_agencyuri')
     copyrightowneruri = fields.Nested(ResourceIdentifierSchema, many=False,
-                               attribute='_copyrightowneruri')
+                                      attribute='_copyrightowneruri')
 
 class CommentSchema(SchemaBase):
     comment = fields.String()
 
     id = fields.Nested(ResourceIdentifierSchema, many=False,
-                               attribute='_id')
+                       attribute='_id')
     creationinfo = fields.Nested(CreationInfoSchema, many=False,
-                               attribute='_creationinfo')
+                                 attribute='_creationinfo')
 
 class DomTypeURISchema(SchemaBase):
     type = fields.String()
 
     uri = fields.Nested(ResourceIdentifierSchema, many=False,
-                               attribute='_uri')
+                        attribute='_uri')
 
 class LanguageCodeURISchema(SchemaBase):
     code = fields.String()
     language = fields.String()
 
     uri = fields.Nested(ResourceIdentifierSchema, many=False,
-                               attribute='_uri')
+                        attribute='_uri')
 
 class CountryCodeURISchema(SchemaBase):
     code = fields.String()
     country = fields.String()
 
     uri = fields.Nested(ResourceIdentifierSchema, many=False,
-                               attribute='_uri')
+                        attribute='_uri')
 class PersonSchema(SchemaBase):
     name = fields.String()
     givenname = fields.String()
@@ -149,31 +149,31 @@ class PersonSchema(SchemaBase):
     title = fields.String()
 
     alternatepersonid = fields.Nested(ResourceIdentifierSchema, many=False,
-                               attribute='_alternatepersonid')
+                                      attribute='_alternatepersonid')
     personid = fields.Nested(ResourceIdentifierSchema, many=False,
-                               attribute='_personid')
+                             attribute='_personid')
     mbox = fields.Nested(ResourceIdentifierSchema, many=False,
-                               attribute='_mbox')
+                         attribute='_mbox')
     phone = fields.Nested(ResourceIdentifierSchema, many=False,
-                               attribute='_phone')
+                          attribute='_phone')
     homepage = fields.Nested(ResourceIdentifierSchema, many=False,
-                               attribute='_homepage')
+                             attribute='_homepage')
     workplacehomepage = fields.Nested(CommentSchema, many=False,
-                               attribute='_workplacehomepage')
+                                      attribute='_workplacehomepage')
 
 class AuthorSchema(SchemaBase):
     positioninauthorlist = fields.Integer()
 
     person = fields.Nested(PersonSchema, many=False,
-                               attribute='_person')
+                           attribute='_person')
     affiliation = fields.Nested(ResourceIdentifierSchema, many=False,
-                               attribute='_affiliation')
+                                attribute='_affiliation')
     alternateaffiliation = fields.Nested(ResourceIdentifierSchema, many=False,
-                               attribute='_alternateaffiliation')
+                                         attribute='_alternateaffiliation')
     mbox = fields.Nested(ResourceIdentifierSchema, many=False,
-                               attribute='_mbox')
+                         attribute='_mbox')
     comment = fields.Nested(CommentSchema, many=False,
-                               attribute='_comment')
+                            attribute='_comment')
 
 class InstitutionSchema(SchemaBase):
     name = fields.String()
@@ -181,22 +181,22 @@ class InstitutionSchema(SchemaBase):
     identifier = fields.Nested(ResourceIdentifierSchema, many=False,
                                attribute='_identifier')
     mbox = fields.Nested(ResourceIdentifierSchema, many=False,
-                               attribute='_mbox')
+                         attribute='_mbox')
     phone = fields.Nested(ResourceIdentifierSchema, many=False,
-                               attribute='_phone')
+                          attribute='_phone')
     country = fields.Nested(CountryCodeURISchema, many=False,
-                               attribute='_country')
+                            attribute='_country')
     homepage = fields.Nested(ResourceIdentifierSchema, many=False,
-                               attribute='_homepage')
+                             attribute='_homepage')
 
 class PersonalAffiliationSchema(SchemaBase):
     department = fields.String()
     function = fields.String()
 
     institution = fields.Nested(InstitutionSchema, many=False,
-                               attribute='_institution')
+                                attribute='_institution')
     comment = fields.Nested(CommentSchema, many=False,
-                               attribute='_comment')
+                            attribute='_comment')
 
 class PostalAddressSchema(SchemaBase):
     streetaddress = fields.String()
@@ -204,7 +204,7 @@ class PostalAddressSchema(SchemaBase):
     postalcode = fields.String()
 
     country = fields.Nested(CountryCodeURISchema, many=False,
-                               attribute='_country')
+                            attribute='_country')
 
 
 class CreatorSchema(SchemaBase):
@@ -253,9 +253,9 @@ class LiteratureSourceSchema(SchemaBase):
     publicationstatus = fields.String()
 
     creator = fields.Nested(AuthorSchema, many=False,
-                               attribute='_creator')
+                            attribute='_creator')
     type = fields.Nested(ResourceIdentifierSchema, many=False,
-                               attribute='_type')
+                         attribute='_type')
     identifier = fields.Nested(ResourceIdentifierSchema, many=False,
                                attribute='_identifier')
 
@@ -374,13 +374,11 @@ class SectionSchema(SchemaBase):
     bottomdepth_upperuncertainty = FloatPositive()
     bottomdepth_confidencelevel = ConfidenceLevel()
 
-
     holediameter_value = FloatPositive()
     holediameter_uncertainty = FloatPositive()
     holediameter_loweruncertainty = FloatPositive()
     holediameter_upperuncertainty = FloatPositive()
     holediameter_confidencelevel = ConfidenceLevel()
-
 
     casingdiameter_value = FloatPositive()
     casingdiameter_uncertainty = FloatPositive()
@@ -402,11 +400,11 @@ class SectionSchema(SchemaBase):
         """Validation of temporal constraints."""
         starttime = data.get('starttime')
         endtime = data.get('endtime')
-        now = datetime.datetime.utcnow()
 
         if starttime and endtime and starttime >= endtime:
-                raise ValidationError(
-                    'endtime must be greater than starttime')
+            raise ValidationError(
+                'endtime must be greater than starttime')
+
     @post_load
     def make_section(self, data):
         return BoreholeSection(**data)
@@ -414,7 +412,7 @@ class SectionSchema(SchemaBase):
 
 class BoreholeSchema(SchemaBase):
     """Schema implementation of a borehole."""
-    publicid = fields.String()
+    publicid = fields.String(required=True)
 
     longitude_value = RequiredLongitude()
     longitude_uncertainty = FloatPositive()
@@ -456,3 +454,24 @@ class BoreholeSchema(SchemaBase):
     @post_load
     def make_borehole(self, data):
         return Borehole(**data)
+
+    @pre_load
+    def make_publicids(self, data, **kwargs):
+        if self.context:
+            data = self.make_dict_publicid(
+                data, self.context["publicid_uri"], "borehole/")
+            if 'sections' in data.keys():
+                for ind, sec in enumerate(data["sections"]):
+                    sec = self.make_dict_publicid(
+                        sec, self.context["publicid_uri"], "borehole/section/")
+
+        return data
+
+    def make_dict_publicid(self, data, uri, data_domain):
+        """
+        Assign a publicid key and generated value to a dict.
+        """
+        if (('publicid' in data.keys() and self.context["overwrite"]) or
+                ('publicid' not in data.keys())):
+            data['publicid'] = create_publicid(uri, data_domain)
+        return data
