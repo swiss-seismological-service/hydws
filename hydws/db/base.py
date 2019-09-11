@@ -204,16 +204,16 @@ class Person(ORMBase):
         backref=backref("_person_phone", uselist=False),
         foreign_keys=[_phone_oid])
 
-    _homepage_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
+    _homepage_oid = Column(Integer, ForeignKey('resourcelocator._oid'))
     _homepage = relationship(
-        "ResourceIdentifier",
+        "ResourceLocator",
         backref=backref("_person_homepage", uselist=False),
         foreign_keys=[_homepage_oid])
 
     _workplacehomepage_oid = Column(
-        Integer, ForeignKey('resourceidentifier._oid'))
+        Integer, ForeignKey('resourcelocator._oid'))
     _workplacehomepage = relationship(
-        "ResourceIdentifier",
+        "ResourceLocator",
         backref=backref("_person_workplacehomepage", uselist=False),
         foreign_keys=[_workplacehomepage_oid])
 
