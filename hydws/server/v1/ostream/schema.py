@@ -156,9 +156,9 @@ class PersonSchema(SchemaBase):
                          attribute='_mbox')
     phone = fields.Nested(ResourceIdentifierSchema, many=False,
                           attribute='_phone')
-    homepage = fields.Nested(ResourceIdentifierSchema, many=False,
+    homepage = fields.Nested(ResourceLocatorSchema, many=False,
                              attribute='_homepage')
-    workplacehomepage = fields.Nested(CommentSchema, many=False,
+    workplacehomepage = fields.Nested(ResourceLocatorSchema, many=False,
                                       attribute='_workplacehomepage')
 
 class AuthorSchema(SchemaBase):
