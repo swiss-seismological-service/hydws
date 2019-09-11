@@ -383,62 +383,6 @@ class LiteratureSource(ORMBase):
     publicationstatus = Column(f'{PREFIX}publicationstatus', String)
 
 
-
-class RealQuantity(ORMBase):
-    """
-    Mixin factory for common :code:`Quantity` types from
-    `QuakeML <https://quake.ethz.ch/quakeml/>`_.
-
-    Quantity types provide the fields:
-        - `value`
-        - `uncertainty`
-        - `loweruncertainty`
-        - `upperuncertainty`
-        - `confidencelevel`.
-
-    Note, that a `column_prefix` may be prepended.
-
-    :param str name: Name of the class returned
-    :param str quantity_type: Type of the quantity to be returned. Valid values
-        are :code:`int`, :code:`real` or rather :code:`float` and :code:`time`.
-    :param column_prefix: Prefix used for DB columns. If :code:`None`, then
-        :code:`name` with an appended underscore :code:`_` is used. Capital
-        Letters are converted to lowercase.
-    :type column_prefix: str or None
-
-    The usage of :py:func:`QuantityMixin` is illustrated bellow:
-
-    .. code::
-
-        # define a ORM mapping using the Quantity mixin factory
-        class FooBar(QuantityMixin('foo', 'int'),
-                     QuantityMixin('bar', 'real'),
-                     ORMBase):
-
-            def __repr__(self):
-                return '<FooBar (foo_value=%d, bar_value=%f)>' % (
-                    self.foo_value, self.bar_value)
-
-
-        # create instance of "FooBar"
-        foobar = FooBar(foo_value=1, bar_value=2)
-
-    """
-
-    _identifier_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
-    _identifier = relationship("ResourceIdentifier", uselist=False, backref=backref("parent", uselist=False), foreign_keys=[_identifier_oid])
-
-    _creator_oid = Column(Integer, ForeignKey('author._oid'))
-    _creator = relationship("Author", uselist=False, backref=backref("parent", uselist=False), foreign_keys=[_creator_oid])
-
-    _type_oid = Column(Integer, ForeignKey('languagecodeuri._oid'))
-    _type = relationship("LanguageCodeURI", uselist=False, backref=backref("parent", uselist=False), foreign_keys=[_type_oid])
-
-    bibtextype = Column(f'{PREFIX}bibtextype', Enum(EBibtexEntryType))
-    title = Column(f'{PREFIX}title', String)
-    author = Column(f'{PREFIX}author', String)
-
-
 def PublicIDMixin(name='', parent_prefix=None, column_prefix=None):
     """
     `SQLAlchemy <https://www.sqlalchemy.org/>`_ mixin providing a general
