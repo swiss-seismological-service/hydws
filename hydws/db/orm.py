@@ -8,14 +8,11 @@
 
 from sqlalchemy import Column, String, Boolean, Integer, ForeignKey
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy import select
 
 
-from hydws.db.base import (ORMBase, RealQuantityMixin, LiteratureSource, CreationInfo,
+from hydws.db.base import (ORMBase, RealQuantityMixin,
                            TimeQuantityMixin, EpochMixin, PublicIDMixin)
 from hydws.server import settings
-
 
 
 # XXX(damb): The implementation of the entities below is based on the QuakeML
@@ -33,9 +30,11 @@ try:
 except AttributeError:
     PREFIX = ''
 
-class Borehole( RealQuantityMixin('longitude',
+class Borehole(RealQuantityMixin('longitude',
                                  value_nullable=False),
                RealQuantityMixin('latitude',
+                                 value_nullable=False),
+               RealQuantityMixin('altitude',
                                  value_nullable=False),
                RealQuantityMixin('depth'),
                RealQuantityMixin('bedrockdepth'),

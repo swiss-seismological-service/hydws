@@ -426,6 +426,12 @@ class BoreholeSchema(SchemaBase):
     latitude_upperuncertainty = FloatPositive()
     latitude_confidencelevel = ConfidenceLevel()
 
+    altitude_value = fields.Float(required=True)
+    altitude_uncertainty = FloatPositive()
+    altitude_loweruncertainty = FloatPositive()
+    altitude_upperuncertainty = FloatPositive()
+    altitude_confidencelevel = ConfidenceLevel()
+
     depth_value = FloatPositive()
     depth_uncertainty = FloatPositive()
     depth_loweruncertainty = FloatPositive()
