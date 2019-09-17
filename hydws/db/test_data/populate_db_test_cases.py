@@ -30,6 +30,7 @@ bh0 = orm.Borehole(
     latitude_uncertainty=0.5368853227,
     longitude_value=10.66320713,
     longitude_uncertainty=0.7947170871,
+    altitude_value=30.0,
     bedrockdepth_value=0,
     _literaturesource=ls0,
 )
@@ -42,11 +43,12 @@ bh1 = orm.Borehole(
     latitude_uncertainty=0.5368853227,
     longitude_value=10.66320713,
     longitude_uncertainty=0.7947170871,
+    altitude_value=30.0,
     bedrockdepth_value=0)
 
 bh1_section1 = orm.BoreholeSection(
     publicid='smi:ch.ethz.sed/bh/section/'
-               '11111111-8d89-4f13-95e7-526ade73cc8b',
+             '11111111-8d89-4f13-95e7-526ade73cc8b',
     starttime=datetime.datetime(2010, 1, 10),
     endtime=datetime.datetime(2010, 12, 10),
     topclosed=False,
@@ -66,7 +68,7 @@ bh1_section1 = orm.BoreholeSection(
 
 bh1_section2 = orm.BoreholeSection(
     publicid='smi:ch.ethz.sed/bh/section/'
-               '11111111-8d89-4f13-95e7-526ade73cc5y',
+             '11111111-8d89-4f13-95e7-526ade73cc5y',
     starttime=datetime.datetime(2010, 1, 10),
     topclosed=False,
     bottomclosed=True,
@@ -127,6 +129,7 @@ bh2 = orm.Borehole(
     latitude_uncertainty=0.5368853227,
     longitude_value=-10.66320713,
     longitude_uncertainty=0.7947170871,
+    altitude_value=30.0,
     bedrockdepth_value=100)
 
 # Third borehole, sections but no hydraulics
@@ -137,11 +140,12 @@ bh3 = orm.Borehole(
     latitude_uncertainty=0.5368853227,
     longitude_value=10.66320713,
     longitude_uncertainty=0.7947170871,
+    altitude_value=30.0,
     bedrockdepth_value=0)
 
 bh3_section1 = orm.BoreholeSection(
     publicid='smi:ch.ethz.sed/bh/section/'
-               '11111111-8d89-4f13-95e7-526ade73cc7c',
+             '11111111-8d89-4f13-95e7-526ade73cc7c',
     starttime=datetime.datetime(2018, 12, 1, 00, 1),
     endtime=datetime.datetime(2019, 2, 12, 00),
     topclosed=False,
@@ -161,7 +165,7 @@ bh3_section1 = orm.BoreholeSection(
 
 bh3_section2 = orm.BoreholeSection(
     publicid='smi:ch.ethz.sed/bh/section/'
-               '11111111-8d89-4f13-95e7-526ade73cc2i',
+             '11111111-8d89-4f13-95e7-526ade73cc2i',
     starttime=datetime.datetime(2018, 12, 1, 00, 1),
     endtime=datetime.datetime(2019, 2, 12, 00, 00),
     topclosed=False,
@@ -181,7 +185,7 @@ bh3_section2 = orm.BoreholeSection(
 
 bh3_section3 = orm.BoreholeSection(
     publicid='smi:ch.ethz.sed/bh/section/'
-               '11111111-8d89-4f13-95e7-526ade73cc5e',
+             '11111111-8d89-4f13-95e7-526ade73cc5e',
     starttime=datetime.datetime(2019, 2, 12, 00, 1),
     endtime=datetime.datetime(2019, 3, 12, 00, 00),
     topclosed=False,
@@ -207,11 +211,12 @@ bh4 = orm.Borehole(
     latitude_uncertainty=0.5368853227,
     longitude_value=10.66320713,
     longitude_uncertainty=0.7947170871,
+    altitude_value=30.0,
     bedrockdepth_value=0)
 
 bh4_section1 = orm.BoreholeSection(
     publicid='smi:ch.ethz.sed/bh/section/'
-               '11111111-8d89-4f13-95e7-526ade73c123',
+             '11111111-8d89-4f13-95e7-526ade73c123',
     topclosed=False,
     bottomclosed=False,
     toplatitude_value=15.63484349,
@@ -227,11 +232,31 @@ bh4_section1 = orm.BoreholeSection(
     holediameter_value=0.3,
     casingdiameter_value=0.28, )
 
+samples_single_section = []
+start_date = datetime.datetime(2010, 12, 1)
+flow = 0.001
+for dt in [start_date + datetime.timedelta(minutes=n) for n in range(900)]:
+    samplex = orm.HydraulicSample(
+        datetime_value=dt,
+        toptemperature_value=273,
+        topflow_value=flow,
+        toppressure_value=73,
+        bottomtemperature_value=303,
+        bottomflow_value=flow,
+        bottompressure_value=73,
+        fluiddensity_value=8,
+        fluidviscosity_value=0.5,
+        fluidph_value=7, )
+    samples_single_section.append(samplex)
+    flow += 0.001
+
+
 def insert_orm_values(db_url):
 
     bh1_section1._hydraulics.append(sample1)
     bh1_section1._hydraulics.append(sample2)
     bh1_section1._hydraulics.append(sample3)
+    bh4_section1._hydraulics = samples_single_section
     bh1._sections = [bh1_section1, bh1_section2]
     bh4._sections = [bh4_section1]
 
