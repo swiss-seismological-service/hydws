@@ -91,6 +91,9 @@ class SchemaBase(Schema):
         flattened_data = self._flatten_dict(data, sep='_')
         return flattened_data
 
+    class Meta:
+        ordered=True
+
 
 class ResourceIdentifierSchema(SchemaBase):
     resourceid = fields.String()
