@@ -103,6 +103,7 @@ class HYDWSLoadDataApp(App):
             self.logger.info('{}: Version v{}'.format(self.PROG, __version__))
             self.logger.debug('Configuration: {!r}'.format(self.args))
 
+            context = {}
             if self.args.assignids:
                 context = {
                     'publicid_uri': self.args.publicid_uri,
