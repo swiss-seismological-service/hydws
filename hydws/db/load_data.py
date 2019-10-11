@@ -6,7 +6,7 @@ import traceback
 import argparse
 import json
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, contains_eager
 
 from hydws import __version__
 from hydws.utils import url
@@ -132,9 +132,12 @@ class HYDWSLoadDataApp(App):
                     deserialized_data = [deserialized_data]
 
                 for bh in deserialized_data:
-                    bh_existing = session.query(Borehole).filter(
+                    bh_existing = session.query(Borehole).\
+                        options(contains_eager("_sections").
+                                contains_eager("_hydraulics")).\
+                        filter(
                         Borehole.publicid == bh.publicid).one_or_none()
-                    if bh.existing:
+                    if bh_existing:
                         self.logger.info("A borehole exists with the same "
                                          "publicid. Merging with existing "
                                          "borehole.")

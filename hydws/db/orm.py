@@ -146,7 +146,6 @@ class Borehole(RealQuantityMixin('longitude',
             for attr in MUTABLE_ATTRS:
                 value = getattr(other, attr)
                 setattr(self, attr, value)
-
             for sec in other._sections:
                 _sec = section_lookup_by_publicid(sec.publicid)
                 if _sec is None:
@@ -205,7 +204,7 @@ class BoreholeSection(EpochMixin('Epoch', epoch_type='open'),
 
     _hydraulics = relationship("HydraulicSample", back_populates="_section",
                                lazy='noload',
-                               order_by='HydraulicSample.datetime_value')
+                               order_by='HydraulicSample.datetime_value', cascade='save-update, delete, delete-orphan')
 
     def snapshot(self, filter_cond=None):
         """
@@ -318,17 +317,14 @@ class BoreholeSection(EpochMixin('Epoch', epoch_type='open'),
         """
         assert isinstance(other, type(self._hydraulics)) or other is None, \
             "other is not a list of hydraulic samples"
-
         if other:
             first_sample = min(e.datetime_value for e in other)
             last_sample = max(e.datetime_value for e in other)
-
             def filter_by_overlapping_datetime(s):
                 return (s.datetime_value >= first_sample and
                         s.datetime_value <= last_sample)
 
             self.hyd_reduce(filter_cond=filter_by_overlapping_datetime)
-
             # merge
             for s in other:
                 self._hydraulics.append(s.copy())
@@ -353,9 +349,10 @@ class HydraulicSample(TimeQuantityMixin('datetime', value_nullable=False),
         *Quantities* are implemented as `QuakeML
         <https://quake.ethz.ch/quakeml>`_ quantities.
     """
+    __mapper_args__ = {'confirm_deleted_rows': False}
     fluidcomposition = Column(f'{PREFIX}fluidcomposition', String)
 
-    _section = relationship("BoreholeSection", back_populates="_hydraulics")
+    _section = relationship("BoreholeSection", back_populates="_hydraulics", single_parent=True)
 
     boreholesection_oid = Column(f'{PREFIX}boreholesection_oid',
                                  Integer, ForeignKey('boreholesection._oid'))
