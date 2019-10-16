@@ -35,7 +35,7 @@ class DataImportTestCase(unittest.TestCase):
            return_value=argparse.Namespace(
                db_url="sqlite:///{}/initialized.db".format(dirpath),
                assignids=True, overwrite_publicids=False,
-               publicid_uri="eth_uri/",
+               publicid_uri="eth_uri/", merge_only=False,
                data_file=opened_data, path_logging_conf=None, version=None))
     @patch('hydws.db.load_data.sys.exit')
     def test_data_import(self, sys_exit, parse_args):
