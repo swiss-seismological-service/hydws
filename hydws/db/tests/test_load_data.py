@@ -21,22 +21,16 @@ class LoadBoreholeTestCase(unittest.TestCase):
     """
     Test cases for :py:class:`ramsis.datamodel.well.Borehole`.
     """
-    db = None
-
     def test_load_merge_identical_file(self):
 
         subprocess.run(
-            ['hydws-db-init', '-o', db_sqlite_string,
-             '--logging-conf',
-             '/home/sarsonl/repos/hydws/hydws/config/logging.conf'],
+            ['hydws-db-init', '-o', db_sqlite_string],
             stdout=subprocess.PIPE)
         engine = create_engine(db_sqlite_string, echo="debug")
         Session = sessionmaker(bind=engine)
 
         subprocess.run(
             ['hydws-data-import',
-             '--logging-conf',
-             '/home/sarsonl/repos/hydws/hydws/config/logging.conf',
              db_sqlite_string, json_file_path])
         session = Session()
         bh0 = session.query(orm.Borehole).\
@@ -45,8 +39,6 @@ class LoadBoreholeTestCase(unittest.TestCase):
         session.close()
         subprocess.run(
             ['hydws-data-import', '--merge_only',
-             '--logging-conf',
-             '/home/sarsonl/repos/hydws/hydws/config/logging.conf',
              db_sqlite_string, json_file_path])
         engine = create_engine(db_sqlite_string, echo="debug")
 
@@ -66,17 +58,14 @@ class LoadBoreholeTestCase(unittest.TestCase):
     def test_load_updated_file(self):
 
         subprocess.run(
-            ['hydws-db-init', '-o', db_sqlite_string,
-             '--logging-conf',
-             '/home/sarsonl/repos/hydws/hydws/config/logging.conf'],
+            ['hydws-db-init', '-o',
+             db_sqlite_string],
             stdout=subprocess.PIPE)
         engine = create_engine(db_sqlite_string, echo="debug")
         Session = sessionmaker(bind=engine)
 
         subprocess.run(
             ['hydws-data-import',
-             '--logging-conf',
-             '/home/sarsonl/repos/hydws/hydws/config/logging.conf',
              db_sqlite_string, json_file_path])
         session = Session()
         bh0 = session.query(orm.Borehole).\
@@ -85,8 +74,6 @@ class LoadBoreholeTestCase(unittest.TestCase):
         session.close()
         subprocess.run(
             ['hydws-data-import', '--merge_only',
-             '--logging-conf',
-             '/home/sarsonl/repos/hydws/hydws/config/logging.conf',
              db_sqlite_string, json2_file_path])
         engine = create_engine(db_sqlite_string, echo="debug")
 
