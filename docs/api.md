@@ -1,4 +1,4 @@
-# OpenQuake Engine Server REST API
+# HYDWS REST API
 
 ## Introduction
 
