@@ -28,7 +28,6 @@ class Base(object):
     # (sarsonl) should this have prefix?
     _oid = Column(Integer, primary_key=True, nullable=False)
 
-
 ORMBase = declarative_base(cls=Base)
 
 

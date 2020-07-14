@@ -19,7 +19,7 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('/home/sarsonl/repos/docker_implementation/hydws/hydws'))
+sys.path.insert(0, os.path.abspath('../hydws'))
 
 
 # -- General configuration ------------------------------------------------
@@ -164,6 +164,3 @@ texinfo_documents = [
      author, 'hydws', 'One line description of project.',
      'Miscellaneous'),
 ]
-
-
-

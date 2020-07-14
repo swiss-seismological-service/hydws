@@ -2,6 +2,9 @@
     "bedrockdepth": {
         "value": 0
     },
+    "altitude": {
+        "value": 100
+    },
     "depth": {
         "value": 1000
     },
@@ -84,6 +87,3 @@
         }
     ]
 }
-
-
-

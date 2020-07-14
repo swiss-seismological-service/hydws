@@ -1,6 +1,9 @@
 # hydws
 
 REST webservice allowing access to hydraulic data.
+For a full specification of the api, please find the documentation under /docs/api.md
+
+Instructions for installation and examples of usage may be found below.
 
 ## Installation
 

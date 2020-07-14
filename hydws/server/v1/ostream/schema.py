@@ -91,6 +91,9 @@ class SchemaBase(Schema):
         flattened_data = self._flatten_dict(data, sep='_')
         return flattened_data
 
+    class Meta:
+        ordered=True
+
 
 class ResourceIdentifierSchema(SchemaBase):
     resourceid = fields.String()
@@ -425,6 +428,12 @@ class BoreholeSchema(SchemaBase):
     latitude_loweruncertainty = FloatPositive()
     latitude_upperuncertainty = FloatPositive()
     latitude_confidencelevel = ConfidenceLevel()
+
+    altitude_value = fields.Float(required=True)
+    altitude_uncertainty = FloatPositive()
+    altitude_loweruncertainty = FloatPositive()
+    altitude_upperuncertainty = FloatPositive()
+    altitude_confidencelevel = ConfidenceLevel()
 
     depth_value = FloatPositive()
     depth_uncertainty = FloatPositive()

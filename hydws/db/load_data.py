@@ -6,7 +6,7 @@ import traceback
 import argparse
 import json
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, contains_eager
 
 from hydws import __version__
 from hydws.utils import url
@@ -15,7 +15,7 @@ from hydws.utils.error import Error, ExitCodes
 from hydws.server import settings
 # TODO (sarsonl) make version loading dynamic
 from hydws.server.v1.ostream.schema import BoreholeSchema
-
+from hydws.db.orm import Borehole
 
 class HYDWSLoadDataApp(App):
     """
@@ -43,6 +43,9 @@ class HYDWSLoadDataApp(App):
         # optional arguments
         parser.add_argument("--version", "-V", action="version",
                             version="%(prog)s version " + __version__)
+        parser.add_argument("--merge_only", action="store_true",
+                            help="Only allow data to be merged with existing "
+                            "borehole. Error if publicid cannot be found")
         parser.add_argument("--assignids", action="store_true",
                             help="Generate public ids for boreholes and "
                             "borehole sections")
@@ -92,6 +95,12 @@ class HYDWSLoadDataApp(App):
                 self.args.overwrite_publicids):
             raise ValueError("--publicid_uri and --overwrite_publicids "
                              "only allowed if --assignids is used.")
+        if self.args.merge_only and (
+                self.args.assignids or self.args.publicid_uri is not None or
+                self.args.overwrite_publicids):
+            raise ValueError("--assignids, --publicid_uri and "
+                             "--overwrite_publicids only allowed if "
+                             "--merge_only is not used.")
 
     def run(self):
         """
@@ -103,6 +112,7 @@ class HYDWSLoadDataApp(App):
             self.logger.info('{}: Version v{}'.format(self.PROG, __version__))
             self.logger.debug('Configuration: {!r}'.format(self.args))
 
+            context = {}
             if self.args.assignids:
                 context = {
                     'publicid_uri': self.args.publicid_uri,
@@ -118,11 +128,26 @@ class HYDWSLoadDataApp(App):
                 Session = sessionmaker(bind=engine)
                 session = Session()
 
-                if many_boreholes:
-                    session.add(*deserialized_data)
-                else:
-                    session.add(deserialized_data)
+                if not many_boreholes:
+                    deserialized_data = [deserialized_data]
 
+                for bh in deserialized_data:
+                    bh_existing = session.query(Borehole).\
+                        options(contains_eager("_sections").
+                                contains_eager("_hydraulics")).\
+                        filter(
+                        Borehole.publicid == bh.publicid).one_or_none()
+                    if bh_existing:
+                        self.logger.info("A borehole exists with the same "
+                                         "publicid. Merging with existing "
+                                         "borehole.")
+                        bh_existing.merge(bh)
+                    else:
+                        if self.args.merge_only:
+                            raise ValueError(
+                                "No borehole exists with publicid: "
+                                f"{bh.publicid} and cannot be merged.")
+                        session.add(bh)
                 try:
                     session.commit()
                     self.logger.info(
