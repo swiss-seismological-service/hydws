@@ -249,7 +249,7 @@ def borehole_sections(transformer):
             bottomdepth_value=round(bottom_depth, 2),
             starttime=starttime_section,
             endtime=endtime_section,
-            holediameter=HOLE_DIAMETER,
+            holediameter_value=HOLE_DIAMETER,
             publicid=CB1_PUBLIC_ID_SECTION+str(section_index),
             _hydraulics=hydraulic_samples,
             description=(f"From files: {filename_list}, "
