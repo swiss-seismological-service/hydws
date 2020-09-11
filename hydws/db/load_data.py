@@ -150,7 +150,7 @@ class HYDWSLoadDataApp(App):
                                 # Get time range of imported dataset
                                 first_sample = min(h.datetime_value for h in section._hydraulics)
                                 last_sample = max(h.datetime_value for h in section._hydraulics)
-                                print("first and last sample times", first_sample.datetime_value, last_sample.datetime_value)
+                                print("first and last sample times", first_sample, last_sample)
                                 print("section existing with x hydraulic sample:", len(section_existing._hydraulics))
                                 print("wanting to add from section with x hydrauli samples", len(section._hydraulics))
                                 session.query(HydraulicSample).filter(HydraulicSample.datetime_value>= first_sample).\
