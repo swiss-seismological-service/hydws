@@ -171,7 +171,8 @@ class HYDWSLoadDataApp(App):
                                 print("number of borehole sections: ", [(b._oid, b.publicid) for b in session.query(BoreholeSection).all()])
                                 print("append new hydraulics")
                                 for sample in section._hydraulics:
-                                    sample._section = None
+                                    section._hydraulics.remove(sample)
+                                    sample.boreholesection_oid = None
                                     sample._section = section_existing
                                     section_existing._hydraulics.append(sample)
                                 print("after extend number f hydraulics after delete", len(section_existing._hydraulics))
