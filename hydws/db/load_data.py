@@ -157,10 +157,17 @@ class HYDWSLoadDataApp(App):
                                         filter(HydraulicSample.datetime_value <= last_sample).\
                                         filter(HydraulicSample.boreholesection_oid == section_existing._oid).\
                                         delete(synchronize_session=False)
+                                print("borehole section in session:", section in session)
                                 print("session commit, number f hydraulics after delete", len(section_existing._hydraulics))
-                                session.commit()
+                                print("number of borehole sections: ", [(b._oid, b.m_publicid) for b in session.query(BoreholeSection).all()])
                                 print("append new hydraulics")
+                                for sample in section._hydraulics:
+                                    sample._section = section_existing
                                 section_existing._hydraulics.extend(section._hydraulics)
+                                print("after extend number f hydraulics after delete", len(section_existing._hydraulics))
+                                session.expunge(section)
+                                session.expunge(bh)
+                                print("after expunge borehole section in session:", section in session)
                                 print("next session.commit")
                                 session.commit()
                                 print("number of hydraulics now in db section: ", len(section_existing._hydraulics))
