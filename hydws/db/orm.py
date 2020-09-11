@@ -329,7 +329,8 @@ class BoreholeSection(EpochMixin('Epoch', epoch_type='open'),
             for s in other:
                 self._hydraulics.append(s.copy())
 
-class HydraulicSample(TimeQuantityMixin('datetime', value_nullable=False),
+class HydraulicSample(TimeQuantityMixin('datetime', value_nullable=False,
+                                        index=True),
                       RealQuantityMixin('bottomtemperature'),
                       RealQuantityMixin('bottomflow'),
                       RealQuantityMixin('bottompressure'),
