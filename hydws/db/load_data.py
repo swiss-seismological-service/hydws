@@ -176,7 +176,7 @@ class HYDWSLoadDataApp(App):
                                     section._hydraulics.remove(sample)
                                     sample.boreholesection_oid = None
                                     sample._section = None
-                                    print("section": sample.boreholesection_oid, sample._section)
+                                    print("section", sample.boreholesection_oid, sample._section)
                                     sample._section = section_existing
                                     section_existing._hydraulics.append(sample)
                                     session.add(sample)
