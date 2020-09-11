@@ -507,7 +507,7 @@ UniqueEpochMixin = EpochMixin('Epoch')
 UniqueOpenEpochMixin = EpochMixin('Epoch', epoch_type='open')
 
 
-def QuantityMixin(name, quantity_type, column_prefix=None, value_nullable=True):
+def QuantityMixin(name, quantity_type, column_prefix=None, value_nullable=True, index=False):
     """
     Mixin factory for common :code:`Quantity` types from
     `QuakeML <https://quake.ethz.ch/quakeml/>`_.
@@ -612,4 +612,5 @@ RealQuantityMixin = FloatQuantityMixin
 IntegerQuantityMixin = functools.partial(QuantityMixin,
                                          quantity_type='int')
 TimeQuantityMixin = functools.partial(QuantityMixin,
-                                      quantity_type='time')
+                                      quantity_type='time',
+                                      index=False)

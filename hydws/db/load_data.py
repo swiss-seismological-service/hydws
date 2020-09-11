@@ -141,7 +141,29 @@ class HYDWSLoadDataApp(App):
                         self.logger.info("A borehole exists with the same "
                                          "publicid. Merging with existing "
                                          "borehole.")
-                        bh_existing.merge(bh)
+                        for section in bh._sections:
+                            section_existing = session.query(BoreholeSection).\
+                                options(contains_eager("_hydraulics")).\
+                                filter(
+                                    BoreholeSection.publicid == section,publicid).one_or_none()
+                            if section_existing:
+                                # Get time range of imported dataset
+                                first_sample = min(h.datetime_value for h in section._hydraulics)
+                                last_sample = max(h.datetime_value for h in section._hydraulics)
+                                print("query session delete")
+                                session.query(HydraulicSample).filter(datetime_value>= first_sample).\
+                                        filter(datetime_value <= last_sample).\
+                                        filter(boreholesection_oid == section_existing._oid).\
+                                print("session commit")
+                                session.commit()
+                                print("append new hydraulics")
+                                section_existing._hydraulics.append(section._hydraulics)
+                                print("next session.commit")
+                                session.commit()
+    delete(synchronize_session=False)
+                            else:
+                                session.add(section)
+                        #bh_existing.merge(bh)
                     else:
                         if self.args.merge_only:
                             raise ValueError(
