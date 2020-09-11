@@ -150,17 +150,20 @@ class HYDWSLoadDataApp(App):
                                 # Get time range of imported dataset
                                 first_sample = min(h.datetime_value for h in section._hydraulics)
                                 last_sample = max(h.datetime_value for h in section._hydraulics)
-                                print("query session delete")
+                                print("first and last sample times", first_sample.datetime_value, last_sample.datetime_value)
+                                print("section existing with x hydraulic sample:", len(section_existing._hydraulics))
+                                print("wanting to add from section with x hydrauli samples", len(section._hydraulics))
                                 session.query(HydraulicSample).filter(HydraulicSample.datetime_value>= first_sample).\
                                         filter(HydraulicSample.datetime_value <= last_sample).\
                                         filter(HydraulicSample.boreholesection_oid == section_existing._oid).\
                                         delete(synchronize_session=False)
-                                print("session commit")
+                                print("session commit, number f hydraulics after delete", len(section_existing._hydraulics))
                                 session.commit()
                                 print("append new hydraulics")
                                 section_existing._hydraulics.extend(section._hydraulics)
                                 print("next session.commit")
                                 session.commit()
+                                print("number of hydraulics now in db section: ", len(section_existing._hydraulics))
                             else:
                                 session.add(section)
                         #bh_existing.merge(bh)
