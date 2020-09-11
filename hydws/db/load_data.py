@@ -158,7 +158,7 @@ class HYDWSLoadDataApp(App):
                                 print("session commit")
                                 session.commit()
                                 print("append new hydraulics")
-                                section_existing._hydraulics.append(section._hydraulics)
+                                section_existing._hydraulics.extend(section._hydraulics)
                                 print("next session.commit")
                                 session.commit()
                             else:
