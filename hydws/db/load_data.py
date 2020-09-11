@@ -169,8 +169,6 @@ class HYDWSLoadDataApp(App):
                                 print("session commit, number f hydraulics after delete", len(section_existing._hydraulics))
                                 print("dir of section:", dir(section))
                                 print("number of borehole sections: ", [(b._oid, b.publicid) for b in session.query(BoreholeSection).all()])
-                                session.expunge(section)
-                                session.expunge(bh)
                                 print("append new hydraulics")
                                 for sample in section._hydraulics:
                                     section._hydraulics.remove(sample)
