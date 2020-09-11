@@ -353,7 +353,7 @@ class HydraulicSample(TimeQuantityMixin('datetime', value_nullable=False,
     __mapper_args__ = {'confirm_deleted_rows': False}
     fluidcomposition = Column(f'{PREFIX}fluidcomposition', String)
 
-    _section = relationship("BoreholeSection", back_populates="_hydraulics", single_parent=True)
+    _section = relationship("BoreholeSection", back_populates="_hydraulics", use_list=False)
 
     boreholesection_oid = Column(f'{PREFIX}boreholesection_oid',
                                  Integer, ForeignKey('boreholesection._oid'))
