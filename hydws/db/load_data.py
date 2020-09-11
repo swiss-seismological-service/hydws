@@ -174,11 +174,8 @@ class HYDWSLoadDataApp(App):
                                     section._hydraulics.remove(sample)
                                     sample.boreholesection_oid = None
                                     sample._section = None
-                                    session.flush()
-                                    print("section", sample.boreholesection_oid, sample._section)
                                     sample._section = section_existing
                                     section_existing._hydraulics.append(sample)
-                                    session.add(sample)
                                 print("after extend number f hydraulics after delete", len(section_existing._hydraulics))
                                 print("after expunge borehole section in session:", section in session)
                                 print("next session.commit")
