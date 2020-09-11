@@ -15,7 +15,7 @@ from hydws.utils.error import Error, ExitCodes
 from hydws.server import settings
 # TODO (sarsonl) make version loading dynamic
 from hydws.server.v1.ostream.schema import BoreholeSchema
-from hydws.db.orm import Borehole
+from hydws.db.orm import Borehole, BoreholeSection, HydraulicSample
 
 class HYDWSLoadDataApp(App):
     """
@@ -145,22 +145,22 @@ class HYDWSLoadDataApp(App):
                             section_existing = session.query(BoreholeSection).\
                                 options(contains_eager("_hydraulics")).\
                                 filter(
-                                    BoreholeSection.publicid == section,publicid).one_or_none()
+                                    BoreholeSection.publicid == section.publicid).one_or_none()
                             if section_existing:
                                 # Get time range of imported dataset
                                 first_sample = min(h.datetime_value for h in section._hydraulics)
                                 last_sample = max(h.datetime_value for h in section._hydraulics)
                                 print("query session delete")
-                                session.query(HydraulicSample).filter(datetime_value>= first_sample).\
-                                        filter(datetime_value <= last_sample).\
-                                        filter(boreholesection_oid == section_existing._oid).\
+                                session.query(HydraulicSample).filter(HydraulicSample.datetime_value>= first_sample).\
+                                        filter(HydraulicSample.datetime_value <= last_sample).\
+                                        filter(HydraulicSample.boreholesection_oid == section_existing._oid).\
+                                        delete(synchronize_session=False)
                                 print("session commit")
                                 session.commit()
                                 print("append new hydraulics")
                                 section_existing._hydraulics.append(section._hydraulics)
                                 print("next session.commit")
                                 session.commit()
-    delete(synchronize_session=False)
                             else:
                                 session.add(section)
                         #bh_existing.merge(bh)
