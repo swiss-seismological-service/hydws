@@ -147,6 +147,12 @@ class HYDWSLoadDataApp(App):
                                 filter(
                                     BoreholeSection.publicid == section.publicid).one_or_none()
                             if section_existing:
+                                existing_first_sample = min(h.datetime_value for h in section_existing._hydraulics)
+                                existing_last_sample = max(h.datetime_value for h in section_existing._hydraulics)
+                                row_count = session.query(HydraulicSample).filter(HydraulicSample.datetime_value>= existing_first_sample).\
+                                        filter(HydraulicSample.datetime_value <= existing_last_sample).all()
+                                print("count all samples in session that are in that datetime", len(row_count))
+                                print("min and max time of existing section", existing_first_sample, existing_last_sample)
                                 # Get time range of imported dataset
                                 first_sample = min(h.datetime_value for h in section._hydraulics)
                                 last_sample = max(h.datetime_value for h in section._hydraulics)
@@ -165,8 +171,9 @@ class HYDWSLoadDataApp(App):
                                 print("number of borehole sections: ", [(b._oid, b.publicid) for b in session.query(BoreholeSection).all()])
                                 print("append new hydraulics")
                                 for sample in section._hydraulics:
+                                    sample._section = None
                                     sample._section = section_existing
-                                section_existing._hydraulics.extend(section._hydraulics)
+                                    section_existing._hydraulics.append(sample)
                                 print("after extend number f hydraulics after delete", len(section_existing._hydraulics))
                                 session.expunge(section)
                                 session.expunge(bh)
