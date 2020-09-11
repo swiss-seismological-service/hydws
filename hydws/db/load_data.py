@@ -147,38 +147,31 @@ class HYDWSLoadDataApp(App):
                                 filter(
                                     BoreholeSection.publicid == section.publicid).one_or_none()
                             if section_existing:
-                                existing_first_sample = min(h.datetime_value for h in section_existing._hydraulics)
-                                existing_last_sample = max(h.datetime_value for h in section_existing._hydraulics)
-                                row_count = session.query(HydraulicSample).filter(HydraulicSample.datetime_value>= existing_first_sample).\
-                                        filter(HydraulicSample.datetime_value <= existing_last_sample).all()
-                                print("count all samples in session that are in that datetime", len(row_count))
-                                print("min and max time of existing section", existing_first_sample, existing_last_sample)
                                 # Get time range of imported dataset
                                 first_sample = min(h.datetime_value for h in section._hydraulics)
                                 last_sample = max(h.datetime_value for h in section._hydraulics)
                                 print("first and last sample times", first_sample, last_sample)
-                                print("section existing with x hydraulic sample:", len(section_existing._hydraulics))
-                                print("wanting to add from section with x hydrauli samples", len(section._hydraulics))
+                                print("section existing.hydraulic samples:", len(section_existing._hydraulics))
+                                print("section.hydraulic_samples", len(section._hydraulics))
                                 row_count = session.query(HydraulicSample).filter(HydraulicSample.datetime_value>= first_sample).\
                                         filter(HydraulicSample.datetime_value <= last_sample).\
                                         filter(HydraulicSample.boreholesection_oid == section_existing._oid).\
                                         delete(synchronize_session='fetch')
-                                print('row count', row_count)
-                                print("borehole section in session:", section in session)
+                                print('hydraulic sample db row count', row_count)
+                                print("is section in session:", section in session)
                                 session.commit()
-                                print("session commit, number f hydraulics after delete", len(section_existing._hydraulics))
-                                print("dir of section:", dir(section))
+                                print("len section existing.hydraulics", len(section_existing._hydraulics))
                                 print("number of borehole sections: ", [(b._oid, b.publicid) for b in session.query(BoreholeSection).all()])
-                                print("append new hydraulics")
                                 for sample in section._hydraulics:
                                     section._hydraulics.remove(sample)
                                     sample.boreholesection_oid = None
                                     sample._section = None
                                     sample._section = section_existing
                                     section_existing._hydraulics.append(sample)
+                                print("after adding sample, section.hydraulics:", len(section_existing._hydraulics))
+                                print("exiting section in session:", section_existing in session)
                                 print("after extend number f hydraulics after delete", len(section_existing._hydraulics))
-                                print("after expunge borehole section in session:", section in session)
-                                print("next session.commit")
+                                session.add(section_existing)
                                 session.commit()
                                 print("number of hydraulics now in db section: ", len(section_existing._hydraulics))
                             else:
