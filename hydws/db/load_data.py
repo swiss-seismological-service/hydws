@@ -153,15 +153,16 @@ class HYDWSLoadDataApp(App):
                                 print("first and last sample times", first_sample, last_sample)
                                 print("section existing with x hydraulic sample:", len(section_existing._hydraulics))
                                 print("wanting to add from section with x hydrauli samples", len(section._hydraulics))
-                                session.query(HydraulicSample).filter(HydraulicSample.datetime_value>= first_sample).\
+                                row_count = session.query(HydraulicSample).filter(HydraulicSample.datetime_value>= first_sample).\
                                         filter(HydraulicSample.datetime_value <= last_sample).\
                                         filter(HydraulicSample.boreholesection_oid == section_existing._oid).\
-                                        delete(synchronize_session=False)
+                                        delete(synchronize_session='fetch')
+                                print('row count', row_count)
                                 print("borehole section in session:", section in session)
                                 session.commit()
                                 print("session commit, number f hydraulics after delete", len(section_existing._hydraulics))
                                 print("dir of section:", dir(section))
-                                print("number of borehole sections: ", [(b._oid, b._publicid) for b in session.query(BoreholeSection).all()])
+                                print("number of borehole sections: ", [(b._oid, b.publicid) for b in session.query(BoreholeSection).all()])
                                 print("append new hydraulics")
                                 for sample in section._hydraulics:
                                     sample._section = section_existing
