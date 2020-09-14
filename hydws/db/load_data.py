@@ -6,7 +6,7 @@ import traceback
 import argparse
 import json
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, contains_eager
+from sqlalchemy.orm import sessionmaker, subqueryload
 
 from hydws import __version__
 from hydws.utils import url
@@ -102,6 +102,27 @@ class HYDWSLoadDataApp(App):
                              "--overwrite_publicids only allowed if "
                              "--merge_only is not used.")
 
+    def replace_hydraulics(self, section, section_existing, session):
+        # Get time range of imported dataset
+        first_sample = min(h.datetime_value for h in section._hydraulics)
+        last_sample = max(h.datetime_value for h in section._hydraulics)
+        row_count = session.query(HydraulicSample).filter(
+            HydraulicSample.datetime_value>=first_sample).\
+            filter(HydraulicSample.datetime_value <= last_sample).\
+            filter(HydraulicSample.boreholesection_oid== # noqa
+                   section_existing._oid).delete()
+        self.logger.info(f"{row_count} hydraulic samples deleted.")
+        session.commit()
+        section_existing = session.query(BoreholeSection).\
+            options(subqueryload("_hydraulics")).\
+            filter(
+                BoreholeSection.publicid == section.publicid).one_or_none()
+
+        copied_samples = [sample.copy() for sample in section._hydraulics]
+        section_existing._hydraulics.extend(copied_samples)
+        session.add_all(copied_samples)
+        session.commit()
+
     def run(self):
         """
         Run application.
@@ -130,11 +151,10 @@ class HYDWSLoadDataApp(App):
 
                 if not many_boreholes:
                     deserialized_data = [deserialized_data]
-
                 for bh in deserialized_data:
                     bh_existing = session.query(Borehole).\
-                        options(contains_eager("_sections").
-                                contains_eager("_hydraulics")).\
+                        options(subqueryload("_sections").
+                                subqueryload("_hydraulics")).\
                         filter(
                         Borehole.publicid == bh.publicid).one_or_none()
                     if bh_existing:
@@ -143,46 +163,22 @@ class HYDWSLoadDataApp(App):
                                          "borehole.")
                         for section in bh._sections:
                             section_existing = session.query(BoreholeSection).\
-                                options(contains_eager("_hydraulics")).\
-                                filter(
-                                    BoreholeSection.publicid == section.publicid).one_or_none()
+                                options(subqueryload("_hydraulics")).\
+                                filter(BoreholeSection.publicid== # noqa
+                                       section.publicid).one_or_none()
                             if section_existing:
-                                # Get time range of imported dataset
-                                first_sample = min(h.datetime_value for h in section._hydraulics)
-                                last_sample = max(h.datetime_value for h in section._hydraulics)
-                                print("first and last sample times", first_sample, last_sample)
-                                print("section existing.hydraulic samples:", len(section_existing._hydraulics))
-                                print("section.hydraulic_samples", len(section._hydraulics))
-                                row_count = session.query(HydraulicSample).filter(HydraulicSample.datetime_value>= first_sample).\
-                                        filter(HydraulicSample.datetime_value <= last_sample).\
-                                        filter(HydraulicSample.boreholesection_oid == section_existing._oid).\
-                                        delete(synchronize_session='fetch')
-                                print('hydraulic sample db row count', row_count)
-                                print("is section in session:", section in session)
-                                session.commit()
-                                print("len section existing.hydraulics", len(section_existing._hydraulics))
-                                print("number of borehole sections: ", [(b._oid, b.publicid) for b in session.query(BoreholeSection).all()])
-                                for sample in section._hydraulics:
-                                    section._hydraulics.remove(sample)
-                                    sample.boreholesection_oid = None
-                                    sample._section = None
-                                    sample._section = section_existing
-                                    section_existing._hydraulics.append(sample)
-                                print("after adding sample, section.hydraulics:", len(section_existing._hydraulics))
-                                print("exiting section in session:", section_existing in session)
-                                print("after extend number f hydraulics after delete", len(section_existing._hydraulics))
-                                session.add(section_existing)
-                                session.commit()
-                                print("number of hydraulics now in db section: ", len(section_existing._hydraulics))
+                                self.replace_hydraulics(section,
+                                                        section_existing,
+                                                        session)
                             else:
                                 session.add(section)
-                        #bh_existing.merge(bh)
                     else:
                         if self.args.merge_only:
                             raise ValueError(
                                 "No borehole exists with publicid: "
                                 f"{bh.publicid} and cannot be merged.")
                         session.add(bh)
+
                 try:
                     session.commit()
                     self.logger.info(
