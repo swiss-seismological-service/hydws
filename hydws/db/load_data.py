@@ -6,7 +6,7 @@ import traceback
 import argparse
 import json
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, contains_eager
+from sqlalchemy.orm import sessionmaker, subqueryload
 
 from hydws import __version__
 from hydws.utils import url
@@ -15,7 +15,7 @@ from hydws.utils.error import Error, ExitCodes
 from hydws.server import settings
 # TODO (sarsonl) make version loading dynamic
 from hydws.server.v1.ostream.schema import BoreholeSchema
-from hydws.db.orm import Borehole
+from hydws.db.orm import Borehole, BoreholeSection, HydraulicSample
 
 class HYDWSLoadDataApp(App):
     """
@@ -102,6 +102,27 @@ class HYDWSLoadDataApp(App):
                              "--overwrite_publicids only allowed if "
                              "--merge_only is not used.")
 
+    def replace_hydraulics(self, section, section_existing, session):
+        # Get time range of imported dataset
+        first_sample = min(h.datetime_value for h in section._hydraulics)
+        last_sample = max(h.datetime_value for h in section._hydraulics)
+        row_count = session.query(HydraulicSample).filter(
+            HydraulicSample.datetime_value>=first_sample).\
+            filter(HydraulicSample.datetime_value <= last_sample).\
+            filter(HydraulicSample.boreholesection_oid== # noqa
+                   section_existing._oid).delete()
+        self.logger.info(f"{row_count} hydraulic samples deleted.")
+        session.commit()
+        section_existing = session.query(BoreholeSection).\
+            options(subqueryload("_hydraulics")).\
+            filter(
+                BoreholeSection.publicid == section.publicid).one_or_none()
+
+        copied_samples = [sample.copy() for sample in section._hydraulics]
+        section_existing._hydraulics.extend(copied_samples)
+        session.add_all(copied_samples)
+        session.commit()
+
     def run(self):
         """
         Run application.
@@ -130,24 +151,34 @@ class HYDWSLoadDataApp(App):
 
                 if not many_boreholes:
                     deserialized_data = [deserialized_data]
-
                 for bh in deserialized_data:
                     bh_existing = session.query(Borehole).\
-                        options(contains_eager("_sections").
-                                contains_eager("_hydraulics")).\
+                        options(subqueryload("_sections").
+                                subqueryload("_hydraulics")).\
                         filter(
                         Borehole.publicid == bh.publicid).one_or_none()
                     if bh_existing:
                         self.logger.info("A borehole exists with the same "
                                          "publicid. Merging with existing "
                                          "borehole.")
-                        bh_existing.merge(bh)
+                        for section in bh._sections:
+                            section_existing = session.query(BoreholeSection).\
+                                options(subqueryload("_hydraulics")).\
+                                filter(BoreholeSection.publicid== # noqa
+                                       section.publicid).one_or_none()
+                            if section_existing:
+                                self.replace_hydraulics(section,
+                                                        section_existing,
+                                                        session)
+                            else:
+                                session.add(section)
                     else:
                         if self.args.merge_only:
                             raise ValueError(
                                 "No borehole exists with publicid: "
                                 f"{bh.publicid} and cannot be merged.")
                         session.add(bh)
+
                 try:
                     session.commit()
                     self.logger.info(
