@@ -135,6 +135,7 @@ class HydraulicWebserviceTest(HydraulicWebserviceBase):
             self.logger.debug('Registered rules: {}'.format(app.url_map))
 
             app.run(threaded=True, port=self.args.port,
+                    host="0.0.0.0",
                     debug=(os.environ.get('DEBUG') == 'True'),
                     use_reloader=True, passthrough_errors=True)
 
