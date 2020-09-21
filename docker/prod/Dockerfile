@@ -54,6 +54,7 @@ RUN git clone https://gitlab.seismo.ethz.ch/sed-infra/hydws.git /var/www/hydws
 WORKDIR /var/www/hydws
 RUN git fetch origin
 RUN git checkout develop
+RUN git pull
 RUN python3.6 -m pip install .[postgres]
 
 # Copy Apache configuration configuration
