@@ -79,7 +79,7 @@ RUN mkdir /etc/service/apache2 && \
 	echo "#!/bin/sh\nexec apachectl -D FOREGROUND" > /etc/service/apache2/run && \
 	chmod +x /etc/service/apache2/run
 
-RUN mkdir -p /var/www/hydws/log && chown www-data:www-data /var/www/hydws/log
+RUN mkdir -p /var/www/hydws/log && chown www-data:www-data && chown -R /var/www/hydws/log
 
 # Add the logging configuration
 COPY logging.conf /var/www/hydws/config/prod-logging.conf
