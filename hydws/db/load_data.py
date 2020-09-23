@@ -171,7 +171,8 @@ class HYDWSLoadDataApp(App):
                                                         section_existing,
                                                         session)
                             else:
-                                session.add(section)
+                                section_copy = section.copy()
+                                section_copy._borehole = bh_existing
                     else:
                         if self.args.merge_only:
                             raise ValueError(

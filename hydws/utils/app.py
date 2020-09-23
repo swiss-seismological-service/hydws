@@ -211,7 +211,7 @@ class App(object):
         self.logger = logging.getLogger()
         fallback_handler = logging.handlers.SysLogHandler('/dev/log',
                                                           'local0')
-        fallback_handler.setLevel(logging.WARN)
+        fallback_handler.setLevel(logging.INFO)
         fallback_formatter = logging.Formatter(
             fmt=("<"+self.log_id +
                  "> %(asctime)s %(levelname)s %(name)s %(process)d "

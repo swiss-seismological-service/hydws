@@ -52,7 +52,9 @@ RUN git clone https://gitlab.seismo.ethz.ch/sed-infra/hydws.git /var/www/hydws
 
 # Install the services
 WORKDIR /var/www/hydws
-RUN git checkout -b test_merge origin/test_merge
+RUN git fetch origin
+RUN git checkout develop
+RUN git pull
 RUN python3.6 -m pip install .[postgres]
 
 # Copy Apache configuration configuration
@@ -77,10 +79,13 @@ RUN mkdir /etc/service/apache2 && \
 	echo "#!/bin/sh\nexec apachectl -D FOREGROUND" > /etc/service/apache2/run && \
 	chmod +x /etc/service/apache2/run
 
-RUN mkdir -p /var/www/hydws/log && chown www-data:www-data /var/www/hydws/log
+RUN mkdir -p /var/www/hydws/log && chown www-data:www-data -R /var/www/hydws/log
+
 
 # Add the logging configuration
 COPY logging.conf /var/www/hydws/config/prod-logging.conf
+
+RUN chown www-data:www-data -R /var/www/hydws/config
 
 # Expose Apache2 default port
 EXPOSE 80
