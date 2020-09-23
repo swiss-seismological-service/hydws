@@ -178,7 +178,7 @@ def get_hydraulics(filename_list):
                 topflow = float(q_in) * 1.0e3 / 60.0
                 # Requirement is that pressures are positive: This is not so
                 # for data, any negative values -> 0
-                pressure_uphl = float(pi_uphl) / 1.0e6
+                pressure_uphl = float(pi_uphl) * 1.0e6
                 if pressure_uphl < 0.0:
                     pressure_uphl = 0.0
                 # check if there is any more info that we can add to this.
