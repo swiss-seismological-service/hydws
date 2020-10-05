@@ -62,17 +62,10 @@ class CoordinateTransformer:
         return lon, lat, new_depth
 
 def read_csv(input_filename, sheet_name):
-    xls = pd.ExcelFile(input_filename)
-    df =  xls.parse(sheet_name)
-    df.columns = ['sequence','source', 'datetime', 'profile', 'status',
-                  'cluster', 'y', 'x', 'depth', 'mom_mag',
-                  'pgv', 'stage', 'pwave_signoise', 'swave_signoise',
-                  'quality', 'error', 'location', 'rms_noise', 'dummy1',
-                  'dummy2', 'dummy3', 'dummy4', 'dummy5']
-    df['datetime'] = pd.to_datetime(df['datetime'],
-                                    format="  %d/%m/%Y      %H:%M:%S")
-    df = df.drop(axis=1, labels=['sequence', 'dummy1', 'dummy2', 'dummy3', 'dummy4', 'dummy5'])
-    df = df.sort_values(["datetime", "source"])
+    df = pd.read_csv(input_filename, sep=';')
+    df = df.drop(axis=1, labels=['id_watched_folder', 'Time_Stamp', 'Trigger Time'])
+    # Sort values by columns that might change if a row has been manually updated.
+    df = df.sort_values(["Origin Time", "Source"])
     df = df.reset_index(drop=True)
     return df
 
@@ -85,7 +78,8 @@ def diff_csv(df_1, df_2):
 
 def read_seismic(old_csv_filename, new_csv_filename, sheet_name,
                  lab_origin_easting, lab_origin_northing, lab_origin_depth,
-                 local_proj, external_proj, creation_time, catalog_description="",
+                 local_proj, external_proj, creation_time,
+                 catalog_description="",
                  output_filename=sys.stdout):
     transformer = CoordinateTransformer(lab_origin_easting,
                                         lab_origin_northing,
@@ -99,20 +93,20 @@ def read_seismic(old_csv_filename, new_csv_filename, sheet_name,
     cat = Catalog()
     cat.description = catalog_description
     for ind, row in new_rows.iterrows(): 
-        if row['status'] not in [2, 4]:
+        if row['Status'] not in [2, 4]:
             continue
         e = Event()
-        if row['status'] == 2:
+        if row['Status'] == 2:
             e.event_type = "earthquake"
-        elif row['status'] == 4:
+        elif row['Status'] == 4:
             e.event_type = "explosion"
         
         o = Origin()
-        o.time = row['datetime']
-        o.longitude, o.latitude, _ = transformer.from_local_coords(row['y'], row['x'])
-        o.depth = row['depth'] + lab_origin_depth
+        o.time = row['Origin Time']
+        o.longitude, o.latitude, _ = transformer.from_local_coords(row['Y'], row['X'])
+        o.depth = row['Depth'] + lab_origin_depth
         o.depth_type = "from location"
-        ev_mode = row['location'].lower()
+        ev_mode = row['Location'].lower()
         if "l2 msmx" in ev_mode or "l2 check" in ev_mode:
             o.evaluation_mode = "automatic"
         elif "boot msmx" in ev_mode:
@@ -124,7 +118,7 @@ def read_seismic(old_csv_filename, new_csv_filename, sheet_name,
         o.region = FlinnEngdahl().get_region(o.longitude, o.latitude)
         
         m = Magnitude()
-        m.mag = row['mom_mag']
+        m.mag = row['MomMag']
         m.magnitude_type = "Mw"
         
         # Not sure what else should go in or where it should go...
@@ -141,7 +135,7 @@ def read_seismic(old_csv_filename, new_csv_filename, sheet_name,
         e.creation_info = info
         o.creation_info = info
         m.creation_info = info
-        o.comments = [Comment(text=row['quality'],
+        o.comments = [Comment(text=row['Quality'],
                               resource_id="smi:ch.ges/locationquality/divine")]
     if not output_filename:
         output_filename = sys.stdout.buffer
@@ -159,7 +153,7 @@ def parser():
                         help=("Divine input filename (of type excel) "
                               " including absolute path, to read from."))
     # optional arguments
-    parser.add_argument("--sheet_name", type=str, default="Zones2and6and7FinalLocations",
+    parser.add_argument("--sheet_name", type=str, default="DivineEvents_Dieter",
                         help=("Sheet name to read from on spreadsheet."))
     parser.add_argument("--output_filename", type=str,
                         help=("Output filename including absolute path if wanting "
