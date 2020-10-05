@@ -175,7 +175,7 @@ def get_hydraulics(filename_list):
                 #- the EM1 and HM1 models currently depend
                 # on top values (these can be changed, but should
                 # change everything at same time)
-                topflow = float(q_in) / 1.0e3 * 60.0
+                topflow = float(q_in) / (1.0e3 * 60.0)
                 # Requirement is that pressures are positive: This is not so
                 # for data, any negative values -> 0
                 pressure_uphl = float(pi_uphl) * 1.0e6
