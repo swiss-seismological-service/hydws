@@ -162,7 +162,7 @@ def parser():
                         help=("Description to be saved in catalog output"))
     parser.add_argument("--lab_origin_easting", type=float, default=2679720.70)
     parser.add_argument("--lab_origin_northing", type=float, default=1151600.13)
-    parser.add_argument("--lab_origin_depth", type=float, default=1485.00)
+    parser.add_argument("--lab_origin_depth", type=float, default=-1485.00)
     parser.add_argument("--local_proj", type=int, default=2056,
                         help=("EPSG projection integer for local coordinates."
                         "Default value is swiss CH1903+ grid suitable for Bedretto."))
