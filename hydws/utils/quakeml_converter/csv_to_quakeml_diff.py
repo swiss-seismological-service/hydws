@@ -103,7 +103,7 @@ def read_seismic(old_csv_filename, new_csv_filename, sheet_name,
         
         o = Origin()
         o.time = row['Origin Time']
-        o.longitude, o.latitude, _ = transformer.from_local_coords(row['Y'], row['X'])
+        o.longitude, o.latitude, _ = transformer.from_local_coords(row['X'], row['Y'])
         o.depth = row['Depth'] + lab_origin_depth
         o.depth_type = "from location"
         ev_mode = row['Location'].lower()
