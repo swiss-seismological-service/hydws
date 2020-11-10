@@ -93,7 +93,7 @@ def read_seismic(old_csv_filename, new_csv_filename, sheet_name,
     cat = Catalog()
     cat.description = catalog_description
     for ind, row in new_rows.iterrows(): 
-        if row['Status'] not in [2, 4]:
+        if row['Status'] not in [2, 4, 5]:
             continue
         e = Event()
         if row['Status'] == 2:
