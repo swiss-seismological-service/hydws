@@ -101,8 +101,7 @@ def read_seismic(old_csv_filename, new_csv_filename, sheet_name,
         elif row['Status'] == 4:
             e.event_type = "explosion"
         elif row['Status'] == 5:
-            e.event_type == "not existing"
-        
+            e.event_type = "not existing"
         o = Origin()
         o.time = row['Origin Time']
         o.longitude, o.latitude, _ = transformer.from_local_coords(row['X'], row['Y'])
