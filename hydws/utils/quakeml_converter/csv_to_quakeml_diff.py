@@ -1,4 +1,4 @@
-""" 
+"""
 Dependencies:
     pip install xlrd pandas obspy
     # Other libraries that are required by these modules should be downloaded.
@@ -100,6 +100,8 @@ def read_seismic(old_csv_filename, new_csv_filename, sheet_name,
             e.event_type = "earthquake"
         elif row['Status'] == 4:
             e.event_type = "explosion"
+        elif row['Status'] == 5:
+            e.event_type == "not existing"
         
         o = Origin()
         o.time = row['Origin Time']
@@ -112,8 +114,7 @@ def read_seismic(old_csv_filename, new_csv_filename, sheet_name,
         elif "boot msmx" in ev_mode:
             o.evaluation_mode = "manual"
         else:
-            raise Exception("origin evaluation mode not in "
-                            f"[L2 msmx, L2 check, Boot msmx] {row['location']}")
+            e.event_type == "not existing"
         o.evaluation_status = "final"
         o.region = FlinnEngdahl().get_region(o.longitude, o.latitude)
         
