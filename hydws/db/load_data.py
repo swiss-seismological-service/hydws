@@ -120,6 +120,12 @@ class HYDWSLoadDataApp(App):
 
         copied_samples = [sample.copy() for sample in section._hydraulics]
         section_existing._hydraulics.extend(copied_samples)
+        self.logger.info("Samples added to hydraulic well section "
+                         f"{section_existing.publicid}: "
+                         f"{len(copied_samples)}.")
+        self.logger.info("Total samples in hydraulic well section "
+                         f"{section_existing.publicid}: "
+                         f"{len(section_existing._hydraulics)}.")
         session.add_all(copied_samples)
         session.commit()
 
