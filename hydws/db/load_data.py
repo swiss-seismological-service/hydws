@@ -129,6 +129,28 @@ class HYDWSLoadDataApp(App):
         session.add_all(copied_samples)
         session.commit()
 
+    def set_well_data(self, well, well_existing, session):
+        well_existing.longitude_value = well.longitude_value
+        well_existing.latitude_value = well.latitude_value
+        well_existing.altitude_value = well.altitude_value
+        well_existing.depth_value = well.depth_value
+        well_existing.bedrockdepth_value = well.bedrockdepth_value
+        well_existing.measureddepth_value = well.measureddepth_value
+        session.commit()
+
+    def set_section_data(self, section, section_existing, session):
+        section_existing.endtime = section.endtime
+        section_existing.starttime = section.starttime
+        section_existing.toplatitude_value = section.toplatitude_value
+        section_existing.toplongitude_value = section.toplongitude_value
+        section_existing.bottomlatitude_value = section.bottomlatitude_value
+        section_existing.bottomlongitude_value = section.bottomlongitude_value
+        section_existing.topdepth_value = section.topdepth_value
+        section_existing.bottomdepth_value = section.bottomdepth_value
+        section_existing.holediameter_value = section.holediameter_value
+        section_existing.casingdiameter_value = section.casingdiameter_value
+        session.commit()
+
     def run(self):
         """
         Run application.
@@ -164,6 +186,7 @@ class HYDWSLoadDataApp(App):
                         filter(
                         Borehole.publicid == bh.publicid).one_or_none()
                     if bh_existing:
+                        self.set_well_data(bh, bh_existing, session)
                         self.logger.info("A borehole exists with the same "
                                          "publicid. Merging with existing "
                                          "borehole.")
@@ -176,6 +199,10 @@ class HYDWSLoadDataApp(App):
                                 self.replace_hydraulics(section,
                                                         section_existing,
                                                         session)
+                                self.set_section_data(section,
+                                                      section_existing,
+                                                      session)
+
                             else:
                                 section_copy = section.copy()
                                 section_copy._borehole = bh_existing
