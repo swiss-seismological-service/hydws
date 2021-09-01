@@ -14,6 +14,7 @@ from marshmallow import (Schema, fields, pre_load, validates_schema,
 
 from hydws.server import settings
 from hydws.server.misc import from_fdsnws_datetime, fdsnws_isoformat
+from hydws.server.v1.ostream.schema import BoreholeSchema
 import logging
 
 Format = functools.partial(
@@ -259,3 +260,8 @@ class SectionHydraulicSampleListResourceSchema(HydraulicsSchemaMixin,
     data for specified borehole id and section id.
     """
     pass
+
+class BoreholeListPostResourceSchema(Schema):
+    """Handle incoming Borehole data passed through POST request.
+    """
+    data = fields.Nested(BoreholeSchema, many=True, required=True)

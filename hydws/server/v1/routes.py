@@ -5,9 +5,11 @@
 .. moduleauthor:: Laura Sarson <laura.sarson@sed.ethz.ch>
 
 """
+
 import logging
 from sqlalchemy import literal, or_
 from flask_restful import Api, Resource
+from flask import request
 from webargs.flaskparser import use_kwargs
 from sqlalchemy.orm import contains_eager, lazyload
 
@@ -18,11 +20,13 @@ from hydws.server.errors import FDSNHTTPError
 from hydws.server.misc import (with_fdsnws_exception_handling, decode_publicid,
                                make_response)
 from hydws.server.v1 import blueprint
+from hydws.utils.merge_data import merge_boreholes
 from hydws.server.v1.ostream.schema import (BoreholeSchema,
                                             HydraulicSampleSchema)
 from hydws.server.v1.parser import (
     BoreholeHydraulicSampleListResourceSchema,
     BoreholeListResourceSchema,
+    BoreholeListPostResourceSchema,
     SectionHydraulicSampleListResourceSchema)
 
 from hydws.server.query_filters import DynamicQuery
@@ -43,6 +47,13 @@ class ResourceBase(Resource):
         """
         Template method to be implemented by HYDWS resources in order to serve
         HTTP GET requests.
+        """
+        raise NotImplementedError
+
+    def post(self):
+        """
+        Template method to be implemented by HYDWS resources in order to serve
+        HTTP POST requests.
         """
         raise NotImplementedError
 
@@ -182,6 +193,17 @@ class BoreholeListResource(ResourceBase):
         resp = BoreholeSchema(many=True).dumps(resp)
 
         return make_response(resp, settings.MIMETYPE_JSON)
+
+    @with_fdsnws_exception_handling(__version__)
+    def post(self):
+        try:
+            data = request.get_json() # post_params.pop('data')
+        except KeyError:
+            raise IOError("data sent via POST must contain "
+                          "the 'data' parameter")
+        info = merge_boreholes(data, db.session)
+
+        return make_response({"info": info}, settings.MIMETYPE_JSON)
 
     def _process_request(self, session,
                          **query_params):
