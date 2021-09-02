@@ -71,15 +71,15 @@ def replace_hydraulics(section, section_existing, session):
     logger.info("Total samples in hydraulic well section "
                 f"{section_existing.publicid}: "
                 f"{len(section_existing._hydraulics)}. ")
-    session.add_all(copied_samples)
-    session.commit()
-    info = (f"{row_count} hydraulic samples deleted. "
+    info = (f" {row_count} hydraulic samples deleted. "
             "Samples added to hydraulic well section "
             f"{section_existing.publicid}: "
             f"{len(copied_samples)}. "
             "Total samples in hydraulic well section "
             f"{section_existing.publicid}: "
             f"{len(section_existing._hydraulics)}.")
+    session.add_all(copied_samples)
+    session.commit()
     return info
 
 def set_well_data(well, well_existing, session):
