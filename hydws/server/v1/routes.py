@@ -20,7 +20,7 @@ from hydws.server.errors import FDSNHTTPError
 from hydws.server.misc import (with_fdsnws_exception_handling, decode_publicid,
                                make_response)
 from hydws.server.v1 import blueprint
-from hydws.utils.merge_data import merge_boreholes
+from hydws.utils import merge_data
 from hydws.server.v1.ostream.schema import (BoreholeSchema,
                                             HydraulicSampleSchema)
 from hydws.server.v1.parser import (
@@ -213,7 +213,7 @@ class BoreholeListResource(ResourceBase):
         except KeyError:
             raise IOError("data sent via POST must contain "
                           "the 'data' parameter")
-        info = merge_boreholes(data, db.session)
+        info = merge_data.merge_boreholes(data, db.session)
 
         return make_response({"info": info}, settings.MIMETYPE_JSON)
 

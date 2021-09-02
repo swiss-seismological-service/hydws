@@ -8,8 +8,8 @@ import json
 from sqlalchemy.orm import subqueryload
 
 # TODO (sarsonl) make version loading dynamic
-from hydws.server.v1.ostream.schema import BoreholeSchema
 from hydws.db.orm import Borehole, BoreholeSection, HydraulicSample
+from hydws.server.v1.ostream.schema import BoreholeSchema
 
 
 logger = logging.getLogger(__name__)
@@ -104,10 +104,11 @@ def set_section_data(section, section_existing, session):
     section_existing.casingdiameter_value = section.casingdiameter_value
     session.commit()
 
-def merge_boreholes(data, session, assignids=None,
-                                   publicid_uri=None,
-                                   overwrite_publicids=None,
-                                   merge_only=None):
+def merge_boreholes(data, session,
+                    assignids=None,
+                    publicid_uri=None,
+                    overwrite_publicids=None,
+                    merge_only=None):
     """Function to be called from load_data script or
     by POST request to either add or merge a Borehole
     to the database, replacing any overlapping data.
