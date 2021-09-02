@@ -7,15 +7,12 @@
 """
 import datetime
 import functools
-from collections import OrderedDict
 
 from marshmallow import (Schema, fields, pre_load, validates_schema,
                          validate, ValidationError)
 
 from hydws.server import settings
 from hydws.server.misc import from_fdsnws_datetime, fdsnws_isoformat
-from hydws.server.v1.ostream.schema import BoreholeSchema
-import logging
 
 Format = functools.partial(
     fields.String,
@@ -228,17 +225,18 @@ class BoreholeHydraulicSampleListResourceSchema(HydraulicsSchemaMixin,
         raise ValidationError on hydraulic level query parameters.
         """
         if data.get('level') in ('borehole', 'section'):
-            hydraulic_params = HydraulicsSchemaMixin(exclude=['starttime', 'endtime']).dump(data)
+            hydraulic_params = HydraulicsSchemaMixin(
+                exclude=['starttime', 'endtime']).dump(data)
             if hydraulic_params:
                 raise ValidationError(
-                    'Hydraulic query parameters not allowed: {}'.\
+                    'Hydraulic query parameters not allowed: {}'.
                     format(hydraulic_params))
 
         if data.get('level') == 'borehole':
             section_params = SectionSchemaMixin().dump(data)
             if section_params:
                 raise ValidationError(
-                    'Section query parameters not allowed: {}'.\
+                    'Section query parameters not allowed: {}'.
                     format(section_params))
 
 
@@ -261,7 +259,9 @@ class SectionHydraulicSampleListResourceSchema(HydraulicsSchemaMixin,
     """
     pass
 
-class BoreholeListPostResourceSchema(Schema):
-    """Handle incoming Borehole data passed through POST request.
+class NewUserResourceSchema(GeneralSchema):
     """
-    data = fields.Nested(BoreholeSchema, many=True, required=True)
+    Handle arguments sent for a new user request
+    """
+    username = fields.String(required=True)
+    password = fields.String(required=True)

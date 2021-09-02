@@ -5,12 +5,11 @@
 .. moduleauthor:: Laura Sarson <laura.sarson@sed.ethz.ch>
 
 """
-import inspect
-import copy
+from passlib.apps import custom_app_context as pwd_context
 from sqlalchemy import Column, String, Boolean, Integer, ForeignKey
 from sqlalchemy.orm import relationship, class_mapper
 
-from hydws.db.base import (ORMBase, RealQuantityMixin, CreationInfo,
+from hydws.db.base import (ORMBase, RealQuantityMixin,
                            TimeQuantityMixin, EpochMixin, PublicIDMixin)
 from hydws.server import settings
 
@@ -61,6 +60,19 @@ try:
     PREFIX = settings.HYDWS_PREFIX
 except AttributeError:
     PREFIX = ''
+
+class User(ORMBase):
+    __tablename__ = 'users'
+    id = Column(Integer, primary_key=True)
+    username = Column(String(32), index=True)
+    password_hash = Column(String(128))
+
+    def hash_password(self, password):
+        self.password_hash = pwd_context.encrypt(password)
+
+    def verify_password(self, password):
+        return pwd_context.verify(password, self.password_hash)
+
 
 class Borehole(RealQuantityMixin('longitude',
                                  value_nullable=False),
@@ -115,8 +127,8 @@ class Borehole(RealQuantityMixin('longitude',
 
         if self._sections:
             snap._sections = [s.snapshot(filter_cond=sample_filter_cond)
-                             for s in list(filter(section_filter_cond,
-                                                  self._sections))]
+                              for s in list(filter(section_filter_cond,
+                                                   self._sections))]
         return snap
 
     def merge(self, other, merge_undefined=True):
@@ -167,8 +179,10 @@ class Borehole(RealQuantityMixin('longitude',
 
     def __repr__(self):
         return ("<{}(publicid={!r}, longitude={}, latitude={}, "
-                "depth={}, altitude={})>").format(type(self).__name__, self.publicid,
-                                     self.longitude_value, self.latitude_value, self.depth_value, self.altitude_value)
+                "depth={}, altitude={})>").format(
+                    type(self).__name__,
+                    self.publicid, self.longitude_value, self.latitude_value,
+                    self.depth_value, self.altitude_value)
 
 
 class BoreholeSection(EpochMixin('Epoch', epoch_type='open'),
@@ -204,7 +218,8 @@ class BoreholeSection(EpochMixin('Epoch', epoch_type='open'),
 
     _hydraulics = relationship("HydraulicSample", back_populates="_section",
                                lazy='noload', uselist=True,
-                               order_by='HydraulicSample.datetime_value', cascade='save-update, delete, delete-orphan')
+                               order_by='HydraulicSample.datetime_value',
+                               cascade='save-update, delete, delete-orphan')
 
     def snapshot(self, filter_cond=None):
         """
@@ -244,7 +259,6 @@ class BoreholeSection(EpochMixin('Epoch', epoch_type='open'),
         :param other: Well section to be merged
         :type other: :py:class:`WellSection`
         """
-        
         assert isinstance(other, type(self)) or other is None, \
             "other is not of type WellSection."
 
@@ -283,7 +297,8 @@ class BoreholeSection(EpochMixin('Epoch', epoch_type='open'),
             filter_cond = no_filter
 
         snap = type(self._hydraulics)()
-        snap._hydraulics = [s.copy() for s in self._hydraulics if filter_cond(s)]
+        snap._hydraulics = [s.copy() for s in self._hydraulics
+                            if filter_cond(s)]
 
         return snap._hydraulics
 
@@ -320,6 +335,7 @@ class BoreholeSection(EpochMixin('Epoch', epoch_type='open'),
         if other:
             first_sample = min(e.datetime_value for e in other)
             last_sample = max(e.datetime_value for e in other)
+
             def filter_by_overlapping_datetime(s):
                 return (s.datetime_value >= first_sample and
                         s.datetime_value <= last_sample)
@@ -353,7 +369,8 @@ class HydraulicSample(TimeQuantityMixin('datetime', value_nullable=False,
     __mapper_args__ = {'confirm_deleted_rows': False}
     fluidcomposition = Column(f'{PREFIX}fluidcomposition', String)
 
-    _section = relationship("BoreholeSection", back_populates="_hydraulics", uselist=False)
+    _section = relationship("BoreholeSection", back_populates="_hydraulics",
+                            uselist=False)
 
     boreholesection_oid = Column(f'{PREFIX}boreholesection_oid',
                                  Integer, ForeignKey('boreholesection._oid'))
