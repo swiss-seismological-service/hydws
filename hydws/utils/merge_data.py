@@ -133,9 +133,8 @@ def merge_boreholes(data, session,
                     subqueryload("_hydraulics")).\
             filter(
             Borehole.publicid == bh.publicid).one_or_none()
-        bh_info = (f"Borehole {Borehole.publicid} "
-                   f"already in db: {bh_existing}."
-                   " Merging with existing borehole.")
+        bh_info = (f"Borehole {bh.publicid} "
+                   f"already in db: {False if bh_existing is None else True}.")
         if bh_existing:
             set_well_data(bh, bh_existing, session)
             logger.info("A borehole exists with the same "
@@ -166,6 +165,7 @@ def merge_boreholes(data, session,
                     "No borehole exists with publicid: "
                     f"{bh.publicid} and cannot be merged.")
             session.add(bh)
+            bh_info += "Borehole has been created in db."
         bhs_info += bh_info
 
     try:
