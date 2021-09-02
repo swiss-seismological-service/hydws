@@ -4,8 +4,8 @@
 
 Application to convert csv data to a json file
 """
-
 #!/usr/bin/python
+# flake8: noqa
 
 import sys
 import getopt
@@ -32,26 +32,28 @@ def main(argv):
     publicid2 = "id:boreholesection_{:%Y%m%dT%H%M%S.%f}".format(today)
     try:
         opts, args = getopt.getopt(argv, "hi:o:b:s:",
-                                   ["ifile=", "ofile=", "borehole_param=", "boreholeSection="])
+                                   ["ifile=", "ofile=",
+                                    "borehole_param=", "boreholeSection="])
     except getopt.GetoptError:
-        print("###########################################################"
+        print("##########################################################"
               "############################################")
         print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
               "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
         print("Oops!", sys.exc_info()[0], "occured.")
-        print("Required are -i (inputfile) -o (outputfile) -b (Boreholevalues)")
+        print("Required are -i (inputfile) -o (outputfile) -b "
+              "(Boreholevalues)")
         print("Optional with the required is -s (BoreholeSectionvalues)")
         print("Make sure you give the right values with arguments.")
         print("Try it again!")
-        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
               "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        print("###########################################################"
+        print("#########################################################"
               "############################################")
         sys.exit(2)
     print("")
-    print("###############################################################"
+    print("#############################################################"
           "########################################")
-    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
           "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
     for opt, arg in opts:
         if opt == '-h':
@@ -67,12 +69,15 @@ def main(argv):
             my_parser.add_argument('borehole',
                                    metavar='-b',
                                    type=str,
-                                   help='Values for the borehole(required: latitude_value,'
-                                        'longitude_value, altitude_value, depth_value)')
+                                   help='Values for the borehole(required: '
+                                        'latitude_value,'
+                                        'longitude_value, altitude_value, '
+                                        'depth_value)')
             my_parser.add_argument('-s',
                                    metavar='--boreholeSection',
                                    type=str,
-                                   help='Optional value -s, to put after the Borehole -b, for the boreholeSection')
+                                   help='Optional value -s, to put after the '
+                                        'Borehole -b, for the boreholeSection')
             args = my_parser.parse_args()
             input_path = args.Path
             print('\n'.join(os.listdir(input_path)))
@@ -94,7 +99,8 @@ def main(argv):
     print("##############################################################"
           "#########################################")
     try:
-        # First define the Borehole level with information from the geldinganis borehole
+        # First define the Borehole level with
+        # information from the geldinganis borehole
         if "latitude_value=" not in borehole_param:
             print("Please define the latitude_value!")
             sys.exit(2)
@@ -105,11 +111,13 @@ def main(argv):
             print("Please define the depth_value!")
             sys.exit(2)
         if ",publicid=" not in borehole_param:
-            borehole_param = borehole_param + ",publicid= \"" + publicid1 + "\""
+            borehole_param = borehole_param + ",publicid= \"" + \
+                publicid1 + "\""
             print(
                 "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
                 "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            print("The publicid for the Borehole was not defined, publicid set to: " + str(publicid1))
+            print("The publicid for the Borehole was not defined, "
+                  "publicid set to: " + str(publicid1))
         print("")
         print("Borehole: ", borehole_param)
         print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"

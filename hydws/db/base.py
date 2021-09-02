@@ -9,7 +9,7 @@ import enum
 import functools
 
 from sqlalchemy.orm import relationship, backref
-from sqlalchemy import (Column, Boolean, Integer, Float, String, DateTime,
+from sqlalchemy import (Column, Integer, Float, String, DateTime,
                         Enum, ForeignKey)
 from sqlalchemy.ext.declarative import declared_attr, declarative_base
 from hydws.server import settings
@@ -27,6 +27,7 @@ class Base(object):
         return cls.__name__.lower()
     # (sarsonl) should this have prefix?
     _oid = Column(Integer, primary_key=True, nullable=False)
+
 
 ORMBase = declarative_base(cls=Base)
 
@@ -396,7 +397,7 @@ def PublicIDMixin(name='', parent_prefix=None, column_prefix=None):
         parent_prefix = name
     if not column_prefix:
         column_prefix = parent_prefix
-    
+
     if PREFIX:
         column_prefix = f'{PREFIX}{column_prefix}'
 
@@ -445,7 +446,7 @@ def EpochMixin(name, epoch_type=None, parent_prefix=None):
     if not parent_prefix:
         parent_prefix = ''
     column_prefix = parent_prefix
-    
+
     if PREFIX:
         column_prefix = f'{PREFIX}{column_prefix}'
 
@@ -507,7 +508,8 @@ UniqueEpochMixin = EpochMixin('Epoch')
 UniqueOpenEpochMixin = EpochMixin('Epoch', epoch_type='open')
 
 
-def QuantityMixin(name, quantity_type, column_prefix=None, value_nullable=True, index=False):
+def QuantityMixin(name, quantity_type, column_prefix=None,
+                  value_nullable=True, index=False):
     """
     Mixin factory for common :code:`Quantity` types from
     `QuakeML <https://quake.ethz.ch/quakeml/>`_.

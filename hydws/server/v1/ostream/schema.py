@@ -328,6 +328,7 @@ class HydraulicSampleSchema(SchemaBase):
     fluidph_confidencelevel = ConfidenceLevel()
 
     fluidcomposition = fields.String()
+
     @post_load
     def make_hydraulics(self, data):
         return HydraulicSample(**data)

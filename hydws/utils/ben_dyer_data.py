@@ -17,7 +17,7 @@ from hydws.server.v1.ostream.schema import BoreholeSchema
 
 from datetime import timedelta
 
-HOLE_DIAMETER = 0.3 # Incorrect hole diameter
+HOLE_DIAMETER = 0.3  # Incorrect hole diameter
 
 # Use CH1903+, EPSG:2056
 # lab origin converts to:
@@ -169,7 +169,8 @@ def get_hydraulics(filename_list):
                     continue
                 else:
                     old_minute = minute
-                dttime = dttime.replace(hour=hour, minute=minute, second=second)
+                dttime = dttime.replace(hour=hour, minute=minute,
+                                        second=second)
                 # Using topflow and toppressure referencing the top of the
                 # borehole, even though not sure if it should be bottom
                 #- the EM1 and HM1 models currently depend
@@ -296,7 +297,8 @@ def main():
         starttime = dt.datetime.strftime(section.starttime, "%Y%m%d%H%M%S")
         endtime = dt.datetime.strftime(section.endtime, "%Y%m%d%H%M%S")
         sid = section.topdepth_value
-        output_file = f"ben_dyer_cb1_minute_sampled_{starttime}_{endtime}_{sid}m.json"
+        output_file = (f"ben_dyer_cb1_minute_sampled_{starttime}_"
+                       f"{endtime}_{sid}m.json")
         section_copy = section.copy()
         borehole_write._sections = [section_copy]
         with open(output_file, 'w') as new_file:
