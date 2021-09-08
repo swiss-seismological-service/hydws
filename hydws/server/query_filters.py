@@ -6,7 +6,6 @@
 .. moduleauthor:: Laura Sarson <laura.sarson@sed.ethz.ch>
 
 """
-import datetime
 from sqlalchemy import or_
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -105,7 +104,7 @@ class DynamicQuery(object):
         """
         try:
             return self.query.all()
-        except NoResultFound as err:
+        except NoResultFound:
             return None
 
     def return_one(self):
@@ -174,8 +173,8 @@ class DynamicQuery(object):
         """
 
         eq_attr = self.operator_attr(column, 'eq')
-        filt =  or_((getattr(column, attr)(param_value)),
-                    (getattr(column, eq_attr)(None)))
+        filt = or_((getattr(column, attr)(param_value)),
+                   (getattr(column, eq_attr)(None)))
         return filt
 
     def filter_level(self, query_params, filter_level):
@@ -220,7 +219,7 @@ class DynamicQuery(object):
 
                 else:
                     filt = self.get_filter(
-                        filter_clause, filter_name, query_params,orm_class)
+                        filter_clause, filter_name, query_params, orm_class)
                     if filt is None:
                         continue
 
@@ -241,12 +240,15 @@ class DynamicQuery(object):
 
         :return: Method to evaluate ORM column
             e.g. getattr(col, operator)(param value)
-        :type: Column evaluation method or None if no param value exists. 
+        :type: Column evaluation method or None if no param value exists.
 
         """
-        key, op, param_name, param_value = self.get_query_param(filter_clause, query_params)
+        key, op, param_name, param_value = self.get_query_param(
+            filter_clause, query_params)
         if param_value:
-            return self.filter_query(query_params, filter_name, key, op, param_name, param_value, orm_class)
+            return self.filter_query(
+                query_params, filter_name, key, op, param_name,
+                param_value, orm_class)
         else:
             return None
 
@@ -254,22 +256,23 @@ class DynamicQuery(object):
 
         try:
             key, op, param_name = filter_clause
-        except ValueError as err:
-            raise Exception(f"Invalid filter input")
+        except ValueError:
+            raise Exception("Invalid filter input")
 
         param_value = query_params.get(param_name)
-        
+
         return key, op, param_name, param_value
-        
-    def filter_query(self, query_params, filter_name, key, op, param_name, param_value, orm_class):
+
+    def filter_query(self, query_params, filter_name, key, op,
+                     param_name, param_value, orm_class):
 
         try:
             column = getattr(orm_class, key)
         except AttributeError:
-           raise Exception(f"Invalid filter column: {key}")
+            raise Exception(f"Invalid filter column: {key}")
 
-	    # (sarsonl) Currently 'in' is unused and untested.
-	    # Still requires handling for the backref quantities
+            # (sarsonl) Currently 'in' is unused and untested.
+            # Still requires handling for the backref quantities
         if op == "in":
             if isinstance(param_value, list):
                 filt = column.in_(param_value)

@@ -18,6 +18,7 @@ class MockQuery(object):
     def filter(self, filt):
         self.val += str(filt)
         return self
+
     def paginate(self, page, limit, error_flag):
         pass
 
@@ -123,7 +124,6 @@ class DynamicQueryTestCase(unittest.TestCase):
 
     def test_filter_query_invalid_method(self):
         """Raise Exception in case of non-existent method on column obj.
-        
         """
         dyn_f = qf.DynamicQuery(MockQuery('query'))
         qf.FILTER_BOREHOLES = [('mock_column', 'invalid_method',
@@ -134,7 +134,6 @@ class DynamicQueryTestCase(unittest.TestCase):
 
     def test_filter_query_invalid_level(self):
         """Raise Exception in case of level not handled.
-        
         """
         dyn_f = qf.DynamicQuery(MockQuery('query'))
         qf.FILTER_BOREHOLES = [('mock_column', 'invalid_method',

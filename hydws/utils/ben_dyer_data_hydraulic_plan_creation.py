@@ -17,7 +17,7 @@ from hydws.server.v1.ostream.schema import BoreholeSchema
 
 from datetime import timedelta
 
-HOLE_DIAMETER = 0.3 # Incorrect hole diameter
+HOLE_DIAMETER = 0.3  # Incorrect hole diameter
 
 # Use CH1903+, EPSG:2056
 # lab origin converts to:
@@ -169,13 +169,15 @@ def get_hydraulics(filename_list, section_index):
                      q_out, pi_flowboard) = line
 
                 day_error = 31 if day_year in ['5', '6', '7'] else 0
-                dttime = start_of_year + timedelta(float(day_year) -1 + float(day_error))
+                dttime = (start_of_year + timedelta(float(day_year) -
+                          1 + float(day_error)))
                 hour, minute, second = (int(i) for i in time.split(':'))
                 if old_minute == minute:
                     continue
                 else:
                     old_minute = minute
-                dttime = dttime.replace(hour=hour, minute=minute, second=second)
+                dttime = dttime.replace(hour=hour, minute=minute,
+                                        second=second)
                 #dttime +=  globals()[f"CB1_S{section_index}_TIMEDELTA"]
                 # Using topflow and toppressure referencing the top of the
                 # borehole, even though not sure if it should be bottom
@@ -294,7 +296,8 @@ def main():
         starttime = dt.datetime.strftime(section.starttime, "%Y%m%d%H%M%S")
         endtime = dt.datetime.strftime(section.endtime, "%Y%m%d%H%M%S")
         sid = section.topdepth_value
-        output_file = f"ben_dyer_scenario_cb1_minute_sampled_{starttime}_{endtime}_{sid}m.json"
+        output_file = (f"ben_dyer_scenario_cb1_minute_sampled_{starttime}_"
+                       f"{endtime}_{sid}m.json")
         section_copy = section.copy()
         borehole_write._sections = [section_copy]
         with open(output_file, 'w') as new_file:

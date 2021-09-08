@@ -26,14 +26,14 @@ class BoreholeTestCase(unittest.TestCase):
                                bottomflow_value=i - delta_flow)
             for i in range(num_samples)]
         s0 = dm.BoreholeSection(toplongitude_value=8.925293642,
-                            toplatitude_value=46.90669014,
-                            topdepth_value=0,
-                            bottomlongitude_value=9,
-                            bottomlatitude_value=47,
-                            bottomdepth_value=500,
-                            holediameter_value=0.3,
-                            casingdiameter_value=0.25,
-                            _hydraulics=samples)
+                                toplatitude_value=46.90669014,
+                                topdepth_value=0,
+                                bottomlongitude_value=9,
+                                bottomlatitude_value=47,
+                                bottomdepth_value=500,
+                                holediameter_value=0.3,
+                                casingdiameter_value=0.25,
+                                _hydraulics=samples)
         bh = dm.Borehole(
             longitude_value=8.925,
             latitude_value=46.906,
@@ -62,14 +62,14 @@ class BoreholeTestCase(unittest.TestCase):
                                bottomflow_value=i - delta_flow)
             for i in range(num_samples)]
         s0 = dm.BoreholeSection(toplongitude_value=8.925293642,
-                            toplatitude_value=46.90669014,
-                            topdepth_value=0,
-                            bottomlongitude_value=9,
-                            bottomlatitude_value=47,
-                            bottomdepth_value=500,
-                            holediameter_value=0.3,
-                            casingdiameter_value=0.25,
-                            _hydraulics=samples)
+                                toplatitude_value=46.90669014,
+                                topdepth_value=0,
+                                bottomlongitude_value=9,
+                                bottomlatitude_value=47,
+                                bottomdepth_value=500,
+                                holediameter_value=0.3,
+                                casingdiameter_value=0.25,
+                                _hydraulics=samples)
         bh = dm.Borehole(
             longitude_value=8.925,
             latitude_value=46.906,
@@ -103,22 +103,22 @@ class BoreholeTestCase(unittest.TestCase):
                                bottomflow_value=i - delta_flow)
             for i in range(num_samples)]
         s0 = dm.BoreholeSection(toplongitude_value=8.925293642,
-                            toplatitude_value=46.90669014,
-                            topdepth_value=0,
-                            bottomlongitude_value=9,
-                            bottomlatitude_value=47,
-                            bottomdepth_value=500,
-                            holediameter_value=0.3,
-                            casingdiameter_value=0.25,
-                            _hydraulics=samples)
+                                toplatitude_value=46.90669014,
+                                topdepth_value=0,
+                                bottomlongitude_value=9,
+                                bottomlatitude_value=47,
+                                bottomdepth_value=500,
+                                holediameter_value=0.3,
+                                casingdiameter_value=0.25,
+                                _hydraulics=samples)
         s1 = dm.BoreholeSection(toplongitude_value=9,
-                            toplatitude_value=47,
-                            topdepth_value=500,
-                            bottomlongitude_value=9.01,
-                            bottomlatitude_value=47.01,
-                            bottomdepth_value=1500,
-                            holediameter_value=0.25,
-                            casingdiameter_value=0)
+                                toplatitude_value=47,
+                                topdepth_value=500,
+                                bottomlongitude_value=9.01,
+                                bottomlatitude_value=47.01,
+                                bottomdepth_value=1500,
+                                holediameter_value=0.25,
+                                casingdiameter_value=0)
 
         bh = dm.Borehole(
             longitude_value=8.925,
@@ -173,11 +173,11 @@ class BoreholeTestCase(unittest.TestCase):
 
         sec_id = str(uuid.uuid4())
         s0 = dm.BoreholeSection(publicid=sec_id,
-                            starttime=dt,
-                            endtime=None)
+                                starttime=dt,
+                                endtime=None)
         s1 = dm.BoreholeSection(publicid=sec_id,
-                            starttime=dt,
-                            endtime=dt + delta)
+                                starttime=dt,
+                                endtime=dt + delta)
 
         bh0 = dm.Borehole(
             longitude_value=8.925,
@@ -202,12 +202,12 @@ class BoreholeTestCase(unittest.TestCase):
 
         sec_id0 = str(uuid.uuid4())
         s0 = dm.BoreholeSection(publicid=sec_id0,
-                            starttime=dt,
-                            endtime=None)
+                                starttime=dt,
+                                endtime=None)
         sec_id1 = str(uuid.uuid4())
         s1 = dm.BoreholeSection(publicid=sec_id1,
-                            starttime=dt + delta,
-                            endtime=None)
+                                starttime=dt + delta,
+                                endtime=None)
 
         bh0 = dm.Borehole(
             longitude_value=8.925,
@@ -228,23 +228,22 @@ class BoreholeTestCase(unittest.TestCase):
     def test_merge_to_empty(self):
         bh0 = dm.Borehole(
             longitude_value=8.925,
-            latitude_value=46.906
-                )
+            latitude_value=46.906)
 
         bh_id = str(uuid.uuid4())
         sec_id = str(uuid.uuid4())
         dt = datetime.datetime(2020, 1, 1)
         s0 = dm.BoreholeSection(publicid=sec_id,
-                            starttime=dt,
-                            endtime=None,
-                            toplongitude_value=8.925293642,
-                            toplatitude_value=46.90669014,
-                            topdepth_value=0,
-                            bottomlongitude_value=9,
-                            bottomlatitude_value=47,
-                            bottomdepth_value=500,
-                            holediameter_value=0.3,
-                            casingdiameter_value=0.25)
+                                starttime=dt,
+                                endtime=None,
+                                toplongitude_value=8.925293642,
+                                toplatitude_value=46.90669014,
+                                topdepth_value=0,
+                                bottomlongitude_value=9,
+                                bottomlatitude_value=47,
+                                bottomdepth_value=500,
+                                holediameter_value=0.3,
+                                casingdiameter_value=0.25)
         bh1 = dm.Borehole(
             longitude_value=8.925,
             latitude_value=46.906,
@@ -275,28 +274,28 @@ class BoreholeSectionTestCase(unittest.TestCase):
             for i in range(num_samples)]
         sec_id = str(uuid.uuid4())
         s0 = dm.BoreholeSection(publicid=sec_id,
-                            starttime=dt,
-                            endtime=None,
-                            toplongitude_value=8.925293642,
-                            toplatitude_value=46.90669014,
-                            topdepth_value=0,
-                            bottomlongitude_value=9,
-                            bottomlatitude_value=47,
-                            bottomdepth_value=500,
-                            holediameter_value=0.3,
-                            casingdiameter_value=0.25,
-                            _hydraulics=samples)
+                                starttime=dt,
+                                endtime=None,
+                                toplongitude_value=8.925293642,
+                                toplatitude_value=46.90669014,
+                                topdepth_value=0,
+                                bottomlongitude_value=9,
+                                bottomlatitude_value=47,
+                                bottomdepth_value=500,
+                                holediameter_value=0.3,
+                                casingdiameter_value=0.25,
+                                _hydraulics=samples)
         s1 = dm.BoreholeSection(publicid=sec_id,
-                            starttime=dt,
-                            endtime=dt + (num_samples - 1) * interval,
-                            toplongitude_value=8.925293642,
-                            toplatitude_value=46.90669014,
-                            topdepth_value=0,
-                            bottomlongitude_value=9,
-                            bottomlatitude_value=47,
-                            bottomdepth_value=500,
-                            holediameter_value=0.3,
-                            casingdiameter_value=0.25)
+                                starttime=dt,
+                                endtime=dt + (num_samples - 1) * interval,
+                                toplongitude_value=8.925293642,
+                                toplatitude_value=46.90669014,
+                                topdepth_value=0,
+                                bottomlongitude_value=9,
+                                bottomlatitude_value=47,
+                                bottomdepth_value=500,
+                                holediameter_value=0.3,
+                                casingdiameter_value=0.25)
 
         s0.merge(s1)
 
@@ -323,29 +322,29 @@ class BoreholeSectionTestCase(unittest.TestCase):
 
         sec_id = str(uuid.uuid4())
         s0 = dm.BoreholeSection(publicid=sec_id,
-                            starttime=dt0,
-                            endtime=None,
-                            toplongitude_value=8.925293642,
-                            toplatitude_value=46.90669014,
-                            topdepth_value=0,
-                            bottomlongitude_value=9,
-                            bottomlatitude_value=47,
-                            bottomdepth_value=500,
-                            holediameter_value=0.3,
-                            casingdiameter_value=0.25,
-                            _hydraulics=samples0)
+                                starttime=dt0,
+                                endtime=None,
+                                toplongitude_value=8.925293642,
+                                toplatitude_value=46.90669014,
+                                topdepth_value=0,
+                                bottomlongitude_value=9,
+                                bottomlatitude_value=47,
+                                bottomdepth_value=500,
+                                holediameter_value=0.3,
+                                casingdiameter_value=0.25,
+                                _hydraulics=samples0)
         s1 = dm.BoreholeSection(publicid=sec_id,
-                            starttime=dt1,
-                            endtime=None,
-                            toplongitude_value=8.925293642,
-                            toplatitude_value=46.90669014,
-                            topdepth_value=0,
-                            bottomlongitude_value=9,
-                            bottomlatitude_value=47,
-                            bottomdepth_value=500,
-                            holediameter_value=0.3,
-                            casingdiameter_value=0.25,
-                            _hydraulics=samples1)
+                                starttime=dt1,
+                                endtime=None,
+                                toplongitude_value=8.925293642,
+                                toplatitude_value=46.90669014,
+                                topdepth_value=0,
+                                bottomlongitude_value=9,
+                                bottomlatitude_value=47,
+                                bottomdepth_value=500,
+                                holediameter_value=0.3,
+                                casingdiameter_value=0.25,
+                                _hydraulics=samples1)
 
         s0.merge(s1)
 

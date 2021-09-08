@@ -5,19 +5,22 @@
 .. moduleauthor:: Laura Sarson <laura.sarson@sed.ethz.ch>
 
 """
+
 import logging
 from sqlalchemy import literal, or_
 from flask_restful import Api, Resource
+from flask import request
 from webargs.flaskparser import use_kwargs
 from sqlalchemy.orm import contains_eager, lazyload
 
 from hydws import __version__
-from hydws.db.orm import Borehole, BoreholeSection, HydraulicSample
+from hydws.db.orm import Borehole, BoreholeSection, HydraulicSample, User
 from hydws.server import db, settings
 from hydws.server.errors import FDSNHTTPError
 from hydws.server.misc import (with_fdsnws_exception_handling, decode_publicid,
                                make_response)
 from hydws.server.v1 import blueprint
+from hydws.utils import merge_data
 from hydws.server.v1.ostream.schema import (BoreholeSchema,
                                             HydraulicSampleSchema)
 from hydws.server.v1.parser import (
@@ -43,6 +46,13 @@ class ResourceBase(Resource):
         """
         Template method to be implemented by HYDWS resources in order to serve
         HTTP GET requests.
+        """
+        raise NotImplementedError
+
+    def post(self):
+        """
+        Template method to be implemented by HYDWS resources in order to serve
+        HTTP POST requests.
         """
         raise NotImplementedError
 
@@ -98,9 +108,9 @@ def hydraulicsample_oids(session, borehole_id, **query_params):
     parameters given.
     """
     hyd_base_query = session.query(HydraulicSample).\
-        options(lazyload(HydraulicSample._section).\
+        options(lazyload(HydraulicSample._section).
                 lazyload(BoreholeSection._borehole)).\
-                join(BoreholeSection).join(Borehole).\
+        join(BoreholeSection).join(Borehole).\
         filter(Borehole.publicid==borehole_id)
     hyd_query = DynamicQuery(hyd_base_query)
 
@@ -121,21 +131,21 @@ def query_with_sections(query, sec_list,
         order_by(BoreholeSection.topdepth_value)
     if keep_all_boreholes:
         query = query.filter(or_(BoreholeSection._oid.in_(sec_list),
-                                 Borehole._sections == None))
+                                 Borehole._sections == None)) # noqa
     else:
         query = query.filter(BoreholeSection._oid.in_(sec_list))
     return query
 
 def query_with_sections_and_hydraulics(query, hyd_list, **query_params):
-    query = query.options(lazyload(Borehole._sections).\
+    query = query.options(
+        lazyload(Borehole._sections).
         lazyload(BoreholeSection._hydraulics)).\
         join(BoreholeSection, isouter=True).\
         join(HydraulicSample, isouter=True).\
-        options(contains_eager("_sections").\
-        contains_eager("_hydraulics")).\
+        options(contains_eager("_sections").contains_eager("_hydraulics")).\
         filter(or_(HydraulicSample._oid.in_(hyd_list),
                    BoreholeSection._hydraulics == None)).\
-        order_by(BoreholeSection.topdepth_value, HydraulicSample.datetime_value)
+        order_by(BoreholeSection.topdepth_value, HydraulicSample.datetime_value) # noqa
     return query
 
 def query_hydraulicsamples(session, section_id):
@@ -155,6 +165,19 @@ def section_in_borehole(query, borehole_id, section_id):
         filter(boreholesection_filter.exists()).scalar()
 
     return section_exists
+
+
+class NewUserResource(ResourceBase):
+
+    LOGGER = 'hydws.server.v1.newuserresource'
+
+    @with_fdsnws_exception_handling(__version__)
+    def post(self):
+        user = User(username=request.args.get('username'))
+        user.hash_password(request.args.get('password'))
+        db.session.add(user)
+        db.session.commit()
+        return make_response({'username': user.username}, 201)
 
 
 class BoreholeListResource(ResourceBase):
@@ -183,6 +206,17 @@ class BoreholeListResource(ResourceBase):
 
         return make_response(resp, settings.MIMETYPE_JSON)
 
+    @with_fdsnws_exception_handling(__version__)
+    def post(self):
+        try:
+            data = request.get_json()
+        except KeyError:
+            raise IOError("data sent via POST must contain "
+                          "the 'data' parameter")
+        info = merge_data.merge_boreholes(data, db.session)
+
+        return make_response({"info": info}, settings.MIMETYPE_JSON)
+
     def _process_request(self, session,
                          **query_params):
 
@@ -199,8 +233,8 @@ class BoreholeListResource(ResourceBase):
                              f"params: {sec_list}")
                 query = query_with_sections(query, sec_list, **query_params)
             else:
-                logging.info(f"sections with _oid do not exist that match "
-                             f"query params")
+                logging.info("sections with _oid do not exist that match "
+                             "query params")
         dynamic_query = DynamicQuery(query)
 
         # Use borehole level filtering.
@@ -217,7 +251,7 @@ class BoreholeHydraulicSampleListResource(ResourceBase):
     @use_kwargs(BoreholeHydraulicSampleListResourceSchema,
                 locations=("query", ))
     @with_strict_args(BoreholeHydraulicSampleListResourceSchema,
-                locations=("query", ))
+                      locations=("query", ))
     def get(self, borehole_id, **query_params):
         borehole_id = decode_publicid(borehole_id)
 
@@ -228,7 +262,6 @@ class BoreholeHydraulicSampleListResource(ResourceBase):
         resp = self._process_request(db.session, borehole_id=borehole_id,
                                      **query_params)
         if not resp:
-            
             self._handle_nodata(query_params)
 
         # TODO(damb): Serialize according to query_param format=JSON|XML
@@ -248,7 +281,6 @@ class BoreholeHydraulicSampleListResource(ResourceBase):
             hyd_list = hydraulicsample_oids(session, borehole_id,
                                             **query_params)
 
-
         if level in ['section', 'hydraulic']:
             sec_list = boreholesection_oids(session, borehole_id,
                                             **query_params)
@@ -262,18 +294,14 @@ class BoreholeHydraulicSampleListResource(ResourceBase):
                 query = query_with_sections(
                     query, sec_list, **query_params)
             else:
-                logging.info(f"No sections exist that match query "
-                             f"params for borehole")
+                logging.info("No sections exist that match query "
+                             "params for borehole")
 
         elif level == 'hydraulic':
-            
             if sec_list and hyd_list:
-                logging.info(f"sections with _oid exist that match query "
+                logging.info("sections with _oid exist that match query "
                              f"params: {sec_list}. Hydraulics with _oid "
                              f"exist: {hyd_list}")
-
-                limit = query_params.get('limit')
-                offset = query_params.get('offset')
 
                 query = query_with_sections_and_hydraulics(
                     query, hyd_list, **query_params)
@@ -285,8 +313,8 @@ class BoreholeHydraulicSampleListResource(ResourceBase):
                 query = query_with_sections(
                     query, sec_list, **query_params)
             else:
-                logging.info(f"no sections and no hydraulics exist for "
-                             f"borehole that match query params")
+                logging.info("no sections and no hydraulics exist for "
+                             "borehole that match query params")
 
         query = query.filter(Borehole.publicid==borehole_id)
         dynamic_query = DynamicQuery(query)
@@ -361,3 +389,5 @@ api_v1.add_resource(SectionHydraulicSampleListResource,
                         settings.HYDWS_PATH_BOREHOLES,
                         settings.HYDWS_PATH_SECTIONS,
                         settings.HYDWS_PATH_HYDRAULICS))
+api_v1.add_resource(NewUserResource, '{}/users'.format(
+    settings.HYDWS_PATH_BASE))

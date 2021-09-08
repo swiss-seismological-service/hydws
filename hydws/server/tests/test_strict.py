@@ -93,7 +93,7 @@ class KeywordParserTestCase(unittest.TestCase):
         postfile = "="
 
         with self.assertRaises(strict.ValidationError):
-            test_result = strict.KeywordParser.\
+            _ = strict.KeywordParser.\
                 _parse_postfile(postfile)
 
     # test_parse_postfile_equal ()

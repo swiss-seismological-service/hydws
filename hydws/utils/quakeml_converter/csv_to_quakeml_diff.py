@@ -4,7 +4,8 @@ Dependencies:
     # Other libraries that are required by these modules should be downloaded.
 
 Usage:
-    python ~/ben_dyer_data_seismic.py --output_filename output_name.qml new_excel_file.xls old_excel_file.xls
+    python ~/ben_dyer_data_seismic.py
+    --output_filename output_name.qml new_excel_file.xls old_excel_file.xls
 
 If --output_filename is not defined, results will be written to standard out
 """
@@ -20,7 +21,7 @@ from obspy.core.event import Catalog, Event, Origin, Magnitude,\
     CreationInfo, Comment
 from obspy.geodetics import FlinnEngdahl
 
-logging.basicConfig(level = logging.INFO)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('QUAKEML_TRANSFORM')
 
 class CoordinateTransformer:
@@ -63,8 +64,10 @@ class CoordinateTransformer:
 
 def read_csv(input_filename, sheet_name):
     df = pd.read_csv(input_filename, sep=';')
-    df = df.drop(axis=1, labels=['id_watched_folder', 'Time_Stamp', 'Trigger Time'])
-    # Sort values by columns that might change if a row has been manually updated.
+    df = df.drop(axis=1, labels=['id_watched_folder',
+                                 'Time_Stamp', 'Trigger Time'])
+    # Sort values by columns that might change if a row has been
+    # manually updated.
     df = df.sort_values(["Origin Time", "Source"])
     df = df.reset_index(drop=True)
     return df
@@ -72,7 +75,7 @@ def read_csv(input_filename, sheet_name):
 def diff_csv(df_1, df_2):
     comparison = ~df_1.eq(df_2)
     new_locations = comparison.any(axis=1)
-    new_rows = df_2[new_locations==True]
+    new_rows = df_2[new_locations==True] # noqa
     return new_rows
 
 
@@ -89,10 +92,11 @@ def read_seismic(old_csv_filename, new_csv_filename, sheet_name,
     old_df = read_csv(old_csv_filename, sheet_name)
     new_df = read_csv(new_csv_filename, sheet_name)
     new_rows = diff_csv(new_df, old_df)
-    # Code from https://github.com/obspy/docs/blob/master/workshops/2016-03-07_ipgp/06_Event_metadata-with_solutions.ipynb
+    # Code from https://github.com/obspy/docs/blob/master/workshops/2016-03-07
+    # ipgp/06_Event_metadata-with_solutions.ipynb
     cat = Catalog()
     cat.description = catalog_description
-    for ind, row in new_rows.iterrows(): 
+    for ind, row in new_rows.iterrows():
         if row['Status'] not in [2, 4, 5]:
             continue
         e = Event()
@@ -104,7 +108,8 @@ def read_seismic(old_csv_filename, new_csv_filename, sheet_name,
             e.event_type = "not existing"
         o = Origin()
         o.time = row['Origin Time']
-        o.longitude, o.latitude, _ = transformer.from_local_coords(row['X'], row['Y'])
+        o.longitude, o.latitude, _ = transformer.from_local_coords(row['X'],
+                                                                   row['Y'])
         o.depth = row['Depth'] + lab_origin_depth
         o.depth_type = "from location"
         ev_mode = row['Location'].lower()
@@ -116,13 +121,13 @@ def read_seismic(old_csv_filename, new_csv_filename, sheet_name,
             e.event_type == "not existing"
         o.evaluation_status = "final"
         o.region = FlinnEngdahl().get_region(o.longitude, o.latitude)
-        
+
         m = Magnitude()
         m.mag = row['MomMag']
         m.magnitude_type = "Mw"
-        
+
         # Not sure what else should go in or where it should go...
-        
+
         cat.append(e)
         e.origins = [o]
         e.magnitudes = [m]
@@ -144,7 +149,8 @@ def read_seismic(old_csv_filename, new_csv_filename, sheet_name,
 
 def parser():
 
-    parser = argparse.ArgumentParser(description='Arguments to read Divine seismic events')
+    parser = argparse.ArgumentParser(
+        description='Arguments to read Divine seismic events')
     # required arguments
     parser.add_argument("new_csv_filename", type=str,
                         help=("Divine input filename (of type excel) "
@@ -153,24 +159,29 @@ def parser():
                         help=("Divine input filename (of type excel) "
                               " including absolute path, to read from."))
     # optional arguments
-    parser.add_argument("--sheet_name", type=str, default="DivineEvents_Dieter",
+    parser.add_argument("--sheet_name", type=str,
+                        default="DivineEvents_Dieter",
                         help=("Sheet name to read from on spreadsheet."))
     parser.add_argument("--output_filename", type=str,
-                        help=("Output filename including absolute path if wanting "
+                        help=("Output filename including absolute path "
+                              "if wanting "
                               "results written to file, else stdout."))
     parser.add_argument("--catalog_description", type=str,
                         help=("Description to be saved in catalog output"))
     parser.add_argument("--lab_origin_easting", type=float, default=2679720.70)
-    parser.add_argument("--lab_origin_northing", type=float, default=1151600.13)
+    parser.add_argument("--lab_origin_northing", type=float,
+                        default=1151600.13)
     parser.add_argument("--lab_origin_depth", type=float, default=-1485.00)
     parser.add_argument("--local_proj", type=int, default=2056,
                         help=("EPSG projection integer for local coordinates."
-                        "Default value is swiss CH1903+ grid suitable for Bedretto."))
+                              "Default value is swiss CH1903+ grid suitable "
+                              "for Bedretto."))
     parser.add_argument("--external_proj", type=int, default=4326,
                         help=("EPSG projection integer for external coords,"
-                        "default is WGS84 grid."))
+                              "default is WGS84 grid."))
     parser.add_argument("--creation_time", type=float,
-                        default=datetime.datetime.timestamp(datetime.datetime.now(datetime.timezone.utc)))
+                        default=datetime.datetime.timestamp(
+                            datetime.datetime.now(datetime.timezone.utc)))
 
     args = parser.parse_args()
     return args
@@ -178,17 +189,18 @@ def parser():
 def main():
     args = parser()
     read_seismic(
-            args.new_csv_filename,
-            args.old_csv_filename,
-            args.sheet_name,
-            args.lab_origin_easting,
-            args.lab_origin_northing,
-            args.lab_origin_depth,
-            args.local_proj,
-            args.external_proj,
-            args.creation_time,
-            catalog_description=args.catalog_description,
-            output_filename=args.output_filename)
+        args.new_csv_filename,
+        args.old_csv_filename,
+        args.sheet_name,
+        args.lab_origin_easting,
+        args.lab_origin_northing,
+        args.lab_origin_depth,
+        args.local_proj,
+        args.external_proj,
+        args.creation_time,
+        catalog_description=args.catalog_description,
+        output_filename=args.output_filename)
+
 
 if __name__ == '__main__':
     main()
