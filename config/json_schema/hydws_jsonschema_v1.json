@@ -1,7 +1,6 @@
 {
   "definitions": {
     "CreationInfoSchema": {
-      "type": "object",
       "properties": {
         "agencyid": {
           "title": "agencyid",
@@ -44,20 +43,20 @@
           "type": "string"
         }
       },
+      "type": "object",
       "additionalProperties": false
     },
     "ResourceIdentifierSchema": {
-      "type": "object",
       "properties": {
         "resourceid": {
           "title": "resourceid",
           "type": "string"
         }
       },
+      "type": "object",
       "additionalProperties": false
     },
     "LiteratureSourceSchema": {
-      "type": "object",
       "properties": {
         "accessrights": {
           "title": "accessrights",
@@ -171,10 +170,10 @@
           "type": "string"
         }
       },
+      "type": "object",
       "additionalProperties": false
     },
     "AuthorSchema": {
-      "type": "object",
       "properties": {
         "affiliation": {
           "type": "object",
@@ -207,10 +206,10 @@
           "format": "integer"
         }
       },
+      "type": "object",
       "additionalProperties": false
     },
     "CommentSchema": {
-      "type": "object",
       "properties": {
         "comment": {
           "title": "comment",
@@ -227,10 +226,10 @@
           "many": false
         }
       },
+      "type": "object",
       "additionalProperties": false
     },
     "PersonSchema": {
-      "type": "object",
       "properties": {
         "alternatepersonid": {
           "type": "object",
@@ -247,7 +246,7 @@
         },
         "homepage": {
           "type": "object",
-          "$ref": "#/definitions/ResourceIdentifierSchema",
+          "$ref": "#/definitions/ResourceLocatorSchema",
           "many": false
         },
         "mbox": {
@@ -275,10 +274,21 @@
         },
         "workplacehomepage": {
           "type": "object",
-          "$ref": "#/definitions/CommentSchema",
+          "$ref": "#/definitions/ResourceLocatorSchema",
           "many": false
         }
       },
+      "type": "object",
+      "additionalProperties": false
+    },
+    "ResourceLocatorSchema": {
+      "properties": {
+        "resourcelocator": {
+          "title": "resourcelocator",
+          "type": "string"
+        }
+      },
+      "type": "object",
       "additionalProperties": false
     },
     "SectionSchema": {
@@ -288,14 +298,9 @@
         "starttime",
         "topclosed"
       ],
-      "type": "object",
       "properties": {
-        "bottomclosed": {
-          "title": "bottomclosed",
-          "type": "boolean"
-        },
-        "bottomdepth_confidencelevel": {
-          "title": "bottomdepth_confidencelevel",
+        "bottomaltitude_confidencelevel": {
+          "title": "bottomaltitude_confidencelevel",
           "type": "number",
           "format": "float",
           "minimum": 0,
@@ -303,33 +308,37 @@
           "maximum": 100.0,
           "exclusiveMaximum": true
         },
-        "bottomdepth_loweruncertainty": {
-          "title": "bottomdepth_loweruncertainty",
+        "bottomaltitude_loweruncertainty": {
+          "title": "bottomaltitude_loweruncertainty",
           "type": "number",
           "format": "float",
           "minimum": 0,
           "exclusiveMinimum": false
         },
-        "bottomdepth_uncertainty": {
-          "title": "bottomdepth_uncertainty",
+        "bottomaltitude_uncertainty": {
+          "title": "bottomaltitude_uncertainty",
           "type": "number",
           "format": "float",
           "minimum": 0,
           "exclusiveMinimum": false
         },
-        "bottomdepth_upperuncertainty": {
-          "title": "bottomdepth_upperuncertainty",
+        "bottomaltitude_upperuncertainty": {
+          "title": "bottomaltitude_upperuncertainty",
           "type": "number",
           "format": "float",
           "minimum": 0,
           "exclusiveMinimum": false
         },
-        "bottomdepth_value": {
-          "title": "bottomdepth_value",
+        "bottomaltitude_value": {
+          "title": "bottomaltitude_value",
           "type": "number",
           "format": "float",
           "minimum": 0,
           "exclusiveMinimum": false
+        },
+        "bottomclosed": {
+          "title": "bottomclosed",
+          "type": "boolean"
         },
         "bottomlatitude_confidencelevel": {
           "title": "bottomlatitude_confidencelevel",
@@ -507,6 +516,43 @@
             "many": true
           }
         },
+        "measureddepth_confidencelevel": {
+          "title": "measureddepth_confidencelevel",
+          "type": "number",
+          "format": "float",
+          "minimum": 0,
+          "exclusiveMinimum": false,
+          "maximum": 100.0,
+          "exclusiveMaximum": true
+        },
+        "measureddepth_loweruncertainty": {
+          "title": "measureddepth_loweruncertainty",
+          "type": "number",
+          "format": "float",
+          "minimum": 0,
+          "exclusiveMinimum": false
+        },
+        "measureddepth_uncertainty": {
+          "title": "measureddepth_uncertainty",
+          "type": "number",
+          "format": "float",
+          "minimum": 0,
+          "exclusiveMinimum": false
+        },
+        "measureddepth_upperuncertainty": {
+          "title": "measureddepth_upperuncertainty",
+          "type": "number",
+          "format": "float",
+          "minimum": 0,
+          "exclusiveMinimum": false
+        },
+        "measureddepth_value": {
+          "title": "measureddepth_value",
+          "type": "number",
+          "format": "float",
+          "minimum": 0,
+          "exclusiveMinimum": false
+        },
         "publicid": {
           "title": "publicid",
           "type": "string"
@@ -520,12 +566,8 @@
           "type": "string",
           "format": "date-time"
         },
-        "topclosed": {
-          "title": "topclosed",
-          "type": "boolean"
-        },
-        "topdepth_confidencelevel": {
-          "title": "topdepth_confidencelevel",
+        "topaltitude_confidencelevel": {
+          "title": "topaltitude_confidencelevel",
           "type": "number",
           "format": "float",
           "minimum": 0,
@@ -533,33 +575,37 @@
           "maximum": 100.0,
           "exclusiveMaximum": true
         },
-        "topdepth_loweruncertainty": {
-          "title": "topdepth_loweruncertainty",
+        "topaltitude_loweruncertainty": {
+          "title": "topaltitude_loweruncertainty",
           "type": "number",
           "format": "float",
           "minimum": 0,
           "exclusiveMinimum": false
         },
-        "topdepth_uncertainty": {
-          "title": "topdepth_uncertainty",
+        "topaltitude_uncertainty": {
+          "title": "topaltitude_uncertainty",
           "type": "number",
           "format": "float",
           "minimum": 0,
           "exclusiveMinimum": false
         },
-        "topdepth_upperuncertainty": {
-          "title": "topdepth_upperuncertainty",
+        "topaltitude_upperuncertainty": {
+          "title": "topaltitude_upperuncertainty",
           "type": "number",
           "format": "float",
           "minimum": 0,
           "exclusiveMinimum": false
         },
-        "topdepth_value": {
-          "title": "topdepth_value",
+        "topaltitude_value": {
+          "title": "topaltitude_value",
           "type": "number",
           "format": "float",
           "minimum": 0,
           "exclusiveMinimum": false
+        },
+        "topclosed": {
+          "title": "topclosed",
+          "type": "boolean"
         },
         "toplatitude_confidencelevel": {
           "title": "toplatitude_confidencelevel",
@@ -640,13 +686,13 @@
           "exclusiveMaximum": true
         }
       },
+      "type": "object",
       "additionalProperties": false
     },
     "HydraulicSampleSchema": {
       "required": [
         "datetime_value"
       ],
-      "type": "object",
       "properties": {
         "bottomflow_confidencelevel": {
           "title": "bottomflow_confidencelevel",
@@ -1019,17 +1065,19 @@
           "exclusiveMinimum": false
         }
       },
+      "type": "object",
       "additionalProperties": false
     },
     "BoreholeSchema": {
       "required": [
+        "altitude_value",
         "latitude_value",
-        "longitude_value"
+        "longitude_value",
+        "publicid"
       ],
-      "type": "object",
       "properties": {
-        "bedrockdepth_confidencelevel": {
-          "title": "bedrockdepth_confidencelevel",
+        "altitude_confidencelevel": {
+          "title": "altitude_confidencelevel",
           "type": "number",
           "format": "float",
           "minimum": 0,
@@ -1037,29 +1085,64 @@
           "maximum": 100.0,
           "exclusiveMaximum": true
         },
-        "bedrockdepth_loweruncertainty": {
-          "title": "bedrockdepth_loweruncertainty",
+        "altitude_loweruncertainty": {
+          "title": "altitude_loweruncertainty",
           "type": "number",
           "format": "float",
           "minimum": 0,
           "exclusiveMinimum": false
         },
-        "bedrockdepth_uncertainty": {
-          "title": "bedrockdepth_uncertainty",
+        "altitude_uncertainty": {
+          "title": "altitude_uncertainty",
           "type": "number",
           "format": "float",
           "minimum": 0,
           "exclusiveMinimum": false
         },
-        "bedrockdepth_upperuncertainty": {
-          "title": "bedrockdepth_upperuncertainty",
+        "altitude_upperuncertainty": {
+          "title": "altitude_upperuncertainty",
           "type": "number",
           "format": "float",
           "minimum": 0,
           "exclusiveMinimum": false
         },
-        "bedrockdepth_value": {
-          "title": "bedrockdepth_value",
+        "altitude_value": {
+          "title": "altitude_value",
+          "type": "number",
+          "format": "float"
+        },
+        "bedrockaltitude_confidencelevel": {
+          "title": "bedrockaltitude_confidencelevel",
+          "type": "number",
+          "format": "float",
+          "minimum": 0,
+          "exclusiveMinimum": false,
+          "maximum": 100.0,
+          "exclusiveMaximum": true
+        },
+        "bedrockaltitude_loweruncertainty": {
+          "title": "bedrockaltitude_loweruncertainty",
+          "type": "number",
+          "format": "float",
+          "minimum": 0,
+          "exclusiveMinimum": false
+        },
+        "bedrockaltitude_uncertainty": {
+          "title": "bedrockaltitude_uncertainty",
+          "type": "number",
+          "format": "float",
+          "minimum": 0,
+          "exclusiveMinimum": false
+        },
+        "bedrockaltitude_upperuncertainty": {
+          "title": "bedrockaltitude_upperuncertainty",
+          "type": "number",
+          "format": "float",
+          "minimum": 0,
+          "exclusiveMinimum": false
+        },
+        "bedrockaltitude_value": {
+          "title": "bedrockaltitude_value",
           "type": "number",
           "format": "float",
           "minimum": 0,
@@ -1070,42 +1153,9 @@
           "$ref": "#/definitions/CreationInfoSchema",
           "many": false
         },
-        "depth_confidencelevel": {
-          "title": "depth_confidencelevel",
-          "type": "number",
-          "format": "float",
-          "minimum": 0,
-          "exclusiveMinimum": false,
-          "maximum": 100.0,
-          "exclusiveMaximum": true
-        },
-        "depth_loweruncertainty": {
-          "title": "depth_loweruncertainty",
-          "type": "number",
-          "format": "float",
-          "minimum": 0,
-          "exclusiveMinimum": false
-        },
-        "depth_uncertainty": {
-          "title": "depth_uncertainty",
-          "type": "number",
-          "format": "float",
-          "minimum": 0,
-          "exclusiveMinimum": false
-        },
-        "depth_upperuncertainty": {
-          "title": "depth_upperuncertainty",
-          "type": "number",
-          "format": "float",
-          "minimum": 0,
-          "exclusiveMinimum": false
-        },
-        "depth_value": {
-          "title": "depth_value",
-          "type": "number",
-          "format": "float",
-          "minimum": 0,
-          "exclusiveMinimum": false
+        "description": {
+          "title": "description",
+          "type": "string"
         },
         "latitude_confidencelevel": {
           "title": "latitude_confidencelevel",
@@ -1227,6 +1277,10 @@
           "minimum": 0,
           "exclusiveMinimum": false
         },
+        "name": {
+          "title": "name",
+          "type": "string"
+        },
         "publicid": {
           "title": "publicid",
           "type": "string"
@@ -1243,6 +1297,7 @@
           }
         }
       },
+      "type": "object",
       "additionalProperties": false
     }
   },
