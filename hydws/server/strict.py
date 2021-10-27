@@ -89,7 +89,6 @@ class KeywordParser(object):
 
     # _parse_arg_keys ()
 
-    
     @staticmethod
     def _parse_postfile(postfile):
         """
@@ -176,16 +175,16 @@ class KeywordParser(object):
             valid_fields.update(schema.fields.keys())
 
         parsers = []
-        for l in locations:
+        for loca in locations:
             try:
-                f = self.__location_map__[l]
+                f = self.__location_map__[loca]
                 if inspect.isfunction(f):
                     function = f
                 else:
                     function = getattr(self, f)
                 parsers.append(function)
             except KeyError:
-                raise ValueError('Invalid location: {!r}'.format(l))
+                raise ValueError('Invalid location: {!r}'.format(loca))
 
         @functools.wraps(func)
         def decorator(*args, **kwargs):

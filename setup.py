@@ -42,7 +42,8 @@ _install_requires = [
     'Flask-SQLAlchemy>=2.3.2',
     'marshmallow==3.0.0rc5',
     'webargs==5.3.1',
-    'Flask-Migrate>=2.4.0']
+    'Flask-Migrate>=2.4.0',
+    'passlib']
 
 _data_files = [
     ('', ['LICENSE'])]

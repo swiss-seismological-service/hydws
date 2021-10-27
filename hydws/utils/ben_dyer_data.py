@@ -17,7 +17,7 @@ from hydws.server.v1.ostream.schema import BoreholeSchema
 
 from datetime import timedelta
 
-HOLE_DIAMETER = 0.3 # Incorrect hole diameter
+HOLE_DIAMETER = 0.3  # Incorrect hole diameter
 
 # Use CH1903+, EPSG:2056
 # lab origin converts to:
@@ -30,7 +30,7 @@ HOLE_DIAMETER = 0.3 # Incorrect hole diameter
 # to swiss coords and then to lat/lon
 LAB_ORIGIN_EASTING = 2679720.70
 LAB_ORIGIN_NORTHING = 1151600.13
-LAB_ORIGIN_DEPTH = 1485.00
+LAB_ORIGIN_DEPTH = -1485.00
 
 CB1_TOP_LOCAL_EASTING = -37.44
 CB1_TOP_LOCAL_NORTHING = 33.43
@@ -169,16 +169,17 @@ def get_hydraulics(filename_list):
                     continue
                 else:
                     old_minute = minute
-                dttime = dttime.replace(hour=hour, minute=minute, second=second)
+                dttime = dttime.replace(hour=hour, minute=minute,
+                                        second=second)
                 # Using topflow and toppressure referencing the top of the
                 # borehole, even though not sure if it should be bottom
                 #- the EM1 and HM1 models currently depend
                 # on top values (these can be changed, but should
                 # change everything at same time)
-                topflow = float(q_in) / 1.0e3 * 60.0
+                topflow = float(q_in) / (1.0e3 * 60.0)
                 # Requirement is that pressures are positive: This is not so
                 # for data, any negative values -> 0
-                pressure_uphl = float(pi_uphl) / 1.0e6
+                pressure_uphl = float(pi_uphl) * 1.0e6
                 if pressure_uphl < 0.0:
                     pressure_uphl = 0.0
                 # check if there is any more info that we can add to this.
@@ -296,7 +297,8 @@ def main():
         starttime = dt.datetime.strftime(section.starttime, "%Y%m%d%H%M%S")
         endtime = dt.datetime.strftime(section.endtime, "%Y%m%d%H%M%S")
         sid = section.topdepth_value
-        output_file = f"ben_dyer_cb1_minute_sampled_{starttime}_{endtime}_{sid}m.json"
+        output_file = (f"ben_dyer_cb1_minute_sampled_{starttime}_"
+                       f"{endtime}_{sid}m.json")
         section_copy = section.copy()
         borehole_write._sections = [section_copy]
         with open(output_file, 'w') as new_file:

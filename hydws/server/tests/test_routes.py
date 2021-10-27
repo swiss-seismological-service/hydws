@@ -3,17 +3,19 @@ import unittest
 import base64
 from datetime import datetime
 
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
 from hydws.server.v1 import routes
 from hydws.server import db, create_app
 
 
 bh1_publicid = 'smi:ch.ethz.sed/bh/11111111-e4a0-4692-bf29-33b5591eb799'
-sec1_publicid = 'smi:ch.ethz.sed/bh/section/11111111-8d89-4f13-95e7-526ade73cc7c'
+sec1_publicid = 'smi:ch.ethz.sed/bh/section/11111111-8d89-4f13-95e7-526ade73cc7c' # noqa
 
-bh1_publicid_encoded = base64.b64encode(bytes(bh1_publicid, 'utf8')).decode('utf-8')
-sec1_publicid_encoded = base64.b64encode(bytes(sec1_publicid, 'utf8')).decode('utf-8')
+bh1_publicid_encoded = base64.b64encode(
+    bytes(bh1_publicid, 'utf8')).decode('utf-8')
+sec1_publicid_encoded = base64.b64encode(
+    bytes(sec1_publicid, 'utf8')).decode('utf-8')
 
 
 def clean_db(db):
@@ -28,7 +30,7 @@ class RoutesGetTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super(RoutesGetTestCase, cls).setUpClass()
-        cls.app = create_app() # Add test config?
+        cls.app = create_app()  # Add test config?
         cls.db = db
         cls.db.app = cls.app
         cls.db.create_all(app=cls.app)
@@ -63,7 +65,7 @@ class RoutesGetTestCase(unittest.TestCase):
 
         routes.db = self.db
         with self.client as c:
-            response = c.get('/hydws/v1/boreholes?maxlatitude=10&level=section')
+            _ = c.get('/hydws/v1/boreholes?maxlatitude=10&level=section')
             mock_process_request.assert_called_with(
                 self.db.session, format='json', level='section',
                 maxlatitude=10.0, nodata=204)
@@ -81,16 +83,15 @@ class RoutesGetTestCase(unittest.TestCase):
 
         routes.db = self.db
         with self.client as c:
-            response = c.get('/hydws/v1/boreholes?maxlatitude=10&level=borehole')
+            _ = c.get('/hydws/v1/boreholes?maxlatitude=10&level=borehole')
             mock_process_request.assert_called_with(
                 self.db.session, format='json', level='borehole',
                 maxlatitude=10.0, nodata=204)
             self.assertTrue(mock_oschema.called)
             self.assertTrue(mock_response.called)
 
-
     @patch.object(routes.BoreholeHydraulicSampleListResource,
-        '_process_request')
+                  '_process_request')
     @patch.object(routes, 'BoreholeHydraulicSampleListResource')
     @patch.object(routes, 'BoreholeSchema')
     @patch.object(routes, 'make_response')
@@ -101,8 +102,8 @@ class RoutesGetTestCase(unittest.TestCase):
 
         routes.db = self.db
         with self.client as c:
-            response = c.get('/hydws/v1/boreholes/{}?level=borehole'.\
-                format(bh1_publicid_encoded))
+            _ = c.get('/hydws/v1/boreholes/{}?level=borehole'.
+                      format(bh1_publicid_encoded))
             self.assertTrue(mock_process_request.called)
             mock_process_request.assert_called_with(
                 self.db.session, borehole_id=bh1_publicid,
@@ -111,7 +112,7 @@ class RoutesGetTestCase(unittest.TestCase):
             self.assertTrue(mock_response.called)
 
     @patch.object(routes.BoreholeHydraulicSampleListResource,
-        '_process_request')
+                  '_process_request')
     @patch.object(routes, 'BoreholeHydraulicSampleListResourceSchema')
     @patch.object(routes, 'BoreholeSchema')
     @patch.object(routes, 'make_response')
@@ -122,9 +123,9 @@ class RoutesGetTestCase(unittest.TestCase):
 
         routes.db = self.db
         with self.client as c:
-            response = c.get(
-                '/hydws/v1/boreholes/{}?starttime=2019-01-01&level=section'.\
-                    format(bh1_publicid_encoded))
+            _ = c.get(
+                '/hydws/v1/boreholes/{}?starttime=2019-01-01&level=section'.
+                format(bh1_publicid_encoded))
             self.assertTrue(mock_process_request.called)
             mock_process_request.assert_called_with(
                 self.db.session, borehole_id=bh1_publicid,
@@ -133,9 +134,8 @@ class RoutesGetTestCase(unittest.TestCase):
             self.assertTrue(mock_oschema.called)
             self.assertTrue(mock_response.called)
 
-
     @patch.object(routes.BoreholeHydraulicSampleListResource,
-        '_process_request')
+                  '_process_request')
     @patch.object(routes, 'BoreholeHydraulicSampleListResourceSchema')
     @patch.object(routes, 'BoreholeSchema')
     @patch.object(routes, 'make_response')
@@ -146,9 +146,9 @@ class RoutesGetTestCase(unittest.TestCase):
 
         routes.db = self.db
         with self.client as c:
-            response = c.get(
-                '/hydws/v1/boreholes/{}?maxfluidph=10.0&level=hydraulic'.\
-                    format(bh1_publicid_encoded))
+            _ = c.get(
+                '/hydws/v1/boreholes/{}?maxfluidph=10.0&level=hydraulic'.
+                format(bh1_publicid_encoded))
             self.assertTrue(mock_process_request.called)
             mock_process_request.assert_called_with(
                 self.db.session, borehole_id=bh1_publicid,
@@ -157,8 +157,8 @@ class RoutesGetTestCase(unittest.TestCase):
             self.assertTrue(mock_oschema.called)
             self.assertTrue(mock_response.called)
 
-
-    @patch.object(routes.SectionHydraulicSampleListResource, '_process_request')
+    @patch.object(routes.SectionHydraulicSampleListResource,
+                  '_process_request')
     @patch.object(routes, 'SectionHydraulicSampleListResourceSchema')
     @patch.object(routes, 'HydraulicSampleSchema')
     @patch.object(routes, 'make_response')
@@ -168,12 +168,13 @@ class RoutesGetTestCase(unittest.TestCase):
         # Mock the query parameters.
         routes.db = self.db
         with self.client as c:
-            response = c.get(
-                '/hydws/v1/boreholes/{}/sections/{}/hydraulics?maxfluidph=10.0'.\
-                    format(bh1_publicid_encoded,
-                           sec1_publicid_encoded))
+            _ = c.get(
+                '/hydws/v1/boreholes/{}/sections/{}/hydraulics?maxfluidph='
+                '10.0'.format(bh1_publicid_encoded,
+                              sec1_publicid_encoded))
             self.assertTrue(mock_process_request.called)
-            mock_process_request.assert_called_with(self.db.session,
+            mock_process_request.assert_called_with(
+                self.db.session,
                 borehole_id=bh1_publicid, section_id=sec1_publicid,
                 format='json', maxfluidph=10., nodata=204)
             self.assertTrue(mock_oschema.called)
@@ -198,7 +199,7 @@ class BoreholeProcessRequestTestcase(unittest.TestCase):
         bhlr = routes.BoreholeListResource()
         session = MagicMock()
         mock_sec_oids.return_value = ['1']
-        returnval = bhlr._process_request(session, **params)
+        _ = bhlr._process_request(session, **params)
         self.assertTrue(mock_sec_oids.called)
         self.assertTrue(mock_query_section.called)
 
@@ -210,7 +211,7 @@ class BoreholeProcessRequestTestcase(unittest.TestCase):
         params = {'level': 'borehole'}
         bhlr = routes.BoreholeListResource()
         session = MagicMock()
-        returnval = bhlr._process_request(session, **params)
+        _ = bhlr._process_request(session, **params)
         self.assertFalse(mock_sec_oids.called)
         self.assertFalse(mock_query_section.called)
         mock_dynamicquery.assert_called_with(params, 'borehole')
@@ -241,7 +242,7 @@ class BoreholeHydraulicProcessRequestTestCase(unittest.TestCase):
         session = MagicMock()
         mock_sec_ids.return_value = ['1']
         mock_querysections.return_value.filter.return_value = 'query'
-        returnval = bhlr._process_request(session, bh1_publicid_encoded, **params)
+        _ = bhlr._process_request(session, bh1_publicid_encoded, **params)
         self.assertTrue(mock_sec_ids.called)
         self.assertTrue(mock_querysections.called)
         self.assertFalse(mock_hyd_ids.called)
@@ -261,13 +262,12 @@ class BoreholeHydraulicProcessRequestTestCase(unittest.TestCase):
         bhlr = routes.BoreholeHydraulicSampleListResource()
         session = MagicMock()
         mock_sec_ids.return_value = []
-        returnval = bhlr._process_request(session, bh1_publicid_encoded, **params)
+        _ = bhlr._process_request(session, bh1_publicid_encoded, **params)
         self.assertTrue(mock_sec_ids.called)
         self.assertFalse(mock_querysections.called)
         self.assertFalse(mock_hyd_ids.called)
         self.assertFalse(mock_queryhydraulics.called)
         self.assertTrue(mock_dynamicquery.return_value.return_one.called)
-
 
     def test_process_request_level_hydraulic(
             self, mock_queryhydraulics, mock_querysections,
@@ -283,7 +283,7 @@ class BoreholeHydraulicProcessRequestTestCase(unittest.TestCase):
         mock_sec_ids.return_value = ['1']
         mock_hyd_ids.return_value = ['1']
         mock_queryhydraulics.return_value.filter.return_value = 'query'
-        returnval = bhlr._process_request(
+        _ = bhlr._process_request(
             session, bh1_publicid_encoded, **params)
         self.assertTrue(mock_sec_ids.called)
         self.assertFalse(mock_querysections.called)
@@ -291,7 +291,6 @@ class BoreholeHydraulicProcessRequestTestCase(unittest.TestCase):
         self.assertTrue(mock_queryhydraulics.called)
         mock_dynamicquery.assert_called_with('query')
         self.assertTrue(mock_dynamicquery.return_value.return_one.called)
-
 
     def test_process_request_level_hydraulic_no_hydraulics(
             self, mock_queryhydraulics, mock_querysections,
@@ -307,7 +306,7 @@ class BoreholeHydraulicProcessRequestTestCase(unittest.TestCase):
         mock_sec_ids.return_value = ['1']
         mock_hyd_ids.return_value = []
         mock_querysections.return_value.filter.return_value = 'query'
-        returnval = bhlr._process_request(session, bh1_publicid_encoded, **params)
+        _ = bhlr._process_request(session, bh1_publicid_encoded, **params)
         self.assertTrue(mock_sec_ids.called)
         self.assertTrue(mock_querysections.called)
         self.assertTrue(mock_hyd_ids.called)
@@ -331,12 +330,12 @@ class SectionHydraulicProcessRequestTestcase(unittest.TestCase):
         mock_in_borehole.return_value = ['1']
         bhlr = routes.SectionHydraulicSampleListResource()
         session = MagicMock()
-        returnval = bhlr._process_request(session, bh1_publicid_encoded,
-                                          sec1_publicid_encoded, **params)
+        _ = bhlr._process_request(session, bh1_publicid_encoded,
+                                  sec1_publicid_encoded, **params)
 
         mock_dynquery.assert_called_with(mock_hydsamples())
-        mock_dynquery.return_value.filter_level.assert_called_with(params, 'hydraulic')
-
+        mock_dynquery.return_value.filter_level.assert_called_with(params,
+                                                                   'hydraulic')
 
     def test_borehole_hyd_section_process_request(
             self, mock_dynquery, mock_hydsamples, mock_in_borehole, hydsample):
@@ -344,7 +343,8 @@ class SectionHydraulicProcessRequestTestcase(unittest.TestCase):
         mock_in_borehole.return_value = True
         bhlr = routes.SectionHydraulicSampleListResource()
         session = MagicMock()
-        returnval = bhlr._process_request(session, bh1_publicid_encoded, sec1_publicid_encoded, **params)
+        _ = bhlr._process_request(session, bh1_publicid_encoded,
+                                  sec1_publicid_encoded, **params)
 
         mock_dynquery.return_value.format_results.assert_called_with(
             limit=10, offset=None, order_column=hydsample.datetime_value)
@@ -356,7 +356,9 @@ class SectionHydraulicProcessRequestTestcase(unittest.TestCase):
         bhlr = routes.SectionHydraulicSampleListResource()
         session = MagicMock()
         with self.assertRaises(ValueError):
-            bhlr._process_request(session, 'borehole_publicid', 'section_publicid', **params)
+            bhlr._process_request(session, 'borehole_publicid',
+                                  'section_publicid',
+                                  **params)
 
 
 @patch.object(routes, 'DynamicQuery')
@@ -365,7 +367,7 @@ class BoreholeSectionOIDsTestcase(unittest.TestCase):
     def test_borehole_section_oids(self, mock_lazy_load, mock_dynquery):
         session = MagicMock()
         query_params = {}
-        return_val = routes.boreholesection_oids(session, **query_params)
+        _ = routes.boreholesection_oids(session, **query_params)
         self.assertTrue(mock_dynquery.called)
 
 
