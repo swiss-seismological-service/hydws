@@ -27,10 +27,11 @@ class BoreholeTestCase(unittest.TestCase):
             for i in range(num_samples)]
         s0 = dm.BoreholeSection(toplongitude_value=8.925293642,
                                 toplatitude_value=46.90669014,
-                                topdepth_value=0,
+                                topaltitude_value=0,
                                 bottomlongitude_value=9,
                                 bottomlatitude_value=47,
-                                bottomdepth_value=500,
+                                bottomaltitude_value=-500,
+                                measureddepth_value=500,
                                 holediameter_value=0.3,
                                 casingdiameter_value=0.25,
                                 _hydraulics=samples)
@@ -63,10 +64,10 @@ class BoreholeTestCase(unittest.TestCase):
             for i in range(num_samples)]
         s0 = dm.BoreholeSection(toplongitude_value=8.925293642,
                                 toplatitude_value=46.90669014,
-                                topdepth_value=0,
+                                topaltitude_value=0,
                                 bottomlongitude_value=9,
                                 bottomlatitude_value=47,
-                                bottomdepth_value=500,
+                                bottomaltitude_value=500,
                                 holediameter_value=0.3,
                                 casingdiameter_value=0.25,
                                 _hydraulics=samples)
@@ -104,19 +105,19 @@ class BoreholeTestCase(unittest.TestCase):
             for i in range(num_samples)]
         s0 = dm.BoreholeSection(toplongitude_value=8.925293642,
                                 toplatitude_value=46.90669014,
-                                topdepth_value=0,
+                                topaltitude_value=0,
                                 bottomlongitude_value=9,
                                 bottomlatitude_value=47,
-                                bottomdepth_value=500,
+                                bottomaltitude_value=-500,
                                 holediameter_value=0.3,
                                 casingdiameter_value=0.25,
                                 _hydraulics=samples)
         s1 = dm.BoreholeSection(toplongitude_value=9,
                                 toplatitude_value=47,
-                                topdepth_value=500,
+                                topaltitude_value=-500,
                                 bottomlongitude_value=9.01,
                                 bottomlatitude_value=47.01,
-                                bottomdepth_value=1500,
+                                bottomaltitude_value=1500,
                                 holediameter_value=0.25,
                                 casingdiameter_value=0)
 
@@ -127,8 +128,8 @@ class BoreholeTestCase(unittest.TestCase):
             _sections=[s0, s1, ])
 
         def remove_lower_section(s):
-            return (s.topdepth_value == 0 and
-                    s.bottomdepth_value == 500)
+            return (s.topaltitude_value == 0 and
+                    s.bottomaltitude_value == -500)
 
         snap = bh.snapshot(section_filter_cond=remove_lower_section)
 
@@ -238,10 +239,10 @@ class BoreholeTestCase(unittest.TestCase):
                                 endtime=None,
                                 toplongitude_value=8.925293642,
                                 toplatitude_value=46.90669014,
-                                topdepth_value=0,
+                                topaltitude_value=0,
                                 bottomlongitude_value=9,
                                 bottomlatitude_value=47,
-                                bottomdepth_value=500,
+                                bottomaltitude_value=-500,
                                 holediameter_value=0.3,
                                 casingdiameter_value=0.25)
         bh1 = dm.Borehole(
@@ -278,10 +279,10 @@ class BoreholeSectionTestCase(unittest.TestCase):
                                 endtime=None,
                                 toplongitude_value=8.925293642,
                                 toplatitude_value=46.90669014,
-                                topdepth_value=0,
+                                topaltitude_value=0,
                                 bottomlongitude_value=9,
                                 bottomlatitude_value=47,
-                                bottomdepth_value=500,
+                                bottomaltitude_value=-500,
                                 holediameter_value=0.3,
                                 casingdiameter_value=0.25,
                                 _hydraulics=samples)
@@ -290,10 +291,10 @@ class BoreholeSectionTestCase(unittest.TestCase):
                                 endtime=dt + (num_samples - 1) * interval,
                                 toplongitude_value=8.925293642,
                                 toplatitude_value=46.90669014,
-                                topdepth_value=0,
+                                topaltitude_value=0,
                                 bottomlongitude_value=9,
                                 bottomlatitude_value=47,
-                                bottomdepth_value=500,
+                                bottomaltitude_value=500,
                                 holediameter_value=0.3,
                                 casingdiameter_value=0.25)
 
@@ -326,10 +327,10 @@ class BoreholeSectionTestCase(unittest.TestCase):
                                 endtime=None,
                                 toplongitude_value=8.925293642,
                                 toplatitude_value=46.90669014,
-                                topdepth_value=0,
+                                topaltitude_value=0,
                                 bottomlongitude_value=9,
                                 bottomlatitude_value=47,
-                                bottomdepth_value=500,
+                                bottomaltitude_value=-500,
                                 holediameter_value=0.3,
                                 casingdiameter_value=0.25,
                                 _hydraulics=samples0)
@@ -338,10 +339,10 @@ class BoreholeSectionTestCase(unittest.TestCase):
                                 endtime=None,
                                 toplongitude_value=8.925293642,
                                 toplatitude_value=46.90669014,
-                                topdepth_value=0,
+                                topaltitude_value=0,
                                 bottomlongitude_value=9,
                                 bottomlatitude_value=47,
-                                bottomdepth_value=500,
+                                bottomaltitude_value=-500,
                                 holediameter_value=0.3,
                                 casingdiameter_value=0.25,
                                 _hydraulics=samples1)

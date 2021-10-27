@@ -40,10 +40,13 @@ def load_json(input_data, context, schema_class=BoreholeSchema):
     many = False
     if isinstance(data, list):
         many = True
-
     schema = schema_class(many=many)
     schema.context = context
-    loaded_data = schema.load(data)
+    try:
+        loaded_data = schema.load(data)
+    except Exception as err:
+        raise IOError(
+            f"input data cannot be read into schema {err}")
     return loaded_data, many
 
 
@@ -86,9 +89,10 @@ def set_well_data(well, well_existing, session):
     well_existing.longitude_value = well.longitude_value
     well_existing.latitude_value = well.latitude_value
     well_existing.altitude_value = well.altitude_value
-    well_existing.depth_value = well.depth_value
-    well_existing.bedrockdepth_value = well.bedrockdepth_value
+    well_existing.bedrockaltitude_value = well.bedrockaltitude_value
     well_existing.measureddepth_value = well.measureddepth_value
+    well_existing.name = well.name
+    well_existing.description = well.description
     session.commit()
 
 def set_section_data(section, section_existing, session):
@@ -98,8 +102,9 @@ def set_section_data(section, section_existing, session):
     section_existing.toplongitude_value = section.toplongitude_value
     section_existing.bottomlatitude_value = section.bottomlatitude_value
     section_existing.bottomlongitude_value = section.bottomlongitude_value
-    section_existing.topdepth_value = section.topdepth_value
-    section_existing.bottomdepth_value = section.bottomdepth_value
+    section_existing.topaltitude_value = section.topaltitude_value
+    section_existing.bottomaltitude_value = section.bottomaltitude_value
+    section_existing.measureddepth_value = section.measureddepth_value
     section_existing.holediameter_value = section.holediameter_value
     section_existing.casingdiameter_value = section.casingdiameter_value
     session.commit()

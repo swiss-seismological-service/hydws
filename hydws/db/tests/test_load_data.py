@@ -26,7 +26,7 @@ class LoadBoreholeTestCase(unittest.TestCase):
         subprocess.run(
             ['hydws-db-init', '-o', db_sqlite_string],
             stdout=subprocess.PIPE)
-        engine = create_engine(db_sqlite_string, echo="debug")
+        engine = create_engine(db_sqlite_string)
         Session = sessionmaker(bind=engine)
 
         subprocess.run(
@@ -40,7 +40,7 @@ class LoadBoreholeTestCase(unittest.TestCase):
         subprocess.run(
             ['hydws-data-import', '--merge_only',
              db_sqlite_string, json_file_path])
-        engine = create_engine(db_sqlite_string, echo="debug")
+        engine = create_engine(db_sqlite_string)
 
         session = Session()
         bh1 = session.query(orm.Borehole).\
@@ -60,13 +60,16 @@ class LoadBoreholeTestCase(unittest.TestCase):
         subprocess.run(
             ['hydws-db-init', '-o',
              db_sqlite_string],
-            stdout=subprocess.PIPE)
-        engine = create_engine(db_sqlite_string, echo="debug")
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
+        engine = create_engine(db_sqlite_string)
         Session = sessionmaker(bind=engine)
 
         subprocess.run(
             ['hydws-data-import',
-             db_sqlite_string, json_file_path])
+             db_sqlite_string, json_file_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
         session = Session()
         bh0 = session.query(orm.Borehole).\
             options(contains_eager("_sections").
@@ -74,8 +77,10 @@ class LoadBoreholeTestCase(unittest.TestCase):
         session.close()
         subprocess.run(
             ['hydws-data-import', '--merge_only',
-             db_sqlite_string, json2_file_path])
-        engine = create_engine(db_sqlite_string, echo="debug")
+             db_sqlite_string, json2_file_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
+        engine = create_engine(db_sqlite_string)
 
         session = Session()
         bh1 = session.query(orm.Borehole).\
@@ -87,7 +92,7 @@ class LoadBoreholeTestCase(unittest.TestCase):
         self.assertEqual(bh0._sections[0]._hydraulics[0].datetime_value,
                          bh1._sections[0]._hydraulics[0].datetime_value)
         self.assertEqual(bh1._sections[0]._hydraulics[-1].datetime_value,
-                         datetime.datetime(2006, 12, 10, 1, 0))
+                         datetime.datetime(2006, 12, 12, 1, 0))
 def suite():
     suite = unittest.makeSuite(LoadBoreholeTestCase, 'test')
     return suite

@@ -80,8 +80,7 @@ class Borehole(RealQuantityMixin('longitude',
                                  value_nullable=False),
                RealQuantityMixin('altitude',
                                  value_nullable=False),
-               RealQuantityMixin('depth'),
-               RealQuantityMixin('bedrockdepth'),
+               RealQuantityMixin('bedrockaltitude'),
                RealQuantityMixin('measureddepth'),
                PublicIDMixin(),
                ORMBase):
@@ -94,9 +93,12 @@ class Borehole(RealQuantityMixin('longitude',
         *Quantities* are implemented as `QuakeML
         <https://quake.ethz.ch/quakeml>`_ quantities.
     """
+
+    description = Column(f'{PREFIX}description', String)
+    name = Column(f'{PREFIX}name', String)
     _sections = relationship("BoreholeSection", back_populates="_borehole",
                              cascade='all, delete-orphan', lazy='noload',
-                             order_by='BoreholeSection.topdepth_value')
+                             order_by='BoreholeSection.topaltitude_value')
 
     _literaturesource_oid = Column(Integer,
                                    ForeignKey('literaturesource._oid'))
@@ -179,19 +181,20 @@ class Borehole(RealQuantityMixin('longitude',
 
     def __repr__(self):
         return ("<{}(publicid={!r}, longitude={}, latitude={}, "
-                "depth={}, altitude={})>").format(
+                "altitude={}, measureddepth={})>").format(
                     type(self).__name__,
                     self.publicid, self.longitude_value, self.latitude_value,
-                    self.depth_value, self.altitude_value)
+                    self.altitude_value, self.measureddepth_value)
 
 
 class BoreholeSection(EpochMixin('Epoch', epoch_type='open'),
                       RealQuantityMixin('toplongitude'),
                       RealQuantityMixin('toplatitude'),
-                      RealQuantityMixin('topdepth'),
+                      RealQuantityMixin('topaltitude'),
                       RealQuantityMixin('bottomlongitude'),
                       RealQuantityMixin('bottomlatitude'),
-                      RealQuantityMixin('bottomdepth'),
+                      RealQuantityMixin('bottomaltitude'),
+                      RealQuantityMixin('measureddepth'),
                       RealQuantityMixin('holediameter'),
                       RealQuantityMixin('casingdiameter'),
                       PublicIDMixin(),

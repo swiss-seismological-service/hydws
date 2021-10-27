@@ -25,26 +25,28 @@ ls0 = base.LiteratureSource(author='Charles Dickens', _creator=creator0,)
 
 bh0 = orm.Borehole(
     publicid='smi:ch.ethz.sed/bh/11111111-e4a0-4692-bf29-33b5591eb2d43',
-    depth_value=1000,
+    name="Borehole1",
+    description="description of borehole",
     latitude_value=10.66320713,
     latitude_uncertainty=0.5368853227,
     longitude_value=10.66320713,
     longitude_uncertainty=0.7947170871,
     altitude_value=30.0,
-    bedrockdepth_value=0,
+    bedrockaltitude_value=0,
+    measureddepth_value=1100,
     _literaturesource=ls0,
 )
 
 
 bh1 = orm.Borehole(
     publicid='smi:ch.ethz.sed/bh/11111111-e4a0-4692-bf29-33b5591eb798',
-    depth_value=1000,
     latitude_value=10.66320713,
     latitude_uncertainty=0.5368853227,
     longitude_value=10.66320713,
     longitude_uncertainty=0.7947170871,
     altitude_value=30.0,
-    bedrockdepth_value=0)
+    measureddepth_value=1000,
+    bedrockaltitude_value=0)
 
 bh1_section1 = orm.BoreholeSection(
     publicid='smi:ch.ethz.sed/bh/section/'
@@ -57,12 +59,13 @@ bh1_section1 = orm.BoreholeSection(
     toplatitude_uncertainty=0.5368853227,
     toplongitude_value=10.66320713,
     toplongitude_uncertainty=0.7947170871,
-    topdepth_value=0,
+    topaltitude_value=0,
     bottomlatitude_value=10.66320713,
     bottomlatitude_uncertainty=0.5368853227,
     bottomlongitude_value=10.66320713,
     bottomlongitude_uncertainty=0.7947170871,
-    bottomdepth_value=1000,
+    bottomaltitude_value=-1000,
+    measureddepth_value=1000,
     holediameter_value=0.3,
     casingdiameter_value=0.28, )
 
@@ -76,12 +79,13 @@ bh1_section2 = orm.BoreholeSection(
     toplatitude_uncertainty=0.5368853227,
     toplongitude_value=10.06320713,
     toplongitude_uncertainty=0.7947170871,
-    topdepth_value=1000,
+    topaltitude_value=-1000,
     bottomlatitude_value=10.06320713,
     bottomlatitude_uncertainty=0.5368853227,
     bottomlongitude_value=10.06320713,
     bottomlongitude_uncertainty=0.7947170871,
-    bottomdepth_value=1100,
+    bottomaltitude_value=-1100,
+    measureddepth_value=100,
     holediameter_value=0.3,
     casingdiameter_value=0.28, )
 
@@ -124,24 +128,27 @@ sample3 = orm.HydraulicSample(
 # Second borehole, no sections.
 bh2 = orm.Borehole(
     publicid='smi:ch.ethz.sed/bh/11111111-e4a0-4692-bf29-33b5591eb799',
-    depth_value=2000,
+    name="Borehole2",
+    description="description of borehole2",
     latitude_value=40.66320713,
     latitude_uncertainty=0.5368853227,
     longitude_value=-10.66320713,
     longitude_uncertainty=0.7947170871,
+    measureddepth_value=2000.0,
     altitude_value=30.0,
-    bedrockdepth_value=100)
+    bedrockaltitude_value=100)
 
 # Third borehole, sections but no hydraulics
 bh3 = orm.Borehole(
     publicid='smi:ch.ethz.sed/bh/11111111-e4a0-4692-bf29-33b5591eb7987',
-    depth_value=1000,
+    name="Borehole3",
+    description="description of borehole3",
     latitude_value=10.66320713,
     latitude_uncertainty=0.5368853227,
     longitude_value=10.66320713,
     longitude_uncertainty=0.7947170871,
     altitude_value=30.0,
-    bedrockdepth_value=0)
+    bedrockaltitude_value=0)
 
 bh3_section1 = orm.BoreholeSection(
     publicid='smi:ch.ethz.sed/bh/section/'
@@ -154,12 +161,13 @@ bh3_section1 = orm.BoreholeSection(
     toplatitude_uncertainty=0.0008854447,
     toplongitude_value=-50.66323323,
     toplongitude_uncertainty=0.7947170871,
-    topdepth_value=0,
+    topaltitude_value=0,
     bottomlatitude_value=50.66323327,
     bottomlatitude_uncertainty=0.5368853227,
     bottomlongitude_value=50.66323330,
     bottomlongitude_uncertainty=0.7947170871,
-    bottomdepth_value=100,
+    bottomaltitude_value=-100,
+    measureddepth_value=100,
     holediameter_value=0.3,
     casingdiameter_value=0.28, )
 
@@ -174,12 +182,13 @@ bh3_section2 = orm.BoreholeSection(
     toplatitude_uncertainty=0.0008854447,
     toplongitude_value=-50.66323323,
     toplongitude_uncertainty=0.7947170871,
-    topdepth_value=100,
+    topaltitude_value=-100,
     bottomlatitude_value=50.66323327,
     bottomlatitude_uncertainty=0.5368853227,
     bottomlongitude_value=50.66323330,
     bottomlongitude_uncertainty=0.7947170871,
-    bottomdepth_value=200,
+    bottomaltitude_value=-200,
+    measureddepth_value=100,
     holediameter_value=0.3,
     casingdiameter_value=0.28, )
 
@@ -194,25 +203,26 @@ bh3_section3 = orm.BoreholeSection(
     toplatitude_uncertainty=0.0008854447,
     toplongitude_value=-50.66323323,
     toplongitude_uncertainty=0.7947170871,
-    topdepth_value=100,
+    topaltitude_value=-100,
     bottomlatitude_value=50.66323327,
     bottomlatitude_uncertainty=0.5368853227,
     bottomlongitude_value=50.66323330,
     bottomlongitude_uncertainty=0.7947170871,
-    bottomdepth_value=200,
+    bottomaltitude_value=-200,
     holediameter_value=0.3,
     casingdiameter_value=0.25, )  # This has been altered from bh3_section2
 
 
 bh4 = orm.Borehole(
     publicid='smi:ch.ethz.sed/bh/11111111-e4a0-4692-bf29-33b5591eb7123',
-    depth_value=1000,
+    name="Borehole4",
+    description="description of borehole4",
     latitude_value=10.66320713,
     latitude_uncertainty=0.5368853227,
     longitude_value=10.66320713,
     longitude_uncertainty=0.7947170871,
     altitude_value=30.0,
-    bedrockdepth_value=0)
+    bedrockaltitude_value=0)
 
 bh4_section1 = orm.BoreholeSection(
     publicid='smi:ch.ethz.sed/bh/section/'
@@ -223,12 +233,13 @@ bh4_section1 = orm.BoreholeSection(
     toplatitude_uncertainty=0.0008854447,
     toplongitude_value=-50.66323323,
     toplongitude_uncertainty=0.7947170871,
-    topdepth_value=0,
+    topaltitude_value=0,
     bottomlatitude_value=50.66323327,
     bottomlatitude_uncertainty=0.5368853227,
     bottomlongitude_value=50.66323330,
     bottomlongitude_uncertainty=0.7947170871,
-    bottomdepth_value=100,
+    bottomaltitude_value=-100,
+    measureddepth_value=100,
     holediameter_value=0.3,
     casingdiameter_value=0.28, )
 

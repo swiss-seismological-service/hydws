@@ -1,11 +1,13 @@
 {
-    "bedrockdepth": {
+    "name": "Borehole1",
+    "description": "some description",
+    "bedrockaltitude": {
         "value": 0
     },
     "altitude": {
         "value": 100
     },
-    "depth": {
+    "measureddepth": {
         "value": 1000
     },
     "latitude": {
@@ -19,8 +21,8 @@
     "sections": [
         {
             "bottomclosed": false,
-            "bottomdepth": {
-                "value": 1000
+            "bottomaltitude": {
+                "value": -1000
  },
             "bottomlatitude": {
                 "uncertainty": 0.5368853227,
@@ -73,7 +75,7 @@
             ],
             "starttime": "2010-01-10T00:00:00",
             "topclosed": false,
-            "topdepth": {
+            "topaltitude": {
                 "value": 0
             },
             "toplatitude": {
