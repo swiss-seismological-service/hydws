@@ -13,7 +13,7 @@
 # docker exec -it hydws /bin/bash
 
 # Base image
-FROM phusion/baseimage:latest
+FROM phusion/baseimage:bionic-1.0.0
 
 # Add label metadata
 LABEL maintainer="Daniel Armbruster"
