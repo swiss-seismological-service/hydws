@@ -31,7 +31,8 @@ class BoreholeTestCase(unittest.TestCase):
                                 bottomlongitude_value=9,
                                 bottomlatitude_value=47,
                                 bottomaltitude_value=-500,
-                                measureddepth_value=500,
+                                topmeasureddepth_value=500,
+                                bottommeasureddepth_value=600,
                                 holediameter_value=0.3,
                                 casingdiameter_value=0.25,
                                 _hydraulics=samples)

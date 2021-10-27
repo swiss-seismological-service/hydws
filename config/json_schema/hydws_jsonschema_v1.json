@@ -1,6 +1,7 @@
 {
   "definitions": {
     "CreationInfoSchema": {
+      "type": "object",
       "properties": {
         "agencyid": {
           "title": "agencyid",
@@ -43,20 +44,20 @@
           "type": "string"
         }
       },
-      "type": "object",
       "additionalProperties": false
     },
     "ResourceIdentifierSchema": {
+      "type": "object",
       "properties": {
         "resourceid": {
           "title": "resourceid",
           "type": "string"
         }
       },
-      "type": "object",
       "additionalProperties": false
     },
     "LiteratureSourceSchema": {
+      "type": "object",
       "properties": {
         "accessrights": {
           "title": "accessrights",
@@ -170,10 +171,10 @@
           "type": "string"
         }
       },
-      "type": "object",
       "additionalProperties": false
     },
     "AuthorSchema": {
+      "type": "object",
       "properties": {
         "affiliation": {
           "type": "object",
@@ -206,10 +207,10 @@
           "format": "integer"
         }
       },
-      "type": "object",
       "additionalProperties": false
     },
     "CommentSchema": {
+      "type": "object",
       "properties": {
         "comment": {
           "title": "comment",
@@ -226,10 +227,10 @@
           "many": false
         }
       },
-      "type": "object",
       "additionalProperties": false
     },
     "PersonSchema": {
+      "type": "object",
       "properties": {
         "alternatepersonid": {
           "type": "object",
@@ -278,20 +279,20 @@
           "many": false
         }
       },
-      "type": "object",
       "additionalProperties": false
     },
     "ResourceLocatorSchema": {
+      "type": "object",
       "properties": {
         "resourcelocator": {
           "title": "resourcelocator",
           "type": "string"
         }
       },
-      "type": "object",
       "additionalProperties": false
     },
     "SectionSchema": {
+      "type": "object",
       "required": [
         "bottomclosed",
         "publicid",
@@ -332,9 +333,7 @@
         "bottomaltitude_value": {
           "title": "bottomaltitude_value",
           "type": "number",
-          "format": "float",
-          "minimum": 0,
-          "exclusiveMinimum": false
+          "format": "float"
         },
         "bottomclosed": {
           "title": "bottomclosed",
@@ -417,6 +416,43 @@
           "exclusiveMinimum": true,
           "maximum": 180.0,
           "exclusiveMaximum": true
+        },
+        "bottommeasureddepth_confidencelevel": {
+          "title": "bottommeasureddepth_confidencelevel",
+          "type": "number",
+          "format": "float",
+          "minimum": 0,
+          "exclusiveMinimum": false,
+          "maximum": 100.0,
+          "exclusiveMaximum": true
+        },
+        "bottommeasureddepth_loweruncertainty": {
+          "title": "bottommeasureddepth_loweruncertainty",
+          "type": "number",
+          "format": "float",
+          "minimum": 0,
+          "exclusiveMinimum": false
+        },
+        "bottommeasureddepth_uncertainty": {
+          "title": "bottommeasureddepth_uncertainty",
+          "type": "number",
+          "format": "float",
+          "minimum": 0,
+          "exclusiveMinimum": false
+        },
+        "bottommeasureddepth_upperuncertainty": {
+          "title": "bottommeasureddepth_upperuncertainty",
+          "type": "number",
+          "format": "float",
+          "minimum": 0,
+          "exclusiveMinimum": false
+        },
+        "bottommeasureddepth_value": {
+          "title": "bottommeasureddepth_value",
+          "type": "number",
+          "format": "float",
+          "minimum": 0,
+          "exclusiveMinimum": false
         },
         "casingdiameter_confidencelevel": {
           "title": "casingdiameter_confidencelevel",
@@ -516,43 +552,6 @@
             "many": true
           }
         },
-        "measureddepth_confidencelevel": {
-          "title": "measureddepth_confidencelevel",
-          "type": "number",
-          "format": "float",
-          "minimum": 0,
-          "exclusiveMinimum": false,
-          "maximum": 100.0,
-          "exclusiveMaximum": true
-        },
-        "measureddepth_loweruncertainty": {
-          "title": "measureddepth_loweruncertainty",
-          "type": "number",
-          "format": "float",
-          "minimum": 0,
-          "exclusiveMinimum": false
-        },
-        "measureddepth_uncertainty": {
-          "title": "measureddepth_uncertainty",
-          "type": "number",
-          "format": "float",
-          "minimum": 0,
-          "exclusiveMinimum": false
-        },
-        "measureddepth_upperuncertainty": {
-          "title": "measureddepth_upperuncertainty",
-          "type": "number",
-          "format": "float",
-          "minimum": 0,
-          "exclusiveMinimum": false
-        },
-        "measureddepth_value": {
-          "title": "measureddepth_value",
-          "type": "number",
-          "format": "float",
-          "minimum": 0,
-          "exclusiveMinimum": false
-        },
         "publicid": {
           "title": "publicid",
           "type": "string"
@@ -599,9 +598,7 @@
         "topaltitude_value": {
           "title": "topaltitude_value",
           "type": "number",
-          "format": "float",
-          "minimum": 0,
-          "exclusiveMinimum": false
+          "format": "float"
         },
         "topclosed": {
           "title": "topclosed",
@@ -684,12 +681,49 @@
           "exclusiveMinimum": true,
           "maximum": 180.0,
           "exclusiveMaximum": true
+        },
+        "topmeasureddepth_confidencelevel": {
+          "title": "topmeasureddepth_confidencelevel",
+          "type": "number",
+          "format": "float",
+          "minimum": 0,
+          "exclusiveMinimum": false,
+          "maximum": 100.0,
+          "exclusiveMaximum": true
+        },
+        "topmeasureddepth_loweruncertainty": {
+          "title": "topmeasureddepth_loweruncertainty",
+          "type": "number",
+          "format": "float",
+          "minimum": 0,
+          "exclusiveMinimum": false
+        },
+        "topmeasureddepth_uncertainty": {
+          "title": "topmeasureddepth_uncertainty",
+          "type": "number",
+          "format": "float",
+          "minimum": 0,
+          "exclusiveMinimum": false
+        },
+        "topmeasureddepth_upperuncertainty": {
+          "title": "topmeasureddepth_upperuncertainty",
+          "type": "number",
+          "format": "float",
+          "minimum": 0,
+          "exclusiveMinimum": false
+        },
+        "topmeasureddepth_value": {
+          "title": "topmeasureddepth_value",
+          "type": "number",
+          "format": "float",
+          "minimum": 0,
+          "exclusiveMinimum": false
         }
       },
-      "type": "object",
       "additionalProperties": false
     },
     "HydraulicSampleSchema": {
+      "type": "object",
       "required": [
         "datetime_value"
       ],
@@ -1065,10 +1099,10 @@
           "exclusiveMinimum": false
         }
       },
-      "type": "object",
       "additionalProperties": false
     },
     "BoreholeSchema": {
+      "type": "object",
       "required": [
         "altitude_value",
         "latitude_value",
@@ -1144,9 +1178,7 @@
         "bedrockaltitude_value": {
           "title": "bedrockaltitude_value",
           "type": "number",
-          "format": "float",
-          "minimum": 0,
-          "exclusiveMinimum": false
+          "format": "float"
         },
         "creationinfo": {
           "type": "object",
@@ -1297,7 +1329,6 @@
           }
         }
       },
-      "type": "object",
       "additionalProperties": false
     }
   },
