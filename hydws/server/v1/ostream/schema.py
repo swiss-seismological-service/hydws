@@ -378,11 +378,17 @@ class SectionSchema(SchemaBase):
     bottomaltitude_upperuncertainty = FloatPositive()
     bottomaltitude_confidencelevel = ConfidenceLevel()
 
-    measureddepth_value = FloatPositive()
-    measureddepth_uncertainty = FloatPositive()
-    measureddepth_loweruncertainty = FloatPositive()
-    measureddepth_upperuncertainty = FloatPositive()
-    measureddepth_confidencelevel = ConfidenceLevel()
+    topmeasureddepth_value = FloatPositive()
+    topmeasureddepth_uncertainty = FloatPositive()
+    topmeasureddepth_loweruncertainty = FloatPositive()
+    topmeasureddepth_upperuncertainty = FloatPositive()
+    topmeasureddepth_confidencelevel = ConfidenceLevel()
+
+    bottommeasureddepth_value = FloatPositive()
+    bottommeasureddepth_uncertainty = FloatPositive()
+    bottommeasureddepth_loweruncertainty = FloatPositive()
+    bottommeasureddepth_upperuncertainty = FloatPositive()
+    bottommeasureddepth_confidencelevel = ConfidenceLevel()
 
     holediameter_value = FloatPositive()
     holediameter_uncertainty = FloatPositive()

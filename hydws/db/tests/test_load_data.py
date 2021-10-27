@@ -1,6 +1,9 @@
 # Copyright (C) 2019, ETH Zurich - Swiss Seismological Service SED
 """
 Well related test facilities.
+
+To debug, please run the command (editing the paths as required):
+hydws-data-import --logging-conf path_to_config/config/logging.conf sqlite:////absolute path/tests/data/test_loading.db /absolute_path/tests/data/borehole_file_updated.json # noqa
 """
 import os
 import datetime

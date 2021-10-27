@@ -65,7 +65,8 @@ bh1_section1 = orm.BoreholeSection(
     bottomlongitude_value=10.66320713,
     bottomlongitude_uncertainty=0.7947170871,
     bottomaltitude_value=-1000,
-    measureddepth_value=1000,
+    topmeasureddepth_value=900,
+    bottommeasureddepth_value=1000,
     holediameter_value=0.3,
     casingdiameter_value=0.28, )
 
@@ -85,7 +86,8 @@ bh1_section2 = orm.BoreholeSection(
     bottomlongitude_value=10.06320713,
     bottomlongitude_uncertainty=0.7947170871,
     bottomaltitude_value=-1100,
-    measureddepth_value=100,
+    topmeasureddepth_value=100,
+    bottommeasureddepth_value=1000,
     holediameter_value=0.3,
     casingdiameter_value=0.28, )
 
@@ -167,7 +169,8 @@ bh3_section1 = orm.BoreholeSection(
     bottomlongitude_value=50.66323330,
     bottomlongitude_uncertainty=0.7947170871,
     bottomaltitude_value=-100,
-    measureddepth_value=100,
+    topmeasureddepth_value=900,
+    bottommeasureddepth_value=1000,
     holediameter_value=0.3,
     casingdiameter_value=0.28, )
 
@@ -188,7 +191,8 @@ bh3_section2 = orm.BoreholeSection(
     bottomlongitude_value=50.66323330,
     bottomlongitude_uncertainty=0.7947170871,
     bottomaltitude_value=-200,
-    measureddepth_value=100,
+    topmeasureddepth_value=900,
+    bottommeasureddepth_value=1000,
     holediameter_value=0.3,
     casingdiameter_value=0.28, )
 
@@ -239,7 +243,8 @@ bh4_section1 = orm.BoreholeSection(
     bottomlongitude_value=50.66323330,
     bottomlongitude_uncertainty=0.7947170871,
     bottomaltitude_value=-100,
-    measureddepth_value=100,
+    topmeasureddepth_value=900,
+    bottommeasureddepth_value=1000,
     holediameter_value=0.3,
     casingdiameter_value=0.28, )
 
