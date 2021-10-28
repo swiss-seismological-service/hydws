@@ -11,6 +11,18 @@ Both borehole and borehole section have a unique publicid which is required to m
 The standard HTTP response status codes are used.
 
 
+#### POST /hydws/v1/boreholes
+
+Post data to be saved in the database. The data should be of the same json format as is output by the webservice.
+Example using curl to upload a file:
+
+`curl -i -X POST -H "Content-Type: application/json" --data @/absolute_path_to_file/borehole_file.json "localhost:8080/hydws/v1/boreholes"`
+
+Where localhost would be changed to the name of the machine that the service is running on.
+
+A file may contain more than one borehole, as a comma seperated list using square parentheses.
+
+
 #### GET /hydws/v1/boreholes
 
 List the available boreholes, optionally with sections.
