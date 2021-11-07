@@ -6,16 +6,20 @@ import logging
 import io
 import json
 from sqlalchemy.orm import subqueryload
+from sqlalchemy import inspect
 
 # TODO (sarsonl) make version loading dynamic
 from hydws.db.orm import Borehole, BoreholeSection, HydraulicSample
-from hydws.server.v1.ostream.schema import BoreholeSchema
+from hydws.server.v1.ostream.schema import (
+    BoreholeSchema)
 
+EXCLUDE_ATTRS = ["sections", "hydraulics", "_oid", "public_id", "borehole_oid"]
 
 logger = logging.getLogger(__name__)
 
 
-def load_json(input_data, context, schema_class=BoreholeSchema):
+def load_json(input_data, context, schema_class=BoreholeSchema,
+              merge_only=False):
     """
     Loads a json file or string of data
     and deserializes it based on BoreholeSchema.
@@ -43,7 +47,8 @@ def load_json(input_data, context, schema_class=BoreholeSchema):
     schema = schema_class(many=many)
     schema.context = context
     try:
-        loaded_data = schema.load(data)
+        # loat partial data only if merge_only is selected
+        loaded_data = schema.load(data, partial=merge_only)
     except Exception as err:
         raise IOError(
             f"input data cannot be read into schema {err}")
@@ -85,35 +90,38 @@ def replace_hydraulics(section, section_existing, session):
     session.commit()
     return info
 
-def set_well_data(well, well_existing, session):
-    well_existing.longitude_value = well.longitude_value
-    well_existing.latitude_value = well.latitude_value
-    well_existing.altitude_value = well.altitude_value
-    well_existing.bedrockaltitude_value = well.bedrockaltitude_value
-    well_existing.measureddepth_value = well.measureddepth_value
-    well_existing.name = well.name
-    well_existing.description = well.description
-    session.commit()
+def replace_attr(existing_obj, new_obj, attr):
+    info = ''
+    existing_attr_value = getattr(existing_obj, attr)
+    new_attr_value = getattr(new_obj, attr)
+    if new_attr_value is not None:
+        if existing_attr_value != new_attr_value:
+            setattr(existing_obj, attr, new_attr_value)
+            info = (f"Replacing attr {attr} from {existing_attr_value} "
+                    f"to {new_attr_value}. ")
+    else:
+        if existing_attr_value is not None:
+            info = (f"Keeping attr {attr} as {existing_attr_value}. "
+                    "rather than setting to None. ")
+            logger.info(info)
+    return info
 
-def set_section_data(section, section_existing, session):
-    section_existing.endtime = section.endtime
-    section_existing.starttime = section.starttime
-    section_existing.toplatitude_value = section.toplatitude_value
-    section_existing.toplongitude_value = section.toplongitude_value
-    section_existing.bottomlatitude_value = section.bottomlatitude_value
-    section_existing.bottomlongitude_value = section.bottomlongitude_value
-    section_existing.topaltitude_value = section.topaltitude_value
-    section_existing.bottomaltitude_value = section.bottomaltitude_value
-    section_existing.measureddepth_value = section.measureddepth_value
-    section_existing.holediameter_value = section.holediameter_value
-    section_existing.casingdiameter_value = section.casingdiameter_value
+def replace_metadata(existing_obj, new_obj, session, orm_class):
+    attr_info = ''
+    inst = inspect(orm_class)
+    attr_names = [c_attr.key for c_attr in inst.mapper.column_attrs]
+    attr_list = [attr for attr in attr_names if attr not in EXCLUDE_ATTRS]
+    for attr in attr_list:
+        attr_info += replace_attr(existing_obj, new_obj, attr)
+
     session.commit()
+    return attr_info
 
 def merge_boreholes(data, session,
                     assignids=None,
                     publicid_uri=None,
                     overwrite_publicids=None,
-                    merge_only=None):
+                    merge_only=False):
     """Function to be called from load_data script or
     by POST request to either add or merge a Borehole
     to the database, replacing any overlapping data.
@@ -125,7 +133,7 @@ def merge_boreholes(data, session,
             'overwrite': overwrite_publicids}
 
     deserialized_data, many_boreholes = load_json(
-        data, context)
+        data, context, merge_only=merge_only)
 
     logger.debug('Adding data to db...')
     bhs_info = ""
@@ -141,7 +149,9 @@ def merge_boreholes(data, session,
         bh_info = (f"Borehole {bh.publicid} "
                    f"already in db: {False if bh_existing is None else True}.")
         if bh_existing:
-            set_well_data(bh, bh_existing, session)
+            bh_attr_info = replace_metadata(bh_existing, bh, session,
+                                            Borehole)
+            bhs_info += bh_attr_info
             logger.info("A borehole exists with the same "
                         "publicid. Merging with existing "
                         "borehole.")
@@ -154,10 +164,10 @@ def merge_boreholes(data, session,
                     hyd_info = replace_hydraulics(section,
                                                   section_existing,
                                                   session)
-                    set_section_data(section,
-                                     section_existing,
-                                     session)
-
+                    sec_attr_info = replace_metadata(section_existing,
+                                                     section, session,
+                                                     BoreholeSection)
+                    bhs_info += sec_attr_info
                 else:
                     hyd_info = (f"section {section.publicid} "
                                 "being fully copied.")
