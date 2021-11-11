@@ -7,13 +7,15 @@ import io
 import json
 from sqlalchemy.orm import subqueryload
 from sqlalchemy import inspect
+from sqlalchemy.sql import func
 
 # TODO (sarsonl) make version loading dynamic
 from hydws.db.orm import Borehole, BoreholeSection, HydraulicSample
 from hydws.server.v1.ostream.schema import (
     BoreholeSchema)
 
-EXCLUDE_ATTRS = ["sections", "hydraulics", "_oid", "public_id", "borehole_oid"]
+EXCLUDE_ATTRS = ["_sections", "_hydraulics", "_oid",
+                 "public_id", "borehole_oid"]
 
 logger = logging.getLogger(__name__)
 
@@ -66,28 +68,29 @@ def replace_hydraulics(section, section_existing, session):
                section_existing._oid).delete()
     logger.info(f"{row_count} hydraulic samples deleted. ")
     session.commit()
-    section_existing = session.query(BoreholeSection).\
-        options(subqueryload("_hydraulics")).\
-        filter(
-            BoreholeSection.publicid == section.publicid).one_or_none()
 
     copied_samples = [sample.copy() for sample in section._hydraulics]
     section_existing._hydraulics.extend(copied_samples)
     logger.info("Samples added to hydraulic well section "
                 f"{section_existing.publicid}: "
                 f"{len(copied_samples)}. ")
+    session.add_all(copied_samples)
+    session.commit()
+
+    db_hydraulics = session.query(HydraulicSample).\
+        join(BoreholeSection).\
+        filter(BoreholeSection.publicid==section_existing.publicid).all()
     logger.info("Total samples in hydraulic well section "
                 f"{section_existing.publicid}: "
-                f"{len(section_existing._hydraulics)}. ")
+                f"{len(db_hydraulics)}. ")
     info = (f" {row_count} hydraulic samples deleted. "
             "Samples added to hydraulic well section "
             f"{section_existing.publicid}: "
             f"{len(copied_samples)}. "
             "Total samples in hydraulic well section "
             f"{section_existing.publicid}: "
-            f"{len(section_existing._hydraulics)}.")
-    session.add_all(copied_samples)
-    session.commit()
+            f"{len(db_hydraulics)}.")
+
     return info
 
 def replace_attr(existing_obj, new_obj, attr):
@@ -117,11 +120,31 @@ def replace_metadata(existing_obj, new_obj, session, orm_class):
     session.commit()
     return attr_info
 
+
+def adjust_section_datetimes(section_existing,
+                             auto_datetime_off, session):
+    # We want section datetime to be
+    # automatically updated to mirror hydraulic
+    # samples.
+    hyd_datetimes = session.query(func.min(HydraulicSample.datetime_value),
+                                  func.max(HydraulicSample.datetime_value)).\
+        join(BoreholeSection).\
+        filter(BoreholeSection.publicid==section_existing.publicid).one()
+
+    if hyd_datetimes:
+        section_existing.starttime = hyd_datetimes[0]
+        section_existing.endtime = hyd_datetimes[1]
+        logger.info("setting the section start and end time to: "
+                    f"{hyd_datetimes}")
+        session.commit()
+
 def merge_boreholes(data, session,
                     assignids=None,
                     publicid_uri=None,
                     overwrite_publicids=None,
-                    merge_only=False):
+                    merge_only=False,
+                    auto_datetime_off=False,
+                    debug=False):
     """Function to be called from load_data script or
     by POST request to either add or merge a Borehole
     to the database, replacing any overlapping data.
@@ -151,7 +174,8 @@ def merge_boreholes(data, session,
         if bh_existing:
             bh_attr_info = replace_metadata(bh_existing, bh, session,
                                             Borehole)
-            bhs_info += bh_attr_info
+            if debug:
+                bhs_info += bh_attr_info
             logger.info("A borehole exists with the same "
                         "publicid. Merging with existing "
                         "borehole.")
@@ -167,12 +191,19 @@ def merge_boreholes(data, session,
                     sec_attr_info = replace_metadata(section_existing,
                                                      section, session,
                                                      BoreholeSection)
-                    bhs_info += sec_attr_info
+                    if debug:
+                        bhs_info += sec_attr_info
                 else:
                     hyd_info = (f"section {section.publicid} "
                                 "being fully copied.")
                     section_copy = section.copy()
                     section_copy._borehole = bh_existing
+                    section_existing = section_copy
+
+                if not auto_datetime_off:
+                    adjust_section_datetimes(
+                        section_existing,
+                        auto_datetime_off, session)
                 bh_info += hyd_info
         else:
             if merge_only:
@@ -180,6 +211,10 @@ def merge_boreholes(data, session,
                     "No borehole exists with publicid: "
                     f"{bh.publicid} and cannot be merged.")
             session.add(bh)
+            for section in bh:
+                if not auto_datetime_off:
+                    adjust_section_datetimes(
+                        section, auto_datetime_off, session)
             bh_info += "Borehole has been created in db."
         bhs_info += bh_info
 

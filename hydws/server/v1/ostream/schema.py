@@ -339,40 +339,40 @@ class SectionSchema(SchemaBase):
     Schema implementation of a borehole section.
     """
     publicid = fields.String(required=True)
-    starttime = DatetimeRequired()
+    starttime = Datetime()
     endtime = Datetime()
 
-    toplongitude_value = Longitude()
+    toplongitude_value = RequiredLongitude()
     toplongitude_uncertainty = FloatPositive()
     toplongitude_loweruncertainty = FloatPositive()
     toplongitude_upperuncertainty = FloatPositive()
     toplongitude_confidencelevel = ConfidenceLevel()
 
-    bottomlongitude_value = Longitude()
+    bottomlongitude_value = RequiredLongitude()
     bottomlongitude_uncertainty = FloatPositive()
     bottomlongitude_loweruncertainty = FloatPositive()
     bottomlongitude_upperuncertainty = FloatPositive()
     bottomlongitude_confidencelevel = ConfidenceLevel()
 
-    toplatitude_value = Latitude()
+    toplatitude_value = RequiredLatitude()
     toplatitude_uncertainty = FloatPositive()
     toplatitude_loweruncertainty = FloatPositive()
     toplatitude_upperuncertainty = FloatPositive()
     toplatitude_confidencelevel = ConfidenceLevel()
 
-    bottomlatitude_value = Latitude()
+    bottomlatitude_value = RequiredLatitude()
     bottomlatitude_uncertainty = FloatPositive()
     bottomlatitude_loweruncertainty = FloatPositive()
     bottomlatitude_upperuncertainty = FloatPositive()
     bottomlatitude_confidencelevel = ConfidenceLevel()
 
-    topaltitude_value = fields.Float()
+    topaltitude_value = fields.Float(required=True)
     topaltitude_uncertainty = FloatPositive()
     topaltitude_loweruncertainty = FloatPositive()
     topaltitude_upperuncertainty = FloatPositive()
     topaltitude_confidencelevel = ConfidenceLevel()
 
-    bottomaltitude_value = fields.Float()
+    bottomaltitude_value = fields.Float(required=True)
     bottomaltitude_uncertainty = FloatPositive()
     bottomaltitude_loweruncertainty = FloatPositive()
     bottomaltitude_upperuncertainty = FloatPositive()
