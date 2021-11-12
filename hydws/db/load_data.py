@@ -53,6 +53,10 @@ class HYDWSLoadDataApp(App):
         parser.add_argument("--overwrite_publicids", action="store_true",
                             help="Overwrite pubic id's that exist in the "
                                  "input data  with new generated public ids")
+        parser.add_argument("--auto_datetime_off", action="store_true",
+                            help="Start and End well section datetimes will "
+                                 "not be automatically allocated, so must "
+                                 "exist in database or within input data.")
         # required arguments
         parser.add_argument("db_url", type=url, metavar="URL",
                             help=("DB URL indicating the database dialect "
@@ -96,7 +100,8 @@ class HYDWSLoadDataApp(App):
                 assignids=self.args.assignids,
                 publicid_uri=self.args.publicid_uri,
                 overwrite_publicids=self.args.overwrite_publicids,
-                merge_only=self.args.merge_only)
+                merge_only=self.args.merge_only,
+                auto_datetime_off=self.args.auto_datetime_off)
 
         except Error as err:
             self.logger.error(err)

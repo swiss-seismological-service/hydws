@@ -210,10 +210,18 @@ class BoreholeListResource(ResourceBase):
     def post(self):
         try:
             data = request.get_json()
+            merge_only = request.args.get(
+                "merge_only", type=bool, default=False)
+            auto_datetime_off = request.args.get(
+                "auto_datetime_off", type=bool, default=False)
+            debug = request.args.get(
+                "debug", type=bool, default=False)
         except KeyError:
             raise IOError("data sent via POST must contain "
                           "the 'data' parameter")
-        info = merge_data.merge_boreholes(data, db.session)
+        info = merge_data.merge_boreholes(
+            data, db.session, merge_only=merge_only,
+            auto_datetime_off=auto_datetime_off, debug=debug)
 
         return make_response({"info": info}, settings.MIMETYPE_JSON)
 
