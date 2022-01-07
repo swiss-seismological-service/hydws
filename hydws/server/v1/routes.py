@@ -5,13 +5,12 @@
 .. moduleauthor:: Laura Sarson <laura.sarson@sed.ethz.ch>
 
 """
-
 import logging
 from sqlalchemy import literal, or_
 from flask_restful import Api, Resource
 from flask import request
 from webargs.flaskparser import use_kwargs
-from sqlalchemy.orm import contains_eager, lazyload
+from sqlalchemy.orm import contains_eager, lazyload, load_only
 
 from hydws import __version__
 from hydws.db.orm import Borehole, BoreholeSection, HydraulicSample, User
@@ -102,16 +101,18 @@ def boreholesection_oids(session, borehole_id=None, **query_params):
 # boreholes and sections without children hydraulics. This
 # is a work-around where seperate calls are done to find if children
 # exist before joining the tables.
-def hydraulicsample_oids(session, borehole_id, **query_params):
+def hydraulicsample_subquery(session, borehole_id, **query_params):
     """
     Return a list of HydraulicSample id's that match to the search
     parameters given.
     """
     hyd_base_query = session.query(HydraulicSample).\
+        options(load_only(HydraulicSample._oid)).\
         options(lazyload(HydraulicSample._section).
                 lazyload(BoreholeSection._borehole)).\
         join(BoreholeSection).join(Borehole).\
         filter(Borehole.publicid==borehole_id)
+
     hyd_query = DynamicQuery(hyd_base_query)
 
     hyd_query.filter_level(query_params,
@@ -119,8 +120,20 @@ def hydraulicsample_oids(session, borehole_id, **query_params):
     hyd_query.format_results(order_column=HydraulicSample.datetime_value,
                              limit=query_params.get('limit'),
                              offset=query_params.get('offset'))
-    hyd_list = [i._oid for i in hyd_query.return_all()]
-    return hyd_list
+
+    hyd_subquery = hyd_query.query.subquery()
+    return hyd_subquery
+
+def borehole_with_hydraulics(session, borehole_id, hyd_subquery):
+
+    query = session.query(Borehole).\
+        join(BoreholeSection, isouter=True).\
+        join(HydraulicSample, isouter=True).\
+        options(contains_eager("_sections").contains_eager("_hydraulics")).\
+        filter(HydraulicSample._oid.in_(hyd_subquery)).\
+        filter(Borehole.publicid==borehole_id).\
+        order_by(BoreholeSection.topaltitude_value, HydraulicSample.datetime_value) # noqa
+    return query
 
 def query_with_sections(query, sec_list,
                         keep_all_boreholes=True,
@@ -285,14 +298,16 @@ class BoreholeHydraulicSampleListResource(ResourceBase):
         level = query_params.get('level')
 
         if level == 'hydraulic':
-            hyd_list = hydraulicsample_oids(session, borehole_id,
-                                            **query_params)
+            hyd_subquery = hydraulicsample_subquery(session, borehole_id,
+                                                    **query_params)
+            # Check if any hydraulics exist, so optimal query chosen
+            hyd_first = session.query(HydraulicSample).\
+                filter(HydraulicSample._oid.in_(hyd_subquery)).first()
 
         if level in ['section', 'hydraulic']:
             sec_list = boreholesection_oids(session, borehole_id,
                                             **query_params)
-
-        query = session.query(Borehole)
+        query = session.query(Borehole).filter(Borehole.publicid==borehole_id)
 
         if level == 'section':
             if sec_list:
@@ -305,16 +320,15 @@ class BoreholeHydraulicSampleListResource(ResourceBase):
                              "params for borehole")
 
         elif level == 'hydraulic':
-            if sec_list and hyd_list:
+            if sec_list and hyd_first:
                 logging.info("sections with _oid exist that match query "
-                             f"params: {sec_list}. Hydraulics with _oid "
-                             f"exist: {hyd_list}")
+                             f"params: {len(sec_list)}. Hydraulics with _oid "
+                             f"exist.")
 
-                query = query_with_sections_and_hydraulics(
-                    query, hyd_list, **query_params)
-                logging.info(str(query))
+                query = borehole_with_hydraulics(
+                    session, borehole_id, hyd_subquery)
 
-            elif sec_list and not hyd_list:
+            elif sec_list and not hyd_first:
                 logging.info(f"sections with _oid exist that match query "
                              f"params: {sec_list} but no hydraulics exist")
                 query = query_with_sections(
@@ -323,10 +337,8 @@ class BoreholeHydraulicSampleListResource(ResourceBase):
                 logging.info("no sections and no hydraulics exist for "
                              "borehole that match query params")
 
-        query = query.filter(Borehole.publicid==borehole_id)
-        dynamic_query = DynamicQuery(query)
-
-        return dynamic_query.return_one()
+        borehole = query.one()
+        return borehole
 
 
 class SectionHydraulicSampleListResource(ResourceBase):
