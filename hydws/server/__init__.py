@@ -7,6 +7,7 @@ from flask import Flask, make_response, g
 from flask_sqlalchemy import SQLAlchemy
 from webargs.flaskparser import parser
 from flask_migrate import Migrate
+from flask_cors import CORS
 
 from hydws import __version__
 from hydws.server import settings, errors
@@ -14,7 +15,7 @@ from hydws.server import settings, errors
 
 db = SQLAlchemy()
 migrate = Migrate()
-
+cors = CORS()
 
 def create_app(config_dict={}):
     """
@@ -27,7 +28,8 @@ def create_app(config_dict={}):
 
     db.init_app(app)
     migrate.init_app(app, db)
-
+    cors.init_app(app)
+    
     # XXX(damb): Avoid circular imports.
     from hydws.server.v1 import blueprint as api_v1_bp, API_VERSION_V1
     app.register_blueprint(
