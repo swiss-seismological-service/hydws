@@ -28,7 +28,7 @@ def create_app(config_dict={}):
 
     db.init_app(app)
     migrate.init_app(app, db)
-    cors.init_app(app)
+    cors.init_app(app, resources={r"/hydws/*": {"origins": "*"}})
     
     # XXX(damb): Avoid circular imports.
     from hydws.server.v1 import blueprint as api_v1_bp, API_VERSION_V1
