@@ -26,15 +26,15 @@ RUN add-apt-repository ppa:deadsnakes/ppa
 
 # System dependencies
 RUN apt-get update && apt-get install -y git \
-                                         python3.6 \
-                                         python3-pip \
-                                         pkg-config \
-                                         build-essential \
-                                         libssl-dev \
-                                         libffi-dev \
-                                         libpython3.6-dev \
-                                         apache2 \
-                                         apache2-dev
+  python3.6 \
+  python3-pip \
+  pkg-config \
+  build-essential \
+  libssl-dev \
+  libffi-dev \
+  libpython3.6-dev \
+  apache2 \
+  apache2-dev
 
 # Update pip
 RUN python3.6 -m pip install --upgrade pip
@@ -46,6 +46,7 @@ RUN mod_wsgi-express module-config | head -n 1 > \
 RUN mod_wsgi-express module-config | tail -n 1 > \
   /etc/apache2/mods-available/wsgi.conf
 RUN a2enmod wsgi
+RUN a2enmod headers
 
 # Get the source from GitLab:master
 RUN git clone https://gitlab.seismo.ethz.ch/sed-infra/hydws.git /var/www/hydws
@@ -76,8 +77,8 @@ RUN a2ensite hydws.conf
 
 # Add the apache2 service
 RUN mkdir /etc/service/apache2 && \
-	echo "#!/bin/sh\nexec apachectl -D FOREGROUND" > /etc/service/apache2/run && \
-	chmod +x /etc/service/apache2/run
+  echo "#!/bin/sh\nexec apachectl -D FOREGROUND" > /etc/service/apache2/run && \
+  chmod +x /etc/service/apache2/run
 
 RUN mkdir -p /var/www/hydws/log && chown www-data:www-data -R /var/www/hydws/log
 
