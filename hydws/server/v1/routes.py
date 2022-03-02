@@ -106,7 +106,7 @@ def hydraulicsample_subquery(session, borehole_id, **query_params):
     Return a list of HydraulicSample id's that match to the search
     parameters given.
     """
-    hyd_base_query = session.query(HydraulicSample).\
+    hyd_base_query = session.query(HydraulicSample._oid).\
         options(load_only(HydraulicSample._oid)).\
         options(lazyload(HydraulicSample._section).
                 lazyload(BoreholeSection._borehole)).\
