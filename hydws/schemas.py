@@ -14,10 +14,7 @@ def real_value_factory(quantity_type: type) -> Type[BaseModel]:
         ('uncertainty', (Optional[float], None)),
         ('loweruncertainty', (Optional[float], None)),
         ('upperuncertainty', (Optional[float], None)),
-        ('confidencelevel', (Optional[float], None)),
-        ('pdfvariable', (Optional[List[float]], None)),
-        ('pdfprobability', (Optional[List[float]], None)),
-        ('pdfbinedges', (Optional[List[float]], None))
+        ('confidencelevel', (Optional[float], None))
     ])
 
     retval = create_model(
@@ -81,6 +78,25 @@ class ValueGetter(GetterDict):
             return default
 
 
+def flatten_dict(name: str, real_object: dict):
+    return_dict = {}
+    for real, value in real_object.items():
+        return_dict[f'{name}_{real}'] = value
+    return return_dict
+
+
+def flatten_attributes(self_obj: object, schema_dict: dict):
+    return_dict = {}
+    for k, v in schema_dict.items():
+        if isinstance(
+                getattr(self_obj, k),
+                (RealFloatValue, RealDatetimeValue)):
+            return_dict.update(**flatten_dict(k, v))
+        elif isinstance(v, (str, int, float, bool, datetime)):
+            return_dict[k] = v
+    return return_dict
+
+
 class HydraulicSample(BaseModel):
     datetime: RealDatetimeValue
     bottomtemperature: Optional[RealFloatValue]
@@ -96,6 +112,15 @@ class HydraulicSample(BaseModel):
 
     class Config:
         getter_dict = ValueGetter
+
+    def flat_dict(self, exclude_unset=False, exclude_defaults=False):
+        schema_dict = self.dict(
+            exclude_unset=exclude_unset,
+            exclude_defaults=exclude_defaults)
+
+        return_dict = flatten_attributes(self, schema_dict)
+
+        return return_dict
 
 
 class BoreholeSectionSchema(BaseModel):
@@ -121,6 +146,18 @@ class BoreholeSectionSchema(BaseModel):
     class Config:
         getter_dict = ValueGetter
 
+    def flat_dict(self, exclude_unset=False, exclude_defaults=False):
+        schema_dict = self.dict(
+            exclude_unset=exclude_unset,
+            exclude_defaults=exclude_defaults)
+
+        return_dict = flatten_attributes(self, schema_dict)
+
+        # return_dict['hydraulics'] =
+        #   [s.orm_dict() for s in schema_dict['hydraulics']]
+
+        return return_dict
+
 
 class BoreholeSchema(BaseModel):
     publicid: str
@@ -135,3 +172,15 @@ class BoreholeSchema(BaseModel):
 
     class Config:
         getter_dict = ValueGetter
+
+    def flat_dict(self, exclude_unset=False, exclude_defaults=False):
+        schema_dict = self.dict(
+            exclude_unset=exclude_unset,
+            exclude_defaults=exclude_defaults)
+
+        return_dict = flatten_attributes(self, schema_dict)
+
+        # return_dict['sections'] =
+        #   [s.orm_dict() for s in schema_dict['sections']]
+
+        return return_dict

@@ -14,11 +14,11 @@ router = APIRouter(prefix='/boreholes', tags=['boreholes'])
 @router.get("/",
             response_model=List[BoreholeSchema],
             response_model_exclude_none=True)
-async def read_boreholes(db: Session = Depends(get_db)):
+async def get_boreholes(db: Session = Depends(get_db)):
     """
     Returns a list of projects.
     """
-    db_result = crud.get_boreholes(db)
+    db_result = crud.read_boreholes(db)
 
     if not db_result:
         raise HTTPException(status_code=404, detail="No boreholes found.")
@@ -28,20 +28,37 @@ async def read_boreholes(db: Session = Depends(get_db)):
 @router.get("/{borehole_id}",
             response_model=BoreholeSchema,
             response_model_exclude_none=True)
-async def read_borehole_hydraulics(borehole_id: str,
-                                   db: Session = Depends(get_db),
-                                   level: Optional[str] = 'section',
-                                   starttime: Optional[datetime] = None,
-                                   endtime: Optional[datetime] = None):
+async def get_borehole(borehole_id: str,
+                       db: Session = Depends(get_db),
+                       level: Optional[str] = 'section',
+                       starttime: Optional[datetime] = None,
+                       endtime: Optional[datetime] = None):
     """
     Returns a borehole.
     """
-    borehole_id = base64.b64decode(borehole_id).decode("utf-8")
-
-    db_result = crud.get_borehole_hydraulics(
+    try:
+        borehole_id = base64.b64decode(borehole_id).decode("utf-8")
+    except BaseException:
+        raise HTTPException(status_code=400,
+                            detail="Borehole ID is not valid Base 64.")
+    db_result = crud.read_borehole(
         borehole_id, db, level, starttime, endtime)
 
     if not db_result:
         raise HTTPException(status_code=404, detail="No boreholes found.")
 
     return db_result
+
+
+@router.put("/", response_model=BoreholeSchema,
+            response_model_exclude_none=True)
+async def put_borehole(borehole: BoreholeSchema, db: Session = Depends(get_db)):
+    return crud.create_borehole(borehole.flat_dict(), db)
+
+
+@router.post("/", response_model=BoreholeSchema,
+             response_model_exclude_none=True)
+async def post_borehole(borehole: BoreholeSchema, db: Session = Depends(get_db)):
+    return crud.create_borehole(borehole.flat_dict(exclude_unset=True), db)
+
+# @router.post("/boreholes", response_model=)
