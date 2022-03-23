@@ -10,7 +10,7 @@ BaseConfig.orm_mode = True
 
 def real_value_factory(quantity_type: type) -> Type[BaseModel]:
     _func_map = dict([
-        ('value', (Optional[quantity_type], None)),
+        ('value', (quantity_type, None)),
         ('uncertainty', (Optional[float], None)),
         ('loweruncertainty', (Optional[float], None)),
         ('upperuncertainty', (Optional[float], None)),
@@ -129,6 +129,7 @@ class BoreholeSectionSchema(BaseModel):
     endtime: Optional[datetime]
     toplongitude: RealFloatValue
     toplatitude: RealFloatValue
+    topaltitude: RealFloatValue
     bottomlongitude: RealFloatValue
     bottomlatitude: RealFloatValue
     bottomaltitude: RealFloatValue
@@ -153,8 +154,10 @@ class BoreholeSectionSchema(BaseModel):
 
         return_dict = flatten_attributes(self, schema_dict)
 
-        # return_dict['hydraulics'] =
-        #   [s.orm_dict() for s in schema_dict['hydraulics']]
+        if hasattr(self, 'hydraulics') and \
+                isinstance(self.hydraulics, list):
+            return_dict['hydraulics'] = \
+                [h.flat_dict() for h in self.hydraulics]
 
         return return_dict
 
@@ -175,12 +178,15 @@ class BoreholeSchema(BaseModel):
 
     def flat_dict(self, exclude_unset=False, exclude_defaults=False):
         schema_dict = self.dict(
+            exclude={'sections': True},
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults)
 
         return_dict = flatten_attributes(self, schema_dict)
 
-        # return_dict['sections'] =
-        #   [s.orm_dict() for s in schema_dict['sections']]
+        if hasattr(self, 'sections') and \
+                isinstance(self.sections, list):
+            return_dict['sections'] = \
+                [s.flat_dict() for s in self.sections]
 
         return return_dict

@@ -50,15 +50,14 @@ async def get_borehole(borehole_id: str,
     return db_result
 
 
-@router.put("/", response_model=BoreholeSchema,
-            response_model_exclude_none=True)
-async def put_borehole(borehole: BoreholeSchema, db: Session = Depends(get_db)):
-    return crud.create_borehole(borehole.flat_dict(), db)
+# @router.put("/", response_model=BoreholeSchema,
+#             response_model_exclude_none=True)
+# async def put_borehole(borehole: BoreholeSchema, db: Session = Depends(get_db)):
+#     return crud.create_borehole(borehole.flat_dict(), db)
 
 
 @router.post("/", response_model=BoreholeSchema,
              response_model_exclude_none=True)
-async def post_borehole(borehole: BoreholeSchema, db: Session = Depends(get_db)):
+async def post_borehole(
+        borehole: BoreholeSchema, db: Session = Depends(get_db)):
     return crud.create_borehole(borehole.flat_dict(exclude_unset=True), db)
-
-# @router.post("/boreholes", response_model=)
