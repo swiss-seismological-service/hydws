@@ -1,5 +1,4 @@
 from datetime import datetime
-from operator import attrgetter
 from sqlalchemy.orm import Session, joinedload, contains_eager
 from sqlalchemy import select, update, delete  # noqa
 from typing import List
@@ -59,10 +58,6 @@ def create_borehole(borehole: dict, db: Session):
     sections = borehole.pop('sections', None)
 
     if borehole_db:
-        # statement = update(Borehole).where(
-        #     Borehole.publicid == borehole['publicid']).values(
-        #     **borehole)
-        # db.execute(statement)
         for key, value in borehole.items():
             setattr(borehole_db, key, value)
     else:

@@ -8,9 +8,11 @@ BaseConfig.arbitrary_types_allowed = True
 BaseConfig.orm_mode = True
 
 
-def real_value_factory(quantity_type: type) -> Type[BaseModel]:
+def real_value_factory(
+        quantity_type: type,
+        default: Any) -> Type[BaseModel]:
     _func_map = dict([
-        ('value', (quantity_type, None)),
+        ('value', (quantity_type, default)),
         ('uncertainty', (Optional[float], None)),
         ('loweruncertainty', (Optional[float], None)),
         ('upperuncertainty', (Optional[float], None)),
@@ -44,11 +46,19 @@ class CreationInfo(creationinfo_factory()):
     pass
 
 
-class RealFloatValue(real_value_factory(float)):
+class RealFloatValue(real_value_factory(float, ...)):
     pass
 
 
-class RealDatetimeValue(real_value_factory(datetime)):
+class OptRealFloatValue(real_value_factory(float, None)):
+    pass
+
+
+class RealDatetimeValue(real_value_factory(datetime, ...)):
+    pass
+
+
+class OptRealDatetimeValue(real_value_factory(datetime, None)):
     pass
 
 
@@ -89,8 +99,13 @@ def flatten_attributes(self_obj: object, schema_dict: dict):
     return_dict = {}
     for k, v in schema_dict.items():
         if isinstance(
-                getattr(self_obj, k),
-                (RealFloatValue, RealDatetimeValue)):
+            getattr(
+                self_obj,
+                k),
+            (RealFloatValue,
+             OptRealFloatValue,
+             RealDatetimeValue,
+             OptRealDatetimeValue)):
             return_dict.update(**flatten_dict(k, v))
         elif isinstance(v, (str, int, float, bool, datetime)):
             return_dict[k] = v
@@ -99,15 +114,15 @@ def flatten_attributes(self_obj: object, schema_dict: dict):
 
 class HydraulicSample(BaseModel):
     datetime: RealDatetimeValue
-    bottomtemperature: Optional[RealFloatValue]
-    bottomflow: Optional[RealFloatValue]
-    bottompressure: Optional[RealFloatValue]
-    toptemperature: Optional[RealFloatValue]
-    topflow: Optional[RealFloatValue]
-    toppressure: Optional[RealFloatValue]
-    fluiddensity: Optional[RealFloatValue]
-    fluidviscosity: Optional[RealFloatValue]
-    fluidph: Optional[RealFloatValue]
+    bottomtemperature: Optional[OptRealFloatValue]
+    bottomflow: Optional[OptRealFloatValue]
+    bottompressure: Optional[OptRealFloatValue]
+    toptemperature: Optional[OptRealFloatValue]
+    topflow: Optional[OptRealFloatValue]
+    toppressure: Optional[OptRealFloatValue]
+    fluiddensity: Optional[OptRealFloatValue]
+    fluidviscosity: Optional[OptRealFloatValue]
+    fluidph: Optional[OptRealFloatValue]
     fluidcomposition: Optional[str]
 
     class Config:
@@ -133,10 +148,10 @@ class BoreholeSectionSchema(BaseModel):
     bottomlongitude: RealFloatValue
     bottomlatitude: RealFloatValue
     bottomaltitude: RealFloatValue
-    topmeasureddepth: Optional[RealFloatValue]
-    bottommeasureddepth: Optional[RealFloatValue]
-    holediameter: Optional[RealFloatValue]
-    casingdiameter: Optional[RealFloatValue]
+    topmeasureddepth: Optional[OptRealFloatValue]
+    bottommeasureddepth: Optional[OptRealFloatValue]
+    holediameter: Optional[OptRealFloatValue]
+    casingdiameter: Optional[OptRealFloatValue]
     topclosed: bool
     bottomclosed: bool
     sectiontype: Optional[str]
@@ -167,8 +182,8 @@ class BoreholeSchema(BaseModel):
     longitude: RealFloatValue
     latitude: RealFloatValue
     altitude: RealFloatValue
-    bedrockaltitude: Optional[RealFloatValue]
-    measureddepth: Optional[RealFloatValue]
+    bedrockaltitude: Optional[OptRealFloatValue]
+    measureddepth: Optional[OptRealFloatValue]
     description: Optional[str]
     name: Optional[str]
     sections: Optional[List[BoreholeSectionSchema]]
