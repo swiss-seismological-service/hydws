@@ -83,17 +83,21 @@ class Borehole(RealQuantityMixin('longitude',
 
     description = Column(f'{PREFIX}description', String)
     name = Column(f'{PREFIX}name', String)
-    _sections = relationship("BoreholeSection", back_populates="_borehole",
-                             cascade='all, delete-orphan', lazy='noload',
+
+    _sections = relationship("BoreholeSection",
+                             back_populates="_borehole",
+                             cascade='all, delete-orphan',
+                             passive_deletes=True,
+                             lazy='noload',
                              order_by='BoreholeSection.topaltitude_value')
 
     _literaturesource_oid = Column(Integer,
                                    ForeignKey('literaturesource._oid'))
-    _literaturesource = relationship("LiteratureSource", uselist=False,
+    _literaturesource = relationship("LiteratureSource",
                                      foreign_keys=[_literaturesource_oid])
 
     _creationinfo_oid = Column(Integer, ForeignKey('creationinfo._oid'))
-    _creationinfo = relationship("CreationInfo", uselist=False,
+    _creationinfo = relationship("CreationInfo",
                                  foreign_keys=[_creationinfo_oid])
 
     def snapshot(self, section_filter_cond=None, sample_filter_cond=None):
@@ -208,15 +212,18 @@ class BoreholeSection(EpochMixin('Epoch', epoch_type='open'),
     casingtype = Column(f'{PREFIX}casingtype', String)
     description = Column(f'{PREFIX}description', String)
 
-    borehole_oid = Column(f'{PREFIX}borehole_oid', Integer,
-                          ForeignKey('borehole._oid'))
+    borehole_oid = Column(f'{PREFIX}borehole_oid',
+                          Integer,
+                          ForeignKey('borehole._oid', ondelete="CASCADE"))
 
     _borehole = relationship("Borehole", back_populates="_sections")
 
-    _hydraulics = relationship("HydraulicSample", back_populates="_section",
-                               lazy='noload', uselist=True,
+    _hydraulics = relationship("HydraulicSample",
+                               back_populates="_section",
+                               lazy='noload',
                                order_by='HydraulicSample.datetime_value',
-                               cascade='save-update, delete, delete-orphan')
+                               cascade='all, delete-orphan',
+                               passive_deletes=True)
 
     def snapshot(self, filter_cond=None):
         """
@@ -367,11 +374,11 @@ class HydraulicSample(TimeQuantityMixin('datetime', value_nullable=False,
     __mapper_args__ = {'confirm_deleted_rows': False}
     fluidcomposition = Column(f'{PREFIX}fluidcomposition', String)
 
-    _section = relationship("BoreholeSection", back_populates="_hydraulics",
-                            uselist=False)
-
-    boreholesection_oid = Column(f'{PREFIX}boreholesection_oid',
-                                 Integer, ForeignKey('boreholesection._oid'))
+    boreholesection_oid = Column(
+        f'{PREFIX}boreholesection_oid',
+        Integer,
+        ForeignKey('boreholesection._oid', ondelete="CASCADE"))
+    _section = relationship("BoreholeSection", back_populates="_hydraulics")
 
     def copy(self, with_foreignkeys=False):
         """
