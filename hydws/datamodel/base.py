@@ -9,6 +9,7 @@ from sqlalchemy import (
     DateTime,
     Enum,
     ForeignKey)
+from sqlalchemy.schema import MetaData
 from sqlalchemy.orm import sessionmaker, relationship, backref
 from sqlalchemy.ext.declarative import declared_attr, declarative_base
 
@@ -44,6 +45,21 @@ class Base(object):
 
 
 ORMBase = declarative_base(cls=Base)
+
+
+def init_db():
+    """
+    Initializes the Database.
+    All DB modules need to be imported when calling this function.
+    """
+    ORMBase.metadata.create_all(engine)
+
+
+def drop_db():
+    """Drops all database Tables but leaves the DB itself in place"""
+    m = MetaData()
+    m.reflect(engine)
+    m.drop_all(engine)
 
 
 # ----------------------------------------------------------------------------

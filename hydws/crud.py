@@ -52,12 +52,24 @@ def read_borehole(
     return result
 
 
+def delete_borehole(publicid: str, db: Session):
+    stmt = delete(Borehole).where(
+        Borehole.publicid == publicid)
+    deleted = db.execute(stmt)
+    db.commit()
+    return deleted.rowcount
+
+
 def create_borehole(borehole: dict, db: Session):
     borehole_db = read_borehole(borehole['publicid'], db, level='borehole')
 
     sections = borehole.pop('sections', None)
 
     if borehole_db:
+        # statement = update(Borehole).where(
+        #     Borehole.publicid == borehole['publicid']).values(
+        #     **borehole)
+        # db.execute(statement)
         for key, value in borehole.items():
             setattr(borehole_db, key, value)
     else:
@@ -70,7 +82,7 @@ def create_borehole(borehole: dict, db: Session):
             borehole_db._sections.append(s)
 
     db.commit()
-    db.refresh(borehole_db)
+
     return borehole_db
 
 
@@ -95,7 +107,7 @@ def create_section(section: dict, db: Session, commit: bool = True):
         db.add(section_db)
 
     if hydraulics:
-        merge_hydraulics(hydraulics, section_db, db)
+        merge_hydraulics(hydraulics, section_db, db, False)
 
     if commit:
         db.commit()
@@ -112,29 +124,17 @@ def merge_hydraulics(
     datetimes = [h['datetime_value'] for h in hydraulics]
     start = min(datetimes)
     end = max(datetimes)
-    import time
 
-    now = time.perf_counter()
     statement = delete(HydraulicSample) \
         .where(HydraulicSample.boreholesection_oid == BoreholeSection._oid) \
         .where(BoreholeSection.publicid == section.publicid) \
         .where(HydraulicSample.datetime_value > start)\
         .where(HydraulicSample.datetime_value < end) \
-        .execution_options(synchronize_session='fetch')
+        .execution_options(synchronize_session=False)
 
-    d = db.execute(statement)
-    then = time.perf_counter()
-    print(d.rowcount)
-    print(then - now)
+    db.execute(statement)
 
-    # for sample in hydraulics:
-    #     sample['_section'] = section
-    # db.bulk_insert_mappings(HydraulicSample, hydraulics)
-
-    samples = [HydraulicSample(**s) for s in hydraulics]
-    for s in samples:
-        s._section = section
-
+    samples = [HydraulicSample(**s, _section=section) for s in hydraulics]
     db.add_all(samples)
 
     if commit:
