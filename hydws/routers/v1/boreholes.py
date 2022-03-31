@@ -5,7 +5,7 @@ from typing import List, Optional
 import base64
 from starlette.status import HTTP_204_NO_CONTENT
 
-from hydws.schemas import BoreholeSchema
+from hydws.schemas import BoreholeSchema, HydraulicSampleSchema
 from hydws import crud
 from hydws.dependencies import get_db
 
@@ -15,11 +15,24 @@ router = APIRouter(prefix='/boreholes', tags=['boreholes'])
 @router.get("/",
             response_model=List[BoreholeSchema],
             response_model_exclude_none=True)
-async def get_boreholes(db: Session = Depends(get_db)):
+async def get_boreholes(db: Session = Depends(get_db),
+                        starttime: Optional[datetime] = None,
+                        endtime: Optional[datetime] = None,
+                        minlatitude: Optional[float] = None,
+                        maxlatitude: Optional[float] = None,
+                        minlongitude: Optional[float] = None,
+                        maxlongitude: Optional[float] = None):
     """
     Returns a list of projects.
     """
-    db_result = crud.read_boreholes(db)
+    db_result = crud.read_boreholes(
+        db,
+        starttime,
+        endtime,
+        minlatitude,
+        maxlatitude,
+        minlongitude,
+        maxlongitude)
 
     if not db_result:
         raise HTTPException(status_code=404, detail="No boreholes found.")
@@ -51,7 +64,8 @@ async def get_borehole(borehole_id: str,
     return db_result
 
 
-@router.post("/", response_model=BoreholeSchema,
+@router.post("/",
+             response_model=BoreholeSchema,
              response_model_exclude_none=True)
 async def post_borehole(
         borehole: BoreholeSchema, db: Session = Depends(get_db)):
@@ -65,7 +79,8 @@ async def post_borehole(
     return result
 
 
-@router.delete("/{borehole_id}", status_code=HTTP_204_NO_CONTENT,
+@router.delete("/{borehole_id}",
+               status_code=HTTP_204_NO_CONTENT,
                response_class=Response)
 async def delete_borehole(borehole_id: str,
                           db: Session = Depends(get_db)) -> None:
@@ -79,3 +94,37 @@ async def delete_borehole(borehole_id: str,
 
     if deleted == 0:
         raise HTTPException(status_code=404, detail="No boreholes found.")
+
+
+@router.get("/{borehole_id}/sections/{section_id}/hydraulics",
+            response_model=List[HydraulicSampleSchema],
+            response_model_exclude_none=True)
+async def get_section_hydraulics(borehole_id: str,
+                                 section_id: str,
+                                 db: Session = Depends(get_db),
+                                 starttime: Optional[datetime] = None,
+                                 endtime: Optional[datetime] = None):
+    """
+    Returns a section.
+    """
+    try:
+        borehole_id = base64.b64decode(borehole_id).decode("utf-8")
+    except BaseException:
+        raise HTTPException(status_code=400,
+                            detail="Borehole ID is not valid Base 64.")
+    db_borehole = crud.read_borehole(borehole_id, db)
+    if not db_borehole:
+        raise HTTPException(status_code=404, detail="Borehole not found.")
+
+    try:
+        section_id = base64.b64decode(section_id).decode("utf-8")
+    except BaseException:
+        raise HTTPException(status_code=400,
+                            detail="Section ID is not valid Base 64.")
+    db_result = crud.read_hydraulics(section_id, db, starttime, endtime)
+
+    if not db_result:
+        raise HTTPException(status_code=404,
+                            detail="No hydraulics that match the criteria.")
+
+    return db_result

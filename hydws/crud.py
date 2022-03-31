@@ -1,13 +1,36 @@
 from datetime import datetime
 from sqlalchemy.orm import Session, joinedload, contains_eager
-from sqlalchemy import select, update, delete  # noqa
-from typing import List, Union
+from sqlalchemy import select, delete
+from typing import List, Optional, Union
 
 from hydws.datamodel.orm import Borehole, BoreholeSection, HydraulicSample
 
 
-def read_boreholes(db: Session) -> List[Borehole]:
+def read_boreholes(db: Session,
+                   starttime: Optional[datetime] = None,
+                   endtime: Optional[datetime] = None,
+                   minlatitude: Optional[float] = None,
+                   maxlatitude: Optional[float] = None,
+                   minlongitude: Optional[float] = None,
+                   maxlongitude: Optional[float] = None) -> List[Borehole]:
+
     statement = select(Borehole).options(joinedload(Borehole._sections))
+
+    if starttime or endtime:
+        statement = statement.join(BoreholeSection)
+    if starttime:
+        statement = statement.where(BoreholeSection.endtime >= starttime)
+    if endtime:
+        statement = statement.where(BoreholeSection.starttime <= endtime)
+    if minlongitude:
+        statement = statement.where(Borehole.longitude_value >= minlongitude)
+    if maxlongitude:
+        statement = statement.where(Borehole.longitude_value <= maxlongitude)
+    if minlatitude:
+        statement = statement.where(Borehole.latitude_value >= minlatitude)
+    if maxlatitude:
+        statement = statement.where(Borehole.latitude_value <= maxlatitude)
+
     return db.execute(statement).unique().scalars().all()
 
 
@@ -52,8 +75,7 @@ def read_borehole_level(
     if endtime:
         statement = statement.where(time_query_end < endtime)
 
-    result = db.execute(statement).unique().scalar_one_or_none()
-    return result
+    return db.execute(statement).unique().scalar_one_or_none()
 
 
 def delete_borehole(publicid: str, db: Session):
@@ -102,7 +124,7 @@ def create_section(section: dict,
 
     if isinstance(borehole, str):
         borehole = read_borehole(borehole, db)
-    if not section:
+    if not borehole:
         raise KeyError(f'Borehole with publicID {borehole} does not exist.')
 
     section_db = read_section(section['publicid'], db)
@@ -112,7 +134,7 @@ def create_section(section: dict,
         for key, value in section.items():
             setattr(section_db, key, value)
     else:
-        section_db = BoreholeSection(**section)
+        section_db = BoreholeSection(**section, _borehole=borehole)
         db.add(section_db)
 
     if hydraulics:
@@ -121,6 +143,25 @@ def create_section(section: dict,
     if commit:
         db.commit()
     return section_db
+
+
+def read_hydraulics(
+        section_id: str,
+        db: Session,
+        starttime: datetime = None,
+        endtime: datetime = None) -> List[HydraulicSample]:
+
+    statement = select(HydraulicSample) \
+        .where(HydraulicSample.boreholesection_oid == BoreholeSection._oid) \
+        .where(BoreholeSection.publicid == section_id)
+    if starttime:
+        statement = statement.where(
+            HydraulicSample.datetime_value >= starttime)
+    if endtime:
+        statement = statement.where(
+            HydraulicSample.datetime_value <= endtime)
+
+    return db.execute(statement).unique().scalars().all()
 
 
 def merge_hydraulics(

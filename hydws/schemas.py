@@ -112,7 +112,7 @@ def flatten_attributes(self_obj: object, schema_dict: dict):
     return return_dict
 
 
-class HydraulicSample(BaseModel):
+class HydraulicSampleSchema(BaseModel):
     datetime: RealDatetimeValue
     bottomtemperature: Optional[OptRealFloatValue]
     bottomflow: Optional[OptRealFloatValue]
@@ -157,7 +157,7 @@ class BoreholeSectionSchema(BaseModel):
     sectiontype: Optional[str]
     casingtype: Optional[str]
     description: Optional[str]
-    hydraulics: Optional[List[HydraulicSample]]
+    hydraulics: Optional[List[HydraulicSampleSchema]]
 
     class Config:
         getter_dict = ValueGetter

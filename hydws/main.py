@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from hydws.datamodel.base import ORMBase, engine
 
-from hydws.routers import boreholes
+from hydws.routers.v1 import boreholes
 
 
 ORMBase.metadata.create_all(bind=engine)
