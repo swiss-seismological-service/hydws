@@ -3,11 +3,13 @@ from functools import lru_cache
 
 
 class Settings(BaseSettings):
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str
     POSTGRES_SERVER: str
     POSTGRES_PORT: str
-    POSTGRES_DB: str
+
+    APP_DB_USER: str
+    APP_DB_PASSWORD: str
+    APP_DB_NAME: str
+
     HYDWS_PREFIX: str = 'm_'
 
     class Config:

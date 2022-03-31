@@ -19,10 +19,10 @@ from config.config import get_settings
 def postgresql_url():
     settings = get_settings()
     SQLALCHEMY_DATABASE_URL = (
-        f"postgresql://{settings.POSTGRES_USER}:"
-        f"{settings.POSTGRES_PASSWORD}@"
+        f"postgresql://{settings.APP_DB_USER}:"
+        f"{settings.APP_DB_PASSWORD}@"
         f"{settings.POSTGRES_SERVER}:"
-        f"{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}")
+        f"{settings.POSTGRES_PORT}/{settings.APP_DB_NAME}")
     return SQLALCHEMY_DATABASE_URL
 
 
