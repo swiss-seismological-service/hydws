@@ -42,20 +42,13 @@ async def get_borehole(borehole_id: str,
     except BaseException:
         raise HTTPException(status_code=400,
                             detail="Borehole ID is not valid Base 64.")
-    db_result = crud.read_borehole(
+    db_result = crud.read_borehole_level(
         borehole_id, db, level, starttime, endtime)
 
     if not db_result:
         raise HTTPException(status_code=404, detail="No boreholes found.")
 
     return db_result
-
-
-# @router.put("/", response_model=BoreholeSchema,
-#             response_model_exclude_none=True)
-# async def put_borehole(borehole: BoreholeSchema,
-#                        db: Session = Depends(get_db)):
-#     return crud.create_borehole(borehole.flat_dict(), db)
 
 
 @router.post("/", response_model=BoreholeSchema,
