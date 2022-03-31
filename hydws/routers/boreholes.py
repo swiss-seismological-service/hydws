@@ -55,8 +55,14 @@ async def get_borehole(borehole_id: str,
              response_model_exclude_none=True)
 async def post_borehole(
         borehole: BoreholeSchema, db: Session = Depends(get_db)):
-    return crud.create_borehole(
-        borehole.flat_dict(exclude_unset=True), db)
+    try:
+        result = crud.create_borehole(
+            borehole.flat_dict(exclude_unset=True), db)
+    except KeyError as k:
+        HTTPException(status_code=404, detail=k)
+    except BaseException as e:
+        HTTPException(status_code=500, detail=e)
+    return result
 
 
 @router.delete("/{borehole_id}", status_code=HTTP_204_NO_CONTENT,

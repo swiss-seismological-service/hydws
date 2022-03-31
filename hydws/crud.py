@@ -101,7 +101,9 @@ def create_section(section: dict,
                    commit: bool = True):
 
     if isinstance(borehole, str):
-        borehole = read_borehole(borehole['publicid'], db)
+        borehole = read_borehole(borehole, db)
+    if not section:
+        raise KeyError(f'Borehole with publicID {borehole} does not exist.')
 
     section_db = read_section(section['publicid'], db)
     hydraulics = section.pop('hydraulics', None)
@@ -123,9 +125,14 @@ def create_section(section: dict,
 
 def merge_hydraulics(
         hydraulics: List[dict],
-        section: BoreholeSection,
+        section: Union[str, BoreholeSection],
         db: Session,
         commit: bool = True):
+
+    if isinstance(section, str):
+        section = read_section(section, db)
+    if not section:
+        raise KeyError(f'Section with publicID {section} does not exist.')
 
     datetimes = [h['datetime_value'] for h in hydraulics]
     start = min(datetimes)
