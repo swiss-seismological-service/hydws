@@ -4,7 +4,7 @@ from functools import lru_cache
 
 class Settings(BaseSettings):
     POSTGRES_SERVER: str
-    POSTGRES_PORT: str
+    PGPORT: str
 
     APP_DB_USER: str
     APP_DB_PASSWORD: str

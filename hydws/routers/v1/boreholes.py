@@ -73,9 +73,12 @@ async def post_borehole(
         result = crud.create_borehole(
             borehole.flat_dict(exclude_unset=True), db)
     except KeyError as k:
-        HTTPException(status_code=404, detail=k)
+        raise HTTPException(status_code=404, detail=str(k))
+    except ValueError as v:
+        raise HTTPException(status_code=422, detail=str(v))
     except BaseException as e:
-        HTTPException(status_code=500, detail=e)
+        raise HTTPException(status_code=500, detail=str(e))
+
     return result
 
 

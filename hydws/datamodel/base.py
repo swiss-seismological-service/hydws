@@ -22,7 +22,7 @@ def postgresql_url():
         f"postgresql://{settings.APP_DB_USER}:"
         f"{settings.APP_DB_PASSWORD}@"
         f"{settings.POSTGRES_SERVER}:"
-        f"{settings.POSTGRES_PORT}/{settings.APP_DB_NAME}")
+        f"{settings.PGPORT}/{settings.APP_DB_NAME}")
     return SQLALCHEMY_DATABASE_URL
 
 

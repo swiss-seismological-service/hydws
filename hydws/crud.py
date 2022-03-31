@@ -117,6 +117,30 @@ def read_section(section_id: str, db: Session):
     return db.execute(statement).scalar_one_or_none()
 
 
+def update_section_epoch(
+        section_db: BoreholeSection,
+        section_new: dict) -> None:
+
+    starttime = section_new.get(
+        'starttime', getattr(section_db, 'starttime', None))
+    endtime = section_new.get(
+        'endtime', getattr(section_db, 'endtime', None))
+
+    if 'hydraulics' in section_new and section_new['hydraulics']:
+        datetimes = [h['datetime_value'] for h in section_new['hydraulics']]
+        min_hyd = min(datetimes)
+        max_hyd = max(datetimes)
+
+        if not starttime or starttime > min_hyd:
+            section_new['starttime'] = min_hyd
+        if not endtime or endtime < max_hyd:
+            section_new['endtime'] = max_hyd
+    else:
+        if not starttime or not endtime:
+            raise ValueError('Sections without hydraulics attached must have'
+                             ' starttime and endtime defined.')
+
+
 def create_section(section: dict,
                    borehole: Union[str, Borehole],
                    db: Session,
@@ -128,6 +152,9 @@ def create_section(section: dict,
         raise KeyError(f'Borehole with publicID {borehole} does not exist.')
 
     section_db = read_section(section['publicid'], db)
+    update_section_epoch(section_db,
+                         section)
+
     hydraulics = section.pop('hydraulics', None)
 
     if section_db:
@@ -138,7 +165,7 @@ def create_section(section: dict,
         db.add(section_db)
 
     if hydraulics:
-        merge_hydraulics(hydraulics, section_db, db, False)
+        create_hydraulics(hydraulics, section_db, db, False)
 
     if commit:
         db.commit()
@@ -152,8 +179,9 @@ def read_hydraulics(
         endtime: datetime = None) -> List[HydraulicSample]:
 
     statement = select(HydraulicSample) \
-        .where(HydraulicSample.boreholesection_oid == BoreholeSection._oid) \
-        .where(BoreholeSection.publicid == section_id)
+        .where(HydraulicSample.boreholesection_oid == BoreholeSection._oid)\
+        .where(BoreholeSection.publicid == section_id)\
+
     if starttime:
         statement = statement.where(
             HydraulicSample.datetime_value >= starttime)
@@ -164,7 +192,7 @@ def read_hydraulics(
     return db.execute(statement).unique().scalars().all()
 
 
-def merge_hydraulics(
+def create_hydraulics(
         hydraulics: List[dict],
         section: Union[str, BoreholeSection],
         db: Session,
@@ -182,7 +210,7 @@ def merge_hydraulics(
     statement = delete(HydraulicSample) \
         .where(HydraulicSample.boreholesection_oid == BoreholeSection._oid) \
         .where(BoreholeSection.publicid == section.publicid) \
-        .where(HydraulicSample.datetime_value > start)\
+        .where(HydraulicSample.datetime_value > start) \
         .where(HydraulicSample.datetime_value < end) \
         .execution_options(synchronize_session=False)
 

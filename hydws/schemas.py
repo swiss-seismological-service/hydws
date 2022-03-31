@@ -140,7 +140,7 @@ class HydraulicSampleSchema(BaseModel):
 
 class BoreholeSectionSchema(BaseModel):
     publicid: str
-    starttime: datetime
+    starttime: Optional[datetime]
     endtime: Optional[datetime]
     toplongitude: RealFloatValue
     toplatitude: RealFloatValue
