@@ -1,5 +1,5 @@
 {
-    "publicid": "smi:ch.ethz.sed/bh/ST100",
+    "publicid": "smi:ch.ethz.sed/bh/ST1",
     "longitude": {
         "value": 8.47706629603003
     },
@@ -16,7 +16,7 @@
     },
     "sections": [
         {
-            "publicid": "smi:ch.ethz.sed/bh/ST100/section_15",
+            "publicid": "smi:ch.ethz.sed/bh/ST1/section_09",
             "toplongitude": {
                 "value": 8
             },
@@ -49,8 +49,8 @@
             },
             "topclosed": true,
             "bottomclosed": true,
-            "starttime": "2022-03-23T01:00:14",
-            "endtime": "2022-03-23T17:54:15",
+            "starttime": "2022-02-23T01:00:14",
+            "endtime": "2022-03-30T17:54:15",
             "hydraulics": [
                 {
                     "datetime": {

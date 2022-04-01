@@ -178,7 +178,7 @@ class Borehole(RealQuantityMixin('longitude',
                     self.altitude_value, self.measureddepth_value)
 
 
-class BoreholeSection(EpochMixin('Epoch', epoch_type='open'),
+class BoreholeSection(EpochMixin('Epoch', epoch_type='finite'),
                       RealQuantityMixin('toplongitude',
                                         value_nullable=False),
                       RealQuantityMixin('toplatitude',

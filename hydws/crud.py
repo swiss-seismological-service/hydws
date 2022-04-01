@@ -1,6 +1,7 @@
 from datetime import datetime
 from sqlalchemy.orm import Session, joinedload, contains_eager
 from sqlalchemy import select, delete
+from sqlalchemy.sql import func
 from typing import List, Optional, Union
 
 from hydws.datamodel.orm import Borehole, BoreholeSection, HydraulicSample
@@ -119,26 +120,52 @@ def read_section(section_id: str, db: Session):
 
 def update_section_epoch(
         section_db: BoreholeSection,
-        section_new: dict) -> None:
+        section_new: dict,
+        db: Session) -> None:
 
-    starttime = section_new.get(
-        'starttime', getattr(section_db, 'starttime', None))
-    endtime = section_new.get(
-        'endtime', getattr(section_db, 'endtime', None))
+    start_new = section_new.get('starttime', None)
+    end_new = section_new.get('endtime', None)
+    hydraulics = section_new.get('hydraulics', None)
 
-    if 'hydraulics' in section_new and section_new['hydraulics']:
+    if hydraulics:
         datetimes = [h['datetime_value'] for h in section_new['hydraulics']]
         min_hyd = min(datetimes)
         max_hyd = max(datetimes)
+        start_new = min(min_hyd, start_new or min_hyd)
+        end_new = max(max_hyd, end_new or max_hyd)
 
-        if not starttime or starttime > min_hyd:
-            section_new['starttime'] = min_hyd
-        if not endtime or endtime < max_hyd:
-            section_new['endtime'] = max_hyd
-    else:
-        if not starttime or not endtime:
+    if not section_db:
+        if not start_new or not end_new:
             raise ValueError('Sections without hydraulics attached must have'
                              ' starttime and endtime defined.')
+        else:
+            section_new['starttime'] = start_new
+            section_new['endtime'] = end_new
+    else:
+        if start_new:
+            if start_new < section_db.starttime:
+                section_new['starttime'] = start_new
+            else:
+                min_db = db.execute(
+                    select(func.min(
+                        HydraulicSample.datetime_value)).where(
+                        HydraulicSample.boreholesection_oid
+                        == section_db._oid)).scalar()
+                print(min_db)
+                print(start_new)
+                section_new['starttime'] = min(start_new, min_db)
+        if end_new:
+            if end_new > section_db.endtime:
+                section_new['endtime'] = end_new
+            else:
+                max_db = db.execute(
+                    select(func.max(
+                        HydraulicSample.datetime_value)).where(
+                        HydraulicSample.boreholesection_oid
+                        == section_db._oid)).scalar()
+                print(max_db)
+                print(end_new)
+                section_new['endtime'] = max(end_new, max_db)
 
 
 def create_section(section: dict,
@@ -153,7 +180,7 @@ def create_section(section: dict,
 
     section_db = read_section(section['publicid'], db)
     update_section_epoch(section_db,
-                         section)
+                         section, db)
 
     hydraulics = section.pop('hydraulics', None)
 
@@ -206,7 +233,8 @@ def create_hydraulics(
     datetimes = [h['datetime_value'] for h in hydraulics]
     start = min(datetimes)
     end = max(datetimes)
-
+    import time
+    now = time.perf_counter()
     statement = delete(HydraulicSample) \
         .where(HydraulicSample.boreholesection_oid == BoreholeSection._oid) \
         .where(BoreholeSection.publicid == section.publicid) \
@@ -215,6 +243,9 @@ def create_hydraulics(
         .execution_options(synchronize_session=False)
 
     db.execute(statement)
+
+    after = time.perf_counter()
+    print(after - now)
 
     samples = [HydraulicSample(**s, _section=section) for s in hydraulics]
     db.add_all(samples)
