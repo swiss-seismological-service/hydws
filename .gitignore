@@ -1,11 +1,3 @@
-<<<<<<< HEAD
-venv*
-*.egg-info
-*.pyc
-env/
-.tox/
-*.swp
-=======
 # custom
 logs/
 node_modules/
@@ -142,4 +134,3 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
->>>>>>> feat: copy over orm, basic structure and borehole get endpoints
