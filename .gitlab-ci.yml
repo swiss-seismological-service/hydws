@@ -1,63 +1,99 @@
 stages:
-    - codestyle
-    - test
+    # - codestyle
+    # - test
+    - publish
+    - deploy
 
-.test-rules:
-    rules:
-        - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"'
-          when: always
-        - if: '$CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "feature/ci"'
-          when: always
-        - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME != "develop"'
-          when: always
+# .test-rules:
+#     rules:
+#         - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"'
+#           when: always
+#         - if: '$CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "feature/ci"'
+#           when: always
+#         - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME != "develop"'
+#           when: always
 
-.add-ssh:
-    &add-ssh ## Install ssh-agent if not already installed, it is required by Docker.
-    - "command -v ssh-agent >/dev/null || ( apt-get update -y && apt-get install openssh-client -y )"
+# .add-ssh:
+#     &add-ssh ## Install ssh-agent if not already installed, it is required by Docker.
+#     - "command -v ssh-agent >/dev/null || ( apt-get update -y && apt-get install openssh-client -y )"
 
-    ## Run ssh-agent (inside the build environment)
-    - eval $(ssh-agent -s)
+#     ## Run ssh-agent (inside the build environment)
+#     - eval $(ssh-agent -s)
 
-    ## Add the SSH key stored in SSH_PRIVATE_KEY variable to the agent store
-    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+#     ## Add the SSH key stored in SSH_PRIVATE_KEY variable to the agent store
+#     - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
 
-    ## Create the SSH directory and give it the right permissions
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - ssh-keyscan -t rsa gitlab.seismo.ethz.ch >> ~/.ssh/known_hosts
+#     ## Create the SSH directory and give it the right permissions
+#     - mkdir -p ~/.ssh
+#     - chmod 700 ~/.ssh
+#     - ssh-keyscan -t rsa gitlab.seismo.ethz.ch >> ~/.ssh/known_hosts
 
-    - apt-get update
-    - apt-get install -y python3-dev build-essential
+#     - apt-get update
+#     - apt-get install -y python3-dev build-essential
 
-.add-env: &add-env
-    - echo COMPOSE_PROJECT_NAME=hydws >> .env
-    - echo POSTGRES_SERVER=$POSTGRES_SERVER >> .env
-    - echo POSTGRES_PASSWORD=$POSTGRES_PASSWORD >> .env
-    - echo PGPORT=$PGPORT >> .env
-    - echo APP_DB_USER=hydws >> .env
-    - echo APP_DB_PASSWORD=$APP_DB_PASSWORD >> .env
-    - echo APP_DB_NAME=hydws >> .env
+# .add-env: &add-env
+#     - echo COMPOSE_PROJECT_NAME=hydws >> .env
+#     - echo POSTGRES_SERVER=$POSTGRES_SERVER >> .env
+#     - echo POSTGRES_PASSWORD=$POSTGRES_PASSWORD >> .env
+#     - echo PGPORT=$PGPORT >> .env
+#     - echo APP_DB_USER=hydws >> .env
+#     - echo APP_DB_PASSWORD=$APP_DB_PASSWORD >> .env
+#     - echo APP_DB_NAME=hydws >> .env
 
-flake8-job:
-    stage: codestyle
-    extends: .test-rules
-    image: python:3.8-alpine
-    before_script:
-        - pip install tox
-    script:
-        - tox -e flake8
+# flake8-job:
+#     stage: codestyle
+#     extends: .test-rules
+#     image: python:3.8-alpine
+#     before_script:
+#         - pip install tox
+#     script:
+#         - tox -e flake8
 
-py38-test-job:
-    stage: test
-    extends: .test-rules
-    needs: ["flake8-job"]
-    image: python:3.8
-    before_script:
-        - *add-ssh
-        - *add-env
-        - pip install tox
-    script:
-        - tox -e py38-tests
-    artifacts:
-        reports:
-            cobertura: coverage.xml
+# py38-test-job:
+#     stage: test
+#     extends: .test-rules
+#     needs: ["flake8-job"]
+#     image: python:3.8
+#     before_script:
+#         - *add-ssh
+#         - *add-env
+#         - pip install tox
+#     script:
+#         - tox -e py38-tests
+#     artifacts:
+#         reports:
+#             cobertura: coverage.xml
+
+
+variables:
+  TAG_LATEST: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:latest
+  TAG_COMMIT: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA
+
+publish:
+  image: docker:latest
+  stage: publish
+  services:
+    - docker:dind
+  script:
+    - docker build -t $TAG_COMMIT -t $TAG_LATEST .
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
+    - docker push $TAG_COMMIT
+    - docker push $TAG_LATEST
+
+deploy:
+  image: alpine:latest
+  stage: deploy
+  tags:
+    - deployment
+  script:
+    - chmod og= $ID_RSA
+    - apk update && apk add openssh-client
+    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY"
+    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker pull $TAG_COMMIT"
+    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker container rm -f my-app || true"
+    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker run -d -p 80:80 --name my-app $TAG_COMMIT"
+  environment:
+    name: Bedretto HYDWS
+    url: http://bedretto-hydws.ethz.ch
+  only:
+    - feature/ci
