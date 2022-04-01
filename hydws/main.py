@@ -8,7 +8,7 @@ from hydws.routers.v1 import boreholes
 ORMBase.metadata.create_all(bind=engine)
 
 app = FastAPI()
-app.include_router(boreholes.router, prefix='/v1')
+app.include_router(boreholes.router, prefix='/hydws/v1')
 
 
 origins = [
