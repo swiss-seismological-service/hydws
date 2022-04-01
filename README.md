@@ -57,12 +57,6 @@ Where localhost would be changed to the name of the machine that the service is 
 
 A file may contain more than one borehole, as a comma seperated list using square parentheses.
 
-The query parameters are as follows:
-
-    * auto_datetime_off: Boolean (default: False) If False, then section startime and endtime will be updated using the hydraulic samples. starttime will be the same as the time of the first hydraulic sample, and endtime the same as the last sample. If True, then starttime and endtime will be used from the input data values of section starttime and endtime. If these do not exist, then starttime and endtime will be kept as the existing values in the database.
-    * merge_only: Boolean (default:False) defining whether partial data is being uploaded. Input True if only partial metadata is available, and False if all metadata is available. If the borehole already exists then data will be merged with the existing borehole, independent of this parameter selection.
-    * debug: Boolean (default: False) to give a more verbose output on what metadata values are being overwritten.
-
 #### GET /hydws/v1/boreholes
 
 List the available boreholes, optionally with sections.
