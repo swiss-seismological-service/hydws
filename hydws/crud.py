@@ -151,8 +151,6 @@ def update_section_epoch(
                         HydraulicSample.datetime_value)).where(
                         HydraulicSample.boreholesection_oid
                         == section_db._oid)).scalar()
-                print(min_db)
-                print(start_new)
                 section_new['starttime'] = min(start_new, min_db)
         if end_new:
             if end_new > section_db.endtime:
@@ -163,8 +161,6 @@ def update_section_epoch(
                         HydraulicSample.datetime_value)).where(
                         HydraulicSample.boreholesection_oid
                         == section_db._oid)).scalar()
-                print(max_db)
-                print(end_new)
                 section_new['endtime'] = max(end_new, max_db)
 
 
@@ -176,7 +172,8 @@ def create_section(section: dict,
     if isinstance(borehole, str):
         borehole = read_borehole(borehole, db)
     if not borehole:
-        raise KeyError(f'Borehole with publicID {borehole} does not exist.')
+        raise KeyError(
+            f'Borehole with for section {section["publicid"]} does not exist.')
 
     section_db = read_section(section['publicid'], db)
     update_section_epoch(section_db,
