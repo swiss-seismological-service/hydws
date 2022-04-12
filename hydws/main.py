@@ -7,7 +7,10 @@ from hydws.routers.v1 import boreholes
 
 ORMBase.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(
+    docs_url="/hydws/docs",
+    redoc_url=None,
+    openapi_url="/hydws/openapi.json")
 app.include_router(boreholes.router, prefix='/hydws/v1')
 
 

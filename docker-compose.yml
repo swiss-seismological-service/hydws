@@ -10,6 +10,8 @@ services:
       retries: 10
     env_file:
       - '.env'
+    environment:
+      - 'PGPORT=${PGPORT:-5432}'
     restart: '${DOCKER_RESTART_POLICY:-unless-stopped}'
     stop_grace_period: '3s'
     volumes:
