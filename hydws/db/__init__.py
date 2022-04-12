@@ -1,3 +1,0 @@
-"""
-HYDWS database related facilities
-"""

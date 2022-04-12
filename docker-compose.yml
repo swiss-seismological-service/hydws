@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14.2
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-q", "-d", "postgres", "-U", "postgres" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+    env_file:
+      - '.env'
+    restart: '${DOCKER_RESTART_POLICY:-unless-stopped}'
+    stop_grace_period: '3s'
+    volumes:
+      - 'postgres:/var/lib/postgresql/data'
+      - ./database:/docker-entrypoint-initdb.d/
+    ports:
+      - '${PGPORT:-5432}:${PGPORT:-5432}'
+
+  web:
+    build:
+      context: '.'
+      target: 'app'
+    depends_on:
+    - 'postgres'
+    env_file:
+      - '.env'
+    restart: '${DOCKER_RESTART_POLICY:-unless-stopped}'
+    stop_grace_period: '3s'
+    tty: true
+
+    ports:
+      - '${DOCKER_WEB_PORT:-127.0.0.1:8000}:8000'
+
+
+volumes:
+  postgres: {}

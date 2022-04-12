@@ -1,0 +1,9 @@
+.git/
+.pytest_cache/
+__pycache__/
+public/
+
+.coverage
+.dockerignore
+# .env*
+!.env.example
