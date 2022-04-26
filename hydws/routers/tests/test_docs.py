@@ -5,5 +5,5 @@ client = TestClient(app)
 
 
 def test_documentation():
-    response = client.get("/docs")
+    response = client.get("/hydws/docs")
     assert response.status_code == 200
