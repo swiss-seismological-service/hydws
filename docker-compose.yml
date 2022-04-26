@@ -21,13 +21,11 @@ services:
       - '${PGPORT:-5432}:${PGPORT:-5432}'
 
   web:
-    build:
-      context: '.'
-      target: 'app'
-    depends_on:
-    - 'postgres'
     env_file:
       - '.env'
+    image: ${TAG_COMMIT}
+    depends_on:
+      - 'postgres'
     restart: '${DOCKER_RESTART_POLICY:-unless-stopped}'
     stop_grace_period: '3s'
     tty: true
