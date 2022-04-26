@@ -8,7 +8,7 @@ stages:
     rules:
         - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"'
           when: always
-        - if: '$CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "feature/ci"'
+        - if: '$CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master"'
           when: always
         - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME != "develop"'
           when: always
@@ -51,8 +51,8 @@ variables:
   DOCKER_TLS_CERTDIR: ""
 
 publish:
-#   only:
-#     - master
+  only:
+    - master
   tags:
     - deployment
   needs: ["py38-test-job"]
@@ -73,8 +73,8 @@ publish:
     - docker push $TAG_LATEST
 
 deploy:
-#   only:
-#     - master
+  only:
+    - master
   needs: ["publish"]
   environment:
     name: bedretto-hydws
