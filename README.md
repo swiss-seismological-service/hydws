@@ -1,3 +1,5 @@
+[![pipeline status](https://gitlab.seismo.ethz.ch/indu/hydws/badges/develop/pipeline.svg)](https://gitlab.seismo.ethz.ch/indu/hydws/-/commits/develop) [![coverage report](https://gitlab.seismo.ethz.ch/indu/hydws/badges/develop/coverage.svg)](https://gitlab.seismo.ethz.ch/indu/hydws/-/commits/develop)
+
 # hydws
 
 REST webservice allowing access to hydraulic data.
