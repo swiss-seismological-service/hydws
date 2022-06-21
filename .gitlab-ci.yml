@@ -42,7 +42,10 @@ py38-test-job:
         - tox -e py38-tests
     artifacts:
         reports:
-            cobertura: coverage.xml
+            coverage_report:
+                coverage_format: cobertura
+                path: coverage.xml
+
 
 
 variables:
