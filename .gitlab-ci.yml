@@ -100,3 +100,4 @@ deploy:
 
     - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch "docker-compose down"
     - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch "docker-compose up -d"
+    
