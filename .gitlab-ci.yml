@@ -6,14 +6,15 @@ stages:
 
 .test-rules:
     rules:
-        - if: '$CI_COMMIT_BRANCH == "cd/postgres"'
+        - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main" || $CI_COMMIT_BRANCH == "main"'
           when: always
-        # - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"'
-        #   when: always
-        # - if: '$CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master"'
-        #   when: always
+        - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /^v\d.*/ || $CI_COMMIT_BRANCH =~ /^v\d.*/'
+          when: always
+        - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /\w*-environment$/ || $CI_COMMIT_BRANCH =~ /\w*-environment$/'
+          when: always
         # - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME != "develop"'
         #   when: always
+        
 
 flake8-job:
     stage: codestyle
@@ -55,7 +56,7 @@ variables:
 
 publish:
     only:
-        - cd/postgres
+        - /\w*-environment$/
     tags:
         - deployment
     needs: ["py310-test-job"]
@@ -77,10 +78,10 @@ publish:
 
 deploy:
     only:
-        - cd/postgres
+        - /\w*-environment$/
     needs: ["publish"]
     environment:
-        name: bedretto-hydws
+        name: $CI_COMMIT_BRANCH
     image: alpine:latest
     stage: deploy
     tags:
@@ -90,14 +91,14 @@ deploy:
         - chmod og= $SERVER_RSA
         - apk update && apk add openssh-client
 
-        - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch "docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY"
-        - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch "docker pull $TAG_COMMIT"
-        - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch "mkdir -p db"
+        - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@${CI_ENVIRONMENT_URL#*://} "docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY"
+        - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@${CI_ENVIRONMENT_URL#*://} "docker pull $TAG_COMMIT"
+        - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@${CI_ENVIRONMENT_URL#*://} "mkdir -p db"
 
-        - scp -i $SERVER_RSA -o StrictHostKeyChecking=no $ENV $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch:~/.env
-        - scp -i $SERVER_RSA -o StrictHostKeyChecking=no docker-compose.yml $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch:~/docker-compose.yml
-        - scp -i $SERVER_RSA -o StrictHostKeyChecking=no ./db/init-database.sh $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch:~/db
-        - scp -i $SERVER_RSA -o StrictHostKeyChecking=no ./db/postgresql.conf $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch:~/db
+        - scp -i $SERVER_RSA -o StrictHostKeyChecking=no $ENV $SERVER_USER@${CI_ENVIRONMENT_URL#*://}:~/.env
+        - scp -i $SERVER_RSA -o StrictHostKeyChecking=no docker-compose.yml $SERVER_USER@${CI_ENVIRONMENT_URL#*://}:~/docker-compose.yml
+        - scp -i $SERVER_RSA -o StrictHostKeyChecking=no ./db/init-database.sh $SERVER_USER@${CI_ENVIRONMENT_URL#*://}:~/db
+        - scp -i $SERVER_RSA -o StrictHostKeyChecking=no ./db/postgresql.conf $SERVER_USER@${CI_ENVIRONMENT_URL#*://}:~/db
 
-        - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch "docker-compose down"
-        - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch "docker-compose up -d"
+        - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@${CI_ENVIRONMENT_URL#*://} "docker-compose down"
+        - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@${CI_ENVIRONMENT_URL#*://} "docker-compose up -d"

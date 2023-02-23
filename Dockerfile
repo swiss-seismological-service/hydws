@@ -1,4 +1,4 @@
-FROM python:3.10 as builder
+FROM python:3.10-slim as builder
 
 WORKDIR /app
 
@@ -16,7 +16,7 @@ RUN pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -r requirements.t
 
 
 
-FROM python:3.10 as app
+FROM python:3.10-slim as app
 
 LABEL maintainer="Nicolas Schmid <nicolas.schmid@sed.ethz.ch>"
 
