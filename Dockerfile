@@ -1,4 +1,22 @@
-FROM python:3.9-slim-bullseye AS app
+FROM python:3.10 as builder
+
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential curl libpq-dev git\
+    && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man \
+    && apt-get clean
+
+
+COPY requirements.txt .
+RUN pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -r requirements.txt
+
+
+
+FROM python:3.10 as app
 
 LABEL maintainer="Nicolas Schmid <nicolas.schmid@sed.ethz.ch>"
 
@@ -13,14 +31,16 @@ RUN apt-get update \
 
 USER python
 
-COPY --chown=python:python requirements*.txt ./
-RUN pip3 install -U --no-cache-dir --user wheel setuptools
-RUN pip3 install --no-cache-dir --user -r requirements.txt
-
 ENV PYTHONUNBUFFERED="true" \
+    PYTHONDONTWRITEBYTECODE="true" \
     PYTHONPATH="." \
     PATH="${PATH}:/home/python/.local/bin" \
     USER="python"
+
+COPY --from=builder --chown=python:python /app/wheels /wheels
+COPY --from=builder --chown=python:python /app/requirements.txt .
+
+RUN pip install --no-cache --user /wheels/*
 
 COPY --chown=python:python . .
 
