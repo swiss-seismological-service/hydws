@@ -28,16 +28,16 @@ py38-test-job:
     needs: ["flake8-job"]
     image: python:3.8
     variables:
-        POSTGRES_DB: $APP_DB_NAME
-        POSTGRES_USER: $APP_DB_USER
+        POSTGRES_DB: $DB_NAME
+        POSTGRES_USER: $DB_USER
         POSTGRES_PASSWORD: $POSTGRES_PASSWORD
         PGPORT: $PGPORT
         POSTGRES_HOST_AUTH_METHOD: trust
     services:
         - postgres:14.2
     before_script:
-      - cp $ENV .env
-      - pip install tox
+        - cp $ENV .env
+        - pip install tox
     script:
         - tox -e py38-tests
     artifacts:
@@ -46,58 +46,55 @@ py38-test-job:
                 coverage_format: cobertura
                 path: coverage.xml
 
-
-
 variables:
-  TAG_LATEST: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:latest
-  TAG_COMMIT: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA
-  DOCKER_TLS_CERTDIR: ""
+    TAG_LATEST: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:latest
+    TAG_COMMIT: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA
+    DOCKER_TLS_CERTDIR: ""
 
 publish:
-  only:
-    - master
-  tags:
-    - deployment
-  needs: ["py38-test-job"]
-  image: docker:19.03.12
-  stage: publish
-  services:
-    - name: docker:19.03.12-dind
-      command:
-        - /bin/sh
-        - -c
-        - | 
-          echo "$CI_SERVER_TLS_CA_FILE" > /etc/ssl/certs/ca-cert-gitlab.seismo.ethz.ch.crt || exit
-          dockerd-entrypoint.sh || exit
-  script:
-    - docker build -t $TAG_COMMIT -t $TAG_LATEST .
-    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
-    - docker push $TAG_COMMIT
-    - docker push $TAG_LATEST
+    only:
+        - master
+    tags:
+        - deployment
+    needs: ["py38-test-job"]
+    image: docker:19.03.12
+    stage: publish
+    services:
+        - name: docker:19.03.12-dind
+          command:
+              - /bin/sh
+              - -c
+              - |
+                  echo "$CI_SERVER_TLS_CA_FILE" > /etc/ssl/certs/ca-cert-gitlab.seismo.ethz.ch.crt || exit
+                  dockerd-entrypoint.sh || exit
+    script:
+        - docker build -t $TAG_COMMIT -t $TAG_LATEST .
+        - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
+        - docker push $TAG_COMMIT
+        - docker push $TAG_LATEST
 
 deploy:
-  only:
-    - master
-  needs: ["publish"]
-  environment:
-    name: bedretto-hydws
-  image: alpine:latest
-  stage: deploy
-  tags:
-    - deployment
-  script:
-    - sed -i '$a\' $ENV && echo "TAG_COMMIT=$TAG_COMMIT" >> $ENV
-    - chmod og= $SERVER_RSA
-    - apk update && apk add openssh-client
+    only:
+        - master
+    needs: ["publish"]
+    environment:
+        name: bedretto-hydws
+    image: alpine:latest
+    stage: deploy
+    tags:
+        - deployment
+    script:
+        - sed -i '$a\' $ENV && echo "TAG_COMMIT=$TAG_COMMIT" >> $ENV
+        - chmod og= $SERVER_RSA
+        - apk update && apk add openssh-client
 
-    - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch "docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY"
-    - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch "docker pull $TAG_COMMIT"
-    - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch "mkdir -p database"
+        - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch "docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY"
+        - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch "docker pull $TAG_COMMIT"
+        - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch "mkdir -p database"
 
-    - scp -i $SERVER_RSA -o StrictHostKeyChecking=no $ENV $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch:~/.env
-    - scp -i $SERVER_RSA -o StrictHostKeyChecking=no docker-compose.yml $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch:~/docker-compose.yml
-    - scp -i $SERVER_RSA -o StrictHostKeyChecking=no ./database/init_db.sh $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch:~/database
+        - scp -i $SERVER_RSA -o StrictHostKeyChecking=no $ENV $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch:~/.env
+        - scp -i $SERVER_RSA -o StrictHostKeyChecking=no docker-compose.yml $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch:~/docker-compose.yml
+        - scp -i $SERVER_RSA -o StrictHostKeyChecking=no ./database/init_db.sh $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch:~/database
 
-    - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch "docker-compose down"
-    - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch "docker-compose up -d"
-    
+        - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch "docker-compose down"
+        - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch "docker-compose up -d"

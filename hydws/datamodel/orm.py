@@ -5,12 +5,12 @@
 .. moduleauthor:: Laura Sarson <laura.sarson@sed.ethz.ch>
 
 """
-from sqlalchemy import Column, String, Boolean, Integer, ForeignKey
-from sqlalchemy.orm import relationship, class_mapper
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
+from sqlalchemy.orm import class_mapper, relationship
 
-from hydws.datamodel.base import (ORMBase, RealQuantityMixin,
-                                  TimeQuantityMixin, EpochMixin, PublicIDMixin)
 from config.config import get_settings
+from hydws.datamodel.base import (EpochMixin, ORMBase, PublicIDMixin,
+                                  RealQuantityMixin, TimeQuantityMixin)
 
 
 def clone(obj, with_foreignkeys=False):
@@ -45,15 +45,6 @@ def clone(obj, with_foreignkeys=False):
     return new
 
 
-# XXX(damb): The implementation of the entities below is based on the QuakeML
-# and the SC3 DB model naming conventions. As a consequence,
-# sub-(sub-(...)types (e.g.  CreationInfo, LiteratureSource, Comment, etc. )
-# are implemented as *flat* mixins instead of moving them to separate tables.
-# Note, that this fact inherently leads to huge tables containing lots of
-# columns.
-
-# XXX(sarsonl): Do we want to restrict nullable values on the db level,
-# or just schema.
 settings = get_settings()
 try:
     PREFIX = settings.HYDWS_PREFIX
@@ -179,18 +170,12 @@ class Borehole(RealQuantityMixin('longitude',
 
 
 class BoreholeSection(EpochMixin('Epoch', epoch_type='finite'),
-                      RealQuantityMixin('toplongitude',
-                                        value_nullable=False),
-                      RealQuantityMixin('toplatitude',
-                                        value_nullable=False),
-                      RealQuantityMixin('topaltitude',
-                                        value_nullable=False),
-                      RealQuantityMixin('bottomlongitude',
-                                        value_nullable=False),
-                      RealQuantityMixin('bottomlatitude',
-                                        value_nullable=False),
-                      RealQuantityMixin('bottomaltitude',
-                                        value_nullable=False),
+                      RealQuantityMixin('toplongitude'),
+                      RealQuantityMixin('toplatitude'),
+                      RealQuantityMixin('topaltitude'),
+                      RealQuantityMixin('bottomlongitude'),
+                      RealQuantityMixin('bottomlatitude'),
+                      RealQuantityMixin('bottomaltitude'),
                       RealQuantityMixin('topmeasureddepth'),
                       RealQuantityMixin('bottommeasureddepth'),
                       RealQuantityMixin('holediameter'),
@@ -206,8 +191,8 @@ class BoreholeSection(EpochMixin('Epoch', epoch_type='finite'),
         *Quantities* are implemented as `QuakeML
         <https://quake.ethz.ch/quakeml>`_ quantities.
     """
-    topclosed = Column(f'{PREFIX}topclosed', Boolean, nullable=False)
-    bottomclosed = Column(f'{PREFIX}bottomclosed', Boolean, nullable=False)
+    topclosed = Column(f'{PREFIX}topclosed', Boolean)
+    bottomclosed = Column(f'{PREFIX}bottomclosed', Boolean)
     sectiontype = Column(f'{PREFIX}sectiontype', String)
     casingtype = Column(f'{PREFIX}casingtype', String)
     description = Column(f'{PREFIX}description', String)
@@ -414,10 +399,5 @@ class HydraulicSample(TimeQuantityMixin('datetime', value_nullable=False,
         return "<{}(datetime={})>".format(type(self).__name__,
                                           self.datetime_value.isoformat())
 
-    # TODO(damb)
-    # https://docs.python.org/3/reference/datamodel.html#object.__hash__
-    # recommends to mix together the hash values of the components of the
-    # object that also play a role in comparison of objects by packing them
-    # into a tuple and hashing the tuple
     def __hash__(self):
         return id(self)

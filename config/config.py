@@ -1,14 +1,15 @@
-from pydantic import BaseSettings
 from functools import lru_cache
+
+from pydantic import BaseSettings
 
 
 class Settings(BaseSettings):
-    POSTGRES_SERVER: str
+    POSTGRES_HOST: str
     PGPORT: str
 
-    APP_DB_USER: str
-    APP_DB_PASSWORD: str
-    APP_DB_NAME: str
+    DB_USER: str
+    DB_PASSWORD: str
+    DB_NAME: str
 
     HYDWS_PREFIX: str = 'm_'
 

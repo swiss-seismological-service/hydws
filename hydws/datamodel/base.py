@@ -1,17 +1,11 @@
 import enum
 import functools
-from sqlalchemy import (
-    create_engine,
-    Column,
-    Integer,
-    Float,
-    String,
-    DateTime,
-    Enum,
-    ForeignKey)
+
+from sqlalchemy import (Column, DateTime, Enum, Float, ForeignKey, Integer,
+                        String, create_engine)
+from sqlalchemy.ext.declarative import declarative_base, declared_attr
+from sqlalchemy.orm import backref, relationship, sessionmaker
 from sqlalchemy.schema import MetaData
-from sqlalchemy.orm import sessionmaker, relationship, backref
-from sqlalchemy.ext.declarative import declared_attr, declarative_base
 
 from config.config import get_settings
 
@@ -19,10 +13,10 @@ from config.config import get_settings
 def postgresql_url():
     settings = get_settings()
     SQLALCHEMY_DATABASE_URL = (
-        f"postgresql://{settings.APP_DB_USER}:"
-        f"{settings.APP_DB_PASSWORD}@"
-        f"{settings.POSTGRES_SERVER}:"
-        f"{settings.PGPORT}/{settings.APP_DB_NAME}")
+        f"postgresql://{settings.DB_USER}:"
+        f"{settings.DB_PASSWORD}@"
+        f"{settings.POSTGRES_HOST}:"
+        f"{settings.PGPORT}/{settings.DB_NAME}")
     return SQLALCHEMY_DATABASE_URL
 
 

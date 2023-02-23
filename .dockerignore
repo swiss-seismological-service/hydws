@@ -5,5 +5,9 @@ public/
 
 .coverage
 .dockerignore
-# .env*
-!.env.example
+
+db/
+
+**/.env
+**/.env.example
+**/postgresql.conf.*
