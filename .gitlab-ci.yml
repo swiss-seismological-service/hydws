@@ -81,7 +81,7 @@ deploy:
         - /\w*-environment$/
     needs: ["publish"]
     environment:
-        name: $CI_COMMIT_BRANCH
+        name: ${CI_COMMIT_BRANCH#-environment}
     image: alpine:latest
     stage: deploy
     tags:
