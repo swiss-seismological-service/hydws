@@ -6,27 +6,29 @@ stages:
 
 .test-rules:
     rules:
-        - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"'
+        - if: '$CI_COMMIT_BRANCH == "cd/postgres"'
           when: always
-        - if: '$CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master"'
-          when: always
-        - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME != "develop"'
-          when: always
+        # - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"'
+        #   when: always
+        # - if: '$CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master"'
+        #   when: always
+        # - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME != "develop"'
+        #   when: always
 
 flake8-job:
     stage: codestyle
     extends: .test-rules
-    image: python:3.8-alpine
+    image: python:3.10-alpine
     before_script:
         - pip install tox
     script:
         - tox -e flake8
 
-py38-test-job:
+py310-test-job:
     stage: test
     extends: .test-rules
     needs: ["flake8-job"]
-    image: python:3.8
+    image: python:3.10
     variables:
         POSTGRES_DB: $DB_NAME
         POSTGRES_USER: $DB_USER
@@ -34,12 +36,12 @@ py38-test-job:
         PGPORT: $PGPORT
         POSTGRES_HOST_AUTH_METHOD: trust
     services:
-        - postgres:14.2
+        - postgres:latest
     before_script:
         - cp $ENV .env
         - pip install tox
     script:
-        - tox -e py38-tests
+        - tox -e py310-tests
     artifacts:
         reports:
             coverage_report:
@@ -53,10 +55,10 @@ variables:
 
 publish:
     only:
-        - master
+        - cd/postgres
     tags:
         - deployment
-    needs: ["py38-test-job"]
+    needs: ["py310-test-job"]
     image: docker:19.03.12
     stage: publish
     services:
@@ -75,7 +77,7 @@ publish:
 
 deploy:
     only:
-        - master
+        - cd/postgres
     needs: ["publish"]
     environment:
         name: bedretto-hydws
@@ -90,11 +92,12 @@ deploy:
 
         - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch "docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY"
         - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch "docker pull $TAG_COMMIT"
-        - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch "mkdir -p database"
+        - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch "mkdir -p db"
 
         - scp -i $SERVER_RSA -o StrictHostKeyChecking=no $ENV $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch:~/.env
         - scp -i $SERVER_RSA -o StrictHostKeyChecking=no docker-compose.yml $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch:~/docker-compose.yml
-        - scp -i $SERVER_RSA -o StrictHostKeyChecking=no ./database/init_db.sh $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch:~/database
+        - scp -i $SERVER_RSA -o StrictHostKeyChecking=no ./db/init-database.sh $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch:~/db
+        - scp -i $SERVER_RSA -o StrictHostKeyChecking=no ./db/postgresql.conf $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch:~/db
 
         - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch "docker-compose down"
         - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@$CI_ENVIRONMENT_NAME.ethz.ch "docker-compose up -d"

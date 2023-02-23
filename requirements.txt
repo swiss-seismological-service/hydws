@@ -1,6 +1,6 @@
 
 autopep8>=1.6.0
-fastapi>=0.74.1
+fastapi[all]>=0.92.0
 flake8>=4.0.1
 gunicorn>=20.1.0
 psycopg2>=2.9.3
