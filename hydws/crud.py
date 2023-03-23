@@ -1,8 +1,9 @@
 from datetime import datetime
-from sqlalchemy.orm import Session, joinedload, contains_eager
-from sqlalchemy import select, delete
-from sqlalchemy.sql import func
 from typing import List, Optional, Union
+
+from sqlalchemy import delete, select
+from sqlalchemy.orm import Session, contains_eager, joinedload
+from sqlalchemy.sql import func
 
 from hydws.datamodel.orm import Borehole, BoreholeSection, HydraulicSample
 

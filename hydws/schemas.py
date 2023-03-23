@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Any, List, Optional, Type
 
-from pydantic import BaseConfig, BaseModel, create_model
+from pydantic import BaseConfig, BaseModel, create_model, validator
 from pydantic.utils import GetterDict
 from sqlalchemy.inspection import inspect
 
@@ -72,25 +72,24 @@ class OptRealDatetimeValue(real_value_factory(datetime, None)):
 
 class ValueGetter(GetterDict):
     def get(self, key: str, default: Any) -> Any:
-        # get SQLAlchemy's column names.
-        cols = self._obj.__table__.columns.keys()
-        cols += inspect(type(self._obj)).relationships.keys()
-
         # if the key-col mapping is 1:1 just return the value
-        if f'm_{key}' in cols:
+        if hasattr(self._obj, key):
             return getattr(self._obj, key, default)
-        elif f'_{key}' in cols:
-            return getattr(self._obj, f'_{key}', default)
+
+        # get this SQLAlchemy objects' column names.
+        inspected = inspect(type(self._obj))
+        cols = [c.name for c in inspected.columns]
+        cols += inspected.relationships.keys()
 
         # else it's probably a sub value
         # get all column names which are present for this key
-        elem = [k for k in cols if k.startswith(f'm_{key}_')]
+        elem = [k for k in cols if k.startswith(f'{key}_')]
         if elem:
             # create a dict for the sub value
             return_dict = {}
             for k in elem:
-                return_dict[k.split(
-                    '_')[-1]] = getattr(self._obj, k[2:], default)
+                return_dict[k.partition(
+                    '_')[-1]] = getattr(self._obj, k, default)
             return return_dict
         else:
             return default
@@ -185,6 +184,11 @@ class BoreholeSectionSchema(BaseModel):
 
         return return_dict
 
+    @validator("publicid")
+    def validate_uuids(cls, value):
+        if value:
+            return str(value)
+
 
 class BoreholeSchema(BaseModel):
     publicid: uuid.UUID
@@ -196,7 +200,7 @@ class BoreholeSchema(BaseModel):
     description: Optional[str]
     name: Optional[str]
     location_name: Optional[str]
-    institution = Optional[str]
+    institution: Optional[str]
     sections: Optional[List[BoreholeSectionSchema]]
 
     class Config:
@@ -216,3 +220,8 @@ class BoreholeSchema(BaseModel):
                 [s.flat_dict() for s in self.sections]
 
         return return_dict
+
+    @validator("publicid")
+    def validate_uuids(cls, value):
+        if value:
+            return str(value)

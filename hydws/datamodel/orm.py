@@ -93,8 +93,7 @@ class BoreholeSection(EpochMixin('Epoch', epoch_type='finite'),
                                passive_deletes=True)
 
 
-class HydraulicSample(TimeQuantityMixin('datetime', value_nullable=False,
-                                        index=True),
+class HydraulicSample(TimeQuantityMixin('datetime', value_nullable=False),
                       RealQuantityMixin('bottomtemperature'),
                       RealQuantityMixin('bottomflow'),
                       RealQuantityMixin('bottompressure'),

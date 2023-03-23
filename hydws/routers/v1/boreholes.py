@@ -1,13 +1,15 @@
+import base64
+import uuid
 from datetime import datetime
+from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
-from typing import List, Optional
-import base64
 from starlette.status import HTTP_204_NO_CONTENT
 
-from hydws.schemas import BoreholeSchema, HydraulicSampleSchema
 from hydws import crud
 from hydws.dependencies import get_db
+from hydws.schemas import BoreholeSchema, HydraulicSampleSchema
 
 router = APIRouter(prefix='/boreholes', tags=['boreholes'])
 
@@ -51,15 +53,15 @@ async def get_borehole(borehole_id: str,
     Returns a borehole.
     """
     try:
-        borehole_id = base64.b64decode(borehole_id).decode("utf-8")
-    except BaseException:
+        borehole_id = uuid.UUID(borehole_id, version=4)
+    except ValueError:
         raise HTTPException(status_code=400,
-                            detail="Borehole ID is not valid Base 64.")
+                            detail="Borehole ID is not valid UUID.")
     db_result = crud.read_borehole_level(
         borehole_id, db, level, starttime, endtime)
 
     if not db_result:
-        raise HTTPException(status_code=404, detail="No boreholes found.")
+        raise HTTPException(status_code=404, detail="Borehole not found.")
 
     return db_result
 

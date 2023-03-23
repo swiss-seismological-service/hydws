@@ -1,5 +1,8 @@
 {
-    "publicid": "smi:ch.ethz.sed/bh/ST1",
+    "publicid": "4a976ca7-8212-4641-89d1-f8adee6a0e1a",
+    "name": "ST1",
+    "location_name": "Bedretto",
+    "institution": "BedrettoLab",
     "longitude": {
         "value": 8.47706629603003
     },
@@ -16,7 +19,8 @@
     },
     "sections": [
         {
-            "publicid": "smi:ch.ethz.sed/bh/ST1/section_09",
+            "publicid": "7b0d96a9-2cc7-4e86-8356-ac9415e10eb2",
+            "name": "Section 09",
             "toplongitude": {
                 "value": 8
             },

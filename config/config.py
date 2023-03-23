@@ -11,8 +11,6 @@ class Settings(BaseSettings):
     DB_PASSWORD: str
     DB_NAME: str
 
-    HYDWS_PREFIX: str = 'm_'
-
     class Config:
         env_file = ".env"
 

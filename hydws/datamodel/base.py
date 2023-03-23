@@ -162,7 +162,7 @@ UniqueOpenEpochMixin = EpochMixin('Epoch', epoch_type='open')
 
 
 def QuantityMixin(name, quantity_type,
-                  value_nullable=True, index=False):
+                  value_nullable=True):
     """
     Mixin factory for common :code:`Quantity` types from
     `QuakeML <https://quake.ethz.ch/quakeml/>`_.
@@ -179,53 +179,59 @@ def QuantityMixin(name, quantity_type,
         are :code:`int`, :code:`real` or rather :code:`float` and :code:`time`.
     """
 
-    def create_value(quantity_type):
+    column_prefix = f'{name}_'
+    column_prefix = column_prefix.lower()
 
-        def _make_value(sql_type):
+    # Name attribute differently to column key.
+    attr_prefix = f'{name}_'.lower()
+
+    def create_value(quantity_type, column_prefix):
+
+        def _make_value(sql_type, column_prefix):
 
             @declared_attr
             def _value(cls):
-                return Column('value', sql_type,
+                return Column(f'{column_prefix}value', sql_type,
                               nullable=value_nullable)
             return _value
 
         if 'int' == quantity_type:
-            return _make_value(Integer)
+            return _make_value(Integer, column_prefix)
         elif quantity_type in ('real', 'float'):
-            return _make_value(Float)
+            return _make_value(Float, column_prefix)
         elif 'time' == quantity_type:
-            return _make_value(DateTime)
+            return _make_value(DateTime, column_prefix)
 
         raise ValueError(f'Invalid quantity_type: {quantity_type}')
 
     @declared_attr
     def _uncertainty(cls):
-        return Column('uncertainty', Float)
+        return Column(f'{column_prefix}uncertainty', Float)
 
     @declared_attr
     def _lower_uncertainty(cls):
-        return Column('loweruncertainty', Float)
+        return Column(f'{column_prefix}loweruncertainty', Float)
 
     @declared_attr
     def _upper_uncertainty(cls):
-        return Column('upperuncertainty', Float)
+        return Column(f'{column_prefix}upperuncertainty', Float)
 
     @declared_attr
     def _confidence_level(cls):
-        return Column('confidencelevel', Float)
+        return Column(f'{column_prefix}confidencelevel', Float)
 
-    _func_map = (('value', create_value(quantity_type)),
+    _func_map = (('value', create_value(quantity_type, column_prefix)),
                  ('uncertainty', _uncertainty),
                  ('loweruncertainty', _lower_uncertainty),
                  ('upperuncertainty', _upper_uncertainty),
                  ('confidencelevel', _confidence_level))
 
-    def __dict__(func_map):
+    def __dict__(func_map, attr_prefix):
 
-        return {f'{attr_name}': attr
+        return {f'{attr_prefix}{attr_name}': attr
                 for attr_name, attr in func_map}
 
-    return type(name, (object,), __dict__(_func_map))
+    return type(name, (object,), __dict__(_func_map, attr_prefix))
 
 
 FloatQuantityMixin = functools.partial(QuantityMixin,
@@ -234,5 +240,4 @@ RealQuantityMixin = FloatQuantityMixin
 IntegerQuantityMixin = functools.partial(QuantityMixin,
                                          quantity_type='int')
 TimeQuantityMixin = functools.partial(QuantityMixin,
-                                      quantity_type='time',
-                                      index=False)
+                                      quantity_type='time')
