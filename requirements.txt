@@ -9,5 +9,6 @@ pytest-cov>=3.0.0
 pytest-dotenv>=0.5.2
 python-dotenv>=0.19.2
 requests>=2.27.1
-SQLAlchemy>=1.4.31
+SQLAlchemy<2.0.0
+typer>=0.7.0
 uvicorn>=0.17.5
