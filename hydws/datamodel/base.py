@@ -1,9 +1,11 @@
 import enum
 import functools
+import uuid
 from datetime import datetime
 
 from sqlalchemy import (Boolean, Column, DateTime, Float, Integer, String,
                         create_engine)
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import MetaData
@@ -31,7 +33,6 @@ SessionLocal = sessionmaker(autocommit=False,
 
 
 class Base(object):
-
     @declared_attr
     def __tablename__(cls):
         return cls.__name__.lower()
@@ -88,7 +89,12 @@ def PublicIDMixin(name=''):
     """
     @declared_attr
     def _publicid(cls):
-        return Column('publicid', String, nullable=False)
+        return Column(
+            'publicid',
+            UUID,
+            nullable=False,
+            unique=True,
+            default=uuid.uuid4)
 
     return type(name, (object,), {'publicid': _publicid})
 

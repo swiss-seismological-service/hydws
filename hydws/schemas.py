@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime
 from typing import Any, List, Optional, Type
 
@@ -146,7 +147,7 @@ class HydraulicSampleSchema(BaseModel):
 
 
 class BoreholeSectionSchema(BaseModel):
-    publicid: str
+    publicid: uuid.UUID
     starttime: Optional[datetime]
     endtime: Optional[datetime]
     toplongitude: RealFloatValue
@@ -164,6 +165,7 @@ class BoreholeSectionSchema(BaseModel):
     sectiontype: Optional[str]
     casingtype: Optional[str]
     description: Optional[str]
+    name: Optional[str]
     hydraulics: Optional[List[HydraulicSampleSchema]]
 
     class Config:
@@ -185,7 +187,7 @@ class BoreholeSectionSchema(BaseModel):
 
 
 class BoreholeSchema(BaseModel):
-    publicid: str
+    publicid: uuid.UUID
     longitude: RealFloatValue
     latitude: RealFloatValue
     altitude: RealFloatValue
@@ -193,6 +195,8 @@ class BoreholeSchema(BaseModel):
     measureddepth: Optional[OptRealFloatValue]
     description: Optional[str]
     name: Optional[str]
+    location_name: Optional[str]
+    institution = Optional[str]
     sections: Optional[List[BoreholeSectionSchema]]
 
     class Config:

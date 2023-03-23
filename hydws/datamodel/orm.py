@@ -21,8 +21,8 @@ class Borehole(RealQuantityMixin('longitude',
                                  value_nullable=False),
                RealQuantityMixin('bedrockaltitude'),
                RealQuantityMixin('measureddepth'),
-               CreationInfoMixin(),
                PublicIDMixin(),
+               CreationInfoMixin,
                ORMBase):
     """
     ORM representation of a borehole.
@@ -30,6 +30,8 @@ class Borehole(RealQuantityMixin('longitude',
 
     description = Column('description', String)
     name = Column('name', String)
+    location_name = Column('location_name', String)
+    institution = Column('institition', String)
 
     _sections = relationship("BoreholeSection",
                              back_populates="_borehole",
@@ -70,6 +72,7 @@ class BoreholeSection(EpochMixin('Epoch', epoch_type='finite'),
     ORM representation of a borehole.
     """
 
+    name = Column('name', String)
     topclosed = Column('topclosed', Boolean)
     bottomclosed = Column('bottomclosed', Boolean)
     sectiontype = Column('sectiontype', String)
@@ -105,8 +108,8 @@ class HydraulicSample(TimeQuantityMixin('datetime', value_nullable=False,
     """
     Represents an hydraulics sample.
     """
-
     __mapper_args__ = {'confirm_deleted_rows': False}
+
     fluidcomposition = Column('fluidcomposition', String)
 
     boreholesection_oid = Column(
