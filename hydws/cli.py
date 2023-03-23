@@ -40,3 +40,11 @@ def post_file(file: Path):
     headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
     r = requests.post(url, data=open(file, 'rb'), headers=headers)
     typer.echo(r.text)
+
+
+@api.command('delete')
+def delete_borehole(uuid: str):
+    url = f'http://localhost:8000/hydws/v1/boreholes/{uuid}'
+    headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+    r = requests.delete(url, headers=headers)
+    typer.echo(r.text)

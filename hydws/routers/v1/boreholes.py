@@ -58,8 +58,13 @@ async def get_borehole(borehole_id: str,
         raise HTTPException(status_code=400,
                             detail="Borehole ID is not valid UUID.")
 
-    db_result = crud.read_borehole_level(
-        borehole_id, db, level, starttime, endtime)
+    if level == 'borehole':
+        db_result = crud.read_borehole(borehole_id, db)
+    if level == 'section':
+        db_result = crud.read_borehole_sections(
+            borehole_id, db, starttime, endtime)
+
+    # TODO: LEVEL HYDRAULICS
 
     if not db_result:
         raise HTTPException(status_code=404, detail="Borehole not found.")
@@ -91,10 +96,10 @@ async def post_borehole(
 async def delete_borehole(borehole_id: str,
                           db: Session = Depends(get_db)) -> None:
     try:
-        borehole_id = base64.b64decode(borehole_id).decode("utf-8")
-    except BaseException:
+        borehole_id = uuid.UUID(borehole_id, version=4)
+    except ValueError:
         raise HTTPException(status_code=400,
-                            detail="Borehole ID is not valid Base 64.")
+                            detail="Borehole ID is not valid UUID.")
 
     deleted = crud.delete_borehole(borehole_id, db)
 

@@ -41,41 +41,20 @@ def read_borehole(borehole_id: str, db: Session) -> Borehole:
     return db.execute(statement).scalar_one_or_none()
 
 
-def read_borehole_level(
-        borehole_id: str,
-        db: Session,
-        level: str = 'section',
-        starttime: datetime = None,
-        endtime: datetime = None) -> Borehole:
+def read_borehole_sections(borehole_id: str,
+                           db: Session,
+                           starttime: datetime = None,
+                           endtime: datetime = None) -> Borehole:
+    statement = select(Borehole) \
+        .where(Borehole.publicid == borehole_id) \
+        .outerjoin(BoreholeSection) \
+        .options(contains_eager(Borehole.sections))
 
-    level_options = None
-    time_query_start = None
-    time_query_end = None
-
-    statement = select(Borehole)
-
-    if level != 'borehole':  # section or hydraulic
-        statement = statement.outerjoin(BoreholeSection)
-        level_options = contains_eager(Borehole.sections)
-        # compare if epoch has overlap, counterintuitive query
-        time_query_start = BoreholeSection.endtime
-        time_query_end = BoreholeSection.starttime
-    if level == 'hydraulic':
-        statement = statement.outerjoin(HydraulicSample)
-        level_options = level_options.contains_eager(
-            BoreholeSection.hydraulics)
-        time_query_start = HydraulicSample.datetime_value
-        time_query_end = HydraulicSample.datetime_value
-
-    if level_options:
-        statement = statement.options(level_options)
-
-    statement = statement.where(Borehole.publicid == borehole_id)
-
+    statement = statement
     if starttime:
-        statement = statement.where(time_query_start > starttime)
+        statement = statement.where(BoreholeSection.endtime > starttime)
     if endtime:
-        statement = statement.where(time_query_end < endtime)
+        statement = statement.where(BoreholeSection.starttime < endtime)
 
     return db.execute(statement).unique().scalar_one_or_none()
 
@@ -85,6 +64,48 @@ def delete_borehole(publicid: str, db: Session):
     deleted = db.execute(stmt)
     db.commit()
     return deleted.rowcount
+
+# ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+
+
+# def read_borehole_level(borehole_id: str,
+#                         db: Session,
+#                         level: str = 'section',
+#                         starttime: datetime = None,
+#                         endtime: datetime = None) -> Borehole:
+
+#     level_options = None
+#     time_query_start = None
+#     time_query_end = None
+
+#     statement = select(Borehole)
+
+#     if level != 'borehole':  # section or hydraulic
+#         statement = statement.outerjoin(BoreholeSection)
+#         level_options = contains_eager(Borehole.sections)
+#         # compare if epoch has overlap, counterintuitive query
+#         time_query_start = BoreholeSection.endtime
+#         time_query_end = BoreholeSection.starttime
+#     if level == 'hydraulic':
+#         statement = statement.outerjoin(HydraulicSample)
+#         level_options = level_options.contains_eager(
+#             BoreholeSection.hydraulics)
+#         time_query_start = HydraulicSample.datetime_value
+#         time_query_end = HydraulicSample.datetime_value
+
+#     if level_options:
+#         statement = statement.options(level_options)
+
+#     statement = statement.where(Borehole.publicid == borehole_id)
+
+#     if starttime:
+#         statement = statement.where(time_query_start > starttime)
+#     if endtime:
+#         statement = statement.where(time_query_end < endtime)
+
+#     return db.execute(statement).unique().scalar_one_or_none()
 
 
 def create_borehole(borehole: dict, db: Session):
