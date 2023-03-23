@@ -16,7 +16,7 @@ def read_boreholes(db: Session,
                    minlongitude: Optional[float] = None,
                    maxlongitude: Optional[float] = None) -> List[Borehole]:
 
-    statement = select(Borehole).options(joinedload(Borehole._sections))
+    statement = select(Borehole).options(joinedload(Borehole.sections))
 
     if starttime or endtime:
         statement = statement.join(BoreholeSection)
@@ -56,14 +56,14 @@ def read_borehole_level(
 
     if level != 'borehole':  # section or hydraulic
         statement = statement.outerjoin(BoreholeSection)
-        level_options = contains_eager(Borehole._sections)
+        level_options = contains_eager(Borehole.sections)
         # compare if epoch has overlap, counterintuitive query
         time_query_start = BoreholeSection.endtime
         time_query_end = BoreholeSection.starttime
     if level == 'hydraulic':
         statement = statement.outerjoin(HydraulicSample)
         level_options = level_options.contains_eager(
-            BoreholeSection._hydraulics)
+            BoreholeSection.hydraulics)
         time_query_start = HydraulicSample.datetime_value
         time_query_end = HydraulicSample.datetime_value
 
@@ -150,7 +150,7 @@ def update_section_epoch(
                 min_db = db.execute(
                     select(func.min(
                         HydraulicSample.datetime_value)).where(
-                        HydraulicSample.boreholesection_oid
+                        HydraulicSample._boreholesection_oid
                         == section_db._oid)).scalar()
                 section_new['starttime'] = min(start_new, min_db)
         if end_new:
@@ -160,7 +160,7 @@ def update_section_epoch(
                 max_db = db.execute(
                     select(func.max(
                         HydraulicSample.datetime_value)).where(
-                        HydraulicSample.boreholesection_oid
+                        HydraulicSample._boreholesection_oid
                         == section_db._oid)).scalar()
                 section_new['endtime'] = max(end_new, max_db)
 
@@ -186,7 +186,7 @@ def create_section(section: dict,
         for key, value in section.items():
             setattr(section_db, key, value)
     else:
-        section_db = BoreholeSection(**section, _borehole=borehole)
+        section_db = BoreholeSection(**section, borehole=borehole)
         db.add(section_db)
 
     if hydraulics:
@@ -204,7 +204,7 @@ def read_hydraulics(
         endtime: datetime = None) -> List[HydraulicSample]:
 
     statement = select(HydraulicSample) \
-        .where(HydraulicSample.boreholesection_oid == BoreholeSection._oid)\
+        .where(HydraulicSample._boreholesection_oid == BoreholeSection._oid)\
         .where(BoreholeSection.publicid == section_id)\
 
     if starttime:
@@ -234,7 +234,7 @@ def create_hydraulics(
     import time
     now = time.perf_counter()
     statement = delete(HydraulicSample) \
-        .where(HydraulicSample.boreholesection_oid == BoreholeSection._oid) \
+        .where(HydraulicSample._boreholesection_oid == BoreholeSection._oid) \
         .where(BoreholeSection.publicid == section.publicid) \
         .where(HydraulicSample.datetime_value > start) \
         .where(HydraulicSample.datetime_value < end) \
@@ -245,7 +245,7 @@ def create_hydraulics(
     after = time.perf_counter()
     print(after - now)
 
-    samples = [HydraulicSample(**s, _section=section) for s in hydraulics]
+    samples = [HydraulicSample(**s, section=section) for s in hydraulics]
     db.add_all(samples)
 
     if commit:

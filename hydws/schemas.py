@@ -8,6 +8,7 @@ from sqlalchemy.inspection import inspect
 
 BaseConfig.arbitrary_types_allowed = True
 BaseConfig.orm_mode = True
+BaseConfig.underscore_attrs_are_private = False
 
 
 def real_value_factory(

@@ -28,24 +28,24 @@ class Borehole(RealQuantityMixin('longitude',
     ORM representation of a borehole.
     """
 
-    description = Column('description', String)
-    name = Column('name', String)
-    location_name = Column('location_name', String)
-    institution = Column('institition', String)
+    description = Column(String)
+    name = Column(String)
+    location_name = Column(String)
+    institution = Column(String)
 
-    _sections = relationship("BoreholeSection",
-                             back_populates="_borehole",
-                             cascade='all, delete-orphan',
-                             passive_deletes=True,
-                             lazy='noload',
-                             order_by='BoreholeSection.topaltitude_value')
+    sections = relationship("BoreholeSection",
+                            back_populates="borehole",
+                            cascade='all, delete-orphan',
+                            passive_deletes=True,
+                            lazy='noload',
+                            order_by='BoreholeSection.topaltitude_value')
 
     def __iter__(self):
-        for s in self._sections:
+        for s in self.sections:
             yield s
 
     def __getitem__(self, item):
-        return self._sections[item] if self._sections else None
+        return self.sections[item] if self.sections else None
 
     def __repr__(self):
         return ("<{}(publicid={!r}, longitude={}, latitude={}, "
@@ -72,25 +72,25 @@ class BoreholeSection(EpochMixin('Epoch', epoch_type='finite'),
     ORM representation of a borehole.
     """
 
-    name = Column('name', String)
-    topclosed = Column('topclosed', Boolean)
-    bottomclosed = Column('bottomclosed', Boolean)
-    sectiontype = Column('sectiontype', String)
-    casingtype = Column('casingtype', String)
-    description = Column('description', String)
+    name = Column(String)
+    topclosed = Column(Boolean)
+    bottomclosed = Column(Boolean)
+    sectiontype = Column(String)
+    casingtype = Column(String)
+    description = Column(String)
 
-    borehole_oid = Column('borehole_oid',
-                          Integer,
-                          ForeignKey('borehole._oid', ondelete="CASCADE"))
+    _borehole_oid = Column(
+        Integer,
+        ForeignKey('borehole._oid', ondelete="CASCADE"))
 
-    _borehole = relationship("Borehole", back_populates="_sections")
+    borehole = relationship("Borehole", back_populates="sections")
 
-    _hydraulics = relationship("HydraulicSample",
-                               back_populates="_section",
-                               lazy='noload',
-                               order_by='HydraulicSample.datetime_value',
-                               cascade='all, delete-orphan',
-                               passive_deletes=True)
+    hydraulics = relationship("HydraulicSample",
+                              back_populates="section",
+                              lazy='noload',
+                              order_by='HydraulicSample.datetime_value',
+                              cascade='all, delete-orphan',
+                              passive_deletes=True)
 
 
 class HydraulicSample(TimeQuantityMixin('datetime', value_nullable=False),
@@ -109,13 +109,12 @@ class HydraulicSample(TimeQuantityMixin('datetime', value_nullable=False),
     """
     __mapper_args__ = {'confirm_deleted_rows': False}
 
-    fluidcomposition = Column('fluidcomposition', String)
+    fluidcomposition = Column(String)
 
-    boreholesection_oid = Column(
-        'boreholesection_oid',
+    _boreholesection_oid = Column(
         Integer,
         ForeignKey('boreholesection._oid', ondelete="CASCADE"))
-    _section = relationship("BoreholeSection", back_populates="_hydraulics")
+    section = relationship("BoreholeSection", back_populates="hydraulics")
 
     def __ne__(self, other):
         return not self.__eq__(other)

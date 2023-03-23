@@ -57,6 +57,7 @@ async def get_borehole(borehole_id: str,
     except ValueError:
         raise HTTPException(status_code=400,
                             detail="Borehole ID is not valid UUID.")
+
     db_result = crud.read_borehole_level(
         borehole_id, db, level, starttime, endtime)
 

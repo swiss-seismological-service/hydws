@@ -91,7 +91,7 @@ def PublicIDMixin(name=''):
     def _publicid(cls):
         return Column(
             'publicid',
-            UUID,
+            UUID(as_uuid=True),
             nullable=False,
             unique=True,
             default=uuid.uuid4)
