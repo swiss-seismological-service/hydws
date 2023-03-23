@@ -8,8 +8,9 @@
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
-from hydws.datamodel.base import (EpochMixin, ORMBase, PublicIDMixin,
-                                  RealQuantityMixin, TimeQuantityMixin)
+from hydws.datamodel.base import (CreationInfoMixin, EpochMixin, ORMBase,
+                                  PublicIDMixin, RealQuantityMixin,
+                                  TimeQuantityMixin)
 
 
 class Borehole(RealQuantityMixin('longitude',
@@ -20,6 +21,7 @@ class Borehole(RealQuantityMixin('longitude',
                                  value_nullable=False),
                RealQuantityMixin('bedrockaltitude'),
                RealQuantityMixin('measureddepth'),
+               CreationInfoMixin(),
                PublicIDMixin(),
                ORMBase):
     """
@@ -35,15 +37,6 @@ class Borehole(RealQuantityMixin('longitude',
                              passive_deletes=True,
                              lazy='noload',
                              order_by='BoreholeSection.topaltitude_value')
-
-    _literaturesource_oid = Column(Integer,
-                                   ForeignKey('literaturesource._oid'))
-    _literaturesource = relationship("LiteratureSource",
-                                     foreign_keys=[_literaturesource_oid])
-
-    _creationinfo_oid = Column(Integer, ForeignKey('creationinfo._oid'))
-    _creationinfo = relationship("CreationInfo",
-                                 foreign_keys=[_creationinfo_oid])
 
     def __iter__(self):
         for s in self._sections:

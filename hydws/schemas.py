@@ -1,5 +1,6 @@
-from typing import Any, List, Optional, Type
 from datetime import datetime
+from typing import Any, List, Optional, Type
+
 from pydantic import BaseConfig, BaseModel, create_model
 from pydantic.utils import GetterDict
 from sqlalchemy.inspection import inspect
@@ -29,10 +30,16 @@ def real_value_factory(
 def creationinfo_factory() -> Type[BaseModel]:
     _func_map = dict([
         ('author', (Optional[str], None)),
+        ('authoruri_resourceid', (Optional[str], None)),
+        ('authoruri_used', (Optional[str], None)),
         ('agencyid', (Optional[str], None)),
+        ('agencyuri_resourceid', (Optional[str], None)),
+        ('agencyuri_used', (Optional[str], None)),
         ('creationtime', (Optional[datetime], None)),
         ('version', (Optional[str], None)),
         ('copyrightowner', (Optional[str], None)),
+        ('copyrightowneruri_resourceid', (Optional[str], None)),
+        ('copyrightowneruri_used', (Optional[str], None)),
         ('licence', (Optional[str], None)),
     ])
     retval = create_model(
