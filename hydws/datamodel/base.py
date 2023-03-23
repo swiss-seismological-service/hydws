@@ -21,7 +21,6 @@ def postgresql_url():
 
 
 settings = get_settings()
-PREFIX = settings.HYDWS_PREFIX
 SQLALCHEMY_DATABASE_URL = postgresql_url()
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
@@ -56,10 +55,6 @@ def drop_db():
     m.drop_all(engine)
 
 
-# ----------------------------------------------------------------------------
-# XXX(damb): Within the mixins below the QML type *ResourceReference* (i.e. a
-# URI) is implemented as sqlalchemy.String
-
 class AutoName(enum.Enum):
     def _generate_next_value_(name, start, count, last_values):
         return name.lower()
@@ -85,12 +80,12 @@ class EBibtexEntryType(AutoName):
 
 class ResourceIdentifier(ORMBase):
 
-    resourceid = Column(f'{PREFIX}resourceid', String)
+    resourceid = Column('resourceid', String)
 
 
 class ResourceLocator(ORMBase):
 
-    resourcelocator = Column(f'{PREFIX}resourcelocator', String)
+    resourcelocator = Column('resourcelocator', String)
 
 
 class CreationInfo(ORMBase):
@@ -98,13 +93,13 @@ class CreationInfo(ORMBase):
     `SQLAlchemy <https://www.sqlalchemy.org/>`_ mixin emulating type
     :code:`CreationInfo` from `QuakeML <https://quake.ethz.ch/quakeml/>`_.
     """
-    creationtime = Column(f'{PREFIX}creationtime', DateTime)
-    version = Column(f'{PREFIX}version', String)
-    copyrightowner = Column(f'{PREFIX}copyrightowner', String)
-    license = Column(f'{PREFIX}license', String)
-    author = Column(f'{PREFIX}author', String)
-    agencyid = Column(f'{PREFIX}agencyid', String)
-    agencyid = Column(f'{PREFIX}agencyid', String)
+    creationtime = Column('creationtime', DateTime)
+    version = Column('version', String)
+    copyrightowner = Column('copyrightowner', String)
+    license = Column('license', String)
+    author = Column('author', String)
+    agencyid = Column('agencyid', String)
+    agencyid = Column('agencyid', String)
 
     _authoruri_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
     _authoruri = relationship(
@@ -122,7 +117,7 @@ class CreationInfo(ORMBase):
 
 class DomTypeURI(ORMBase):
 
-    type = Column(f'{PREFIX}type', String)
+    type = Column('type', String)
 
     _uri_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
     _uri = relationship(
@@ -133,8 +128,8 @@ class DomTypeURI(ORMBase):
 
 class LanguageCodeURI(ORMBase):
 
-    language = Column(f'{PREFIX}language', String)
-    code = Column(f'{PREFIX}code', String)
+    language = Column('language', String)
+    code = Column('code', String)
 
     _uri_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
     _uri = relationship(
@@ -146,8 +141,8 @@ class LanguageCodeURI(ORMBase):
 class CountryCodeURI(ORMBase):
 
     _postaladdress_oid = Column(Integer, ForeignKey('postaladdress._oid'))
-    code = Column(f'{PREFIX}code', String)
-    country = Column(f'{PREFIX}country', String)
+    code = Column('code', String)
+    country = Column('country', String)
 
     _uri_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
     _uri = relationship(
@@ -157,12 +152,7 @@ class CountryCodeURI(ORMBase):
 
 
 class Author(ORMBase):
-
-    # XXX(damb): Unfortunately, the constraint that this value must be
-    # positive must be defined by means of __table_args__
-    # (see: https://docs.sqlalchemy.org/en/13/core/constraints.html#
-    #  setting-up-constraints-when-using-the-declarative-orm-extension)
-    positioninauthorlist = Column(f'{PREFIX}positioninauthorlist', Integer)
+    positioninauthorlist = Column('positioninauthorlist', Integer)
 
     _person_oid = Column(Integer, ForeignKey('person._oid'))
     _person = relationship(
@@ -198,10 +188,10 @@ class Author(ORMBase):
 
 class Person(ORMBase):
 
-    name = Column(f'{PREFIX}name', String)
-    givenname = Column(f'{PREFIX}givenname', String)
-    familyname = Column(f'{PREFIX}familyname', String)
-    title = Column(f'{PREFIX}title', String)
+    name = Column('name', String)
+    givenname = Column('givenname', String)
+    familyname = Column('familyname', String)
+    title = Column('title', String)
 
     _alternatepersonid_oid = Column(
         Integer, ForeignKey('resourceidentifier._oid'))
@@ -244,8 +234,8 @@ class Person(ORMBase):
 
 class PersonalAffiliation(ORMBase):
 
-    department = Column(f'{PREFIX}department', String)
-    function = Column(f'{PREFIX}function', String)
+    department = Column('department', String)
+    function = Column('function', String)
 
     _institution_oid = Column(Integer, ForeignKey('institution._oid'))
     _institution = relationship(
@@ -262,7 +252,7 @@ class PersonalAffiliation(ORMBase):
 
 class Comment(ORMBase):
 
-    comment = Column(f'{PREFIX}comment', String)
+    comment = Column('comment', String)
 
     _id_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
     _id = relationship(
@@ -277,7 +267,7 @@ class Comment(ORMBase):
 
 class Institution(ORMBase):
 
-    name = Column(f'{PREFIX}name', String)
+    name = Column('name', String)
 
     _identifier_oid = Column(Integer, ForeignKey('resourceidentifier._oid'))
     _identifier = relationship(
@@ -313,9 +303,9 @@ class Institution(ORMBase):
 
 class PostalAddress(ORMBase):
 
-    streetaddress = Column(f'{PREFIX}streetaddress', String)
-    locality = Column(f'{PREFIX}locality', String)
-    postalcode = Column(f'{PREFIX}postalcode', String)
+    streetaddress = Column('streetaddress', String)
+    locality = Column('locality', String)
+    postalcode = Column('postalcode', String)
 
     _country_oid = Column(Integer, ForeignKey('countrycodeuri._oid'))
     _country = relationship(
@@ -383,31 +373,31 @@ class LiteratureSource(ORMBase):
         backref=backref("_literaturesource", uselist=False),
         foreign_keys=[_type_oid])
 
-    bibtextype = Column(f'{PREFIX}bibtextype', Enum(EBibtexEntryType))
-    title = Column(f'{PREFIX}title', String)
-    author = Column(f'{PREFIX}author', String)
-    editor = Column(f'{PREFIX}editor', String)
-    bibliographiccitation = Column(f'{PREFIX}bibliographiccitation', String)
-    date = Column(f'{PREFIX}date', DateTime)
-    booktitle = Column(f'{PREFIX}booktitle', String)
-    volume = Column(f'{PREFIX}volume', String)
-    number = Column(f'{PREFIX}number', String)
-    series = Column(f'{PREFIX}series', String)
-    issue = Column(f'{PREFIX}issue', String)
-    year = Column(f'{PREFIX}year', String)
-    edition = Column(f'{PREFIX}edition', String)
-    startpage = Column(f'{PREFIX}startpage', String)
-    endpage = Column(f'{PREFIX}endpage', String)
-    publisher = Column(f'{PREFIX}publisher', String)
-    address = Column(f'{PREFIX}address', String)
-    rights = Column(f'{PREFIX}rights', String)
-    rightsholder = Column(f'{PREFIX}rightsholder', String)
-    accessrights = Column(f'{PREFIX}accessrights', String)
-    license = Column(f'{PREFIX}license', String)
-    publicationstatus = Column(f'{PREFIX}publicationstatus', String)
+    bibtextype = Column('bibtextype', Enum(EBibtexEntryType))
+    title = Column('title', String)
+    author = Column('author', String)
+    editor = Column('editor', String)
+    bibliographiccitation = Column('bibliographiccitation', String)
+    date = Column('date', DateTime)
+    booktitle = Column('booktitle', String)
+    volume = Column('volume', String)
+    number = Column('number', String)
+    series = Column('series', String)
+    issue = Column('issue', String)
+    year = Column('year', String)
+    edition = Column('edition', String)
+    startpage = Column('startpage', String)
+    endpage = Column('endpage', String)
+    publisher = Column('publisher', String)
+    address = Column('address', String)
+    rights = Column('rights', String)
+    rightsholder = Column('rightsholder', String)
+    accessrights = Column('accessrights', String)
+    license = Column('license', String)
+    publicationstatus = Column('publicationstatus', String)
 
 
-def PublicIDMixin(name='', parent_prefix=None, column_prefix=None):
+def PublicIDMixin(name=''):
     """
     `SQLAlchemy <https://www.sqlalchemy.org/>`_ mixin providing a general
     purpose :code:`publicID` attribute.
@@ -417,123 +407,76 @@ def PublicIDMixin(name='', parent_prefix=None, column_prefix=None):
         The attribute :code:`publicID` is inherited from `QuakeML
         <https://quake.ethz.ch/quakeml/>`_.
     """
-    if not parent_prefix:
-        parent_prefix = name
-    if not column_prefix:
-        column_prefix = parent_prefix
-
-    if PREFIX:
-        column_prefix = f'{PREFIX}{column_prefix}'
-
     @declared_attr
     def _publicid(cls):
-        return Column(f'{column_prefix}publicid', String, nullable=False)
+        return Column('publicid', String, nullable=False)
 
-    return type(name, (object,), {f'{parent_prefix}publicid': _publicid})
+    return type(name, (object,), {'publicid': _publicid})
 
 
-def EpochMixin(name, epoch_type=None, parent_prefix=None):
+def EpochMixin(name, epoch_type=None):
     """
-    Mixin factory for common :code:`Epoch` types from
-    `QuakeML <https://quake.ethz.ch/quakeml/>`_.
+    Mixin factory for common :code:`Epoch` types.
 
-    Epoch types provide the fields `starttime` and `endtime`. Note, that a
-    `column_prefix` may be prepended.
+    Epoch types provide the fields `starttime` and `endtime`.
 
     :param str name: Name of the class returned
     :param epoch_type: Type of the epoch to be returned. Valid values
         are :code:`None` or :code:`default`, :code:`open` and :code:`finite`.
     :type epoch_type: str or None
-    :param column_prefix: Prefix used for DB columns. If :code:`None`, then
-        :code:`name` with an appended underscore :code:`_` is used. Capital
-        letters are converted to lowercase.
-    :type column_prefix: str or None
-
-    The usage of :py:func:`EpochMixin` is illustrated bellow:
-
-    .. code::
-
-        import datetime
-
-        # define a ORM mapping using the "Epoch" mixin factory
-        class MyObject(EpochMixin('epoch'), ORMBase):
-
-            def __repr__(self):
-                return \
-                    '<MyObject(epoch_starttime={}, epoch_endtime={})>'.format(
-                        self.epoch_starttime, self.epoch_endtime)
-
-
-        # create instance of "MyObject"
-        my_obj = MyObject(epoch_starttime=datetime.datetime.utcnow())
-
     """
-    if not parent_prefix:
-        parent_prefix = ''
-    column_prefix = parent_prefix
 
-    if PREFIX:
-        column_prefix = f'{PREFIX}{column_prefix}'
-
-    column_prefix = column_prefix.lower()
-
-    class Boundery(enum.Enum):
+    class Boundary(enum.Enum):
         LEFT = enum.auto()
         RIGHT = enum.auto()
 
-    def create_datetime(boundery, column_prefix, **kwargs):
+    def create_datetime(boundary, **kwargs):
 
-        def _make_datetime(boundery, **kwargs):
+        def _make_datetime(boundary, **kwargs):
 
-            if boundery is Boundery.LEFT:
+            if boundary is Boundary.LEFT:
                 name = 'starttime'
-            elif boundery is Boundery.RIGHT:
+            elif boundary is Boundary.RIGHT:
                 name = 'endtime'
             else:
-                raise ValueError(f'Invalid boundery: {boundery!r}.')
+                raise ValueError(f'Invalid boundery: {boundary!r}.')
 
             @declared_attr
             def _datetime(cls):
-                return Column(f'{column_prefix}{name}', DateTime,
+                return Column(f'{name}', DateTime,
                               **kwargs)
 
             return _datetime
 
-        return _make_datetime(boundery, **kwargs)
+        return _make_datetime(boundary, **kwargs)
 
     if epoch_type is None or epoch_type == 'default':
-        _func_map = (('starttime', create_datetime(Boundery.LEFT,
-                                                   column_prefix,
+        _func_map = (('starttime', create_datetime(Boundary.LEFT,
                                                    nullable=False)),
-                     ('endtime', create_datetime(Boundery.RIGHT,
-                                                 column_prefix)))
+                     ('endtime', create_datetime(Boundary.RIGHT)))
     elif epoch_type == 'open':
-        _func_map = (('starttime', create_datetime(Boundery.LEFT,
-                                                   column_prefix)),
-                     ('endtime', create_datetime(Boundery.RIGHT,
-                                                 column_prefix)))
+        _func_map = (('starttime', create_datetime(Boundary.LEFT)),
+                     ('endtime', create_datetime(Boundary.RIGHT)))
     elif epoch_type == 'finite':
-        _func_map = (('starttime', create_datetime(Boundery.LEFT,
-                                                   column_prefix,
+        _func_map = (('starttime', create_datetime(Boundary.LEFT,
                                                    nullable=False)),
-                     ('endtime', create_datetime(Boundery.RIGHT,
-                                                 column_prefix,
+                     ('endtime', create_datetime(Boundary.RIGHT,
                                                  nullable=False)))
     else:
         raise ValueError(f'Invalid epoch_type: {epoch_type!r}.')
 
-    def __dict__(func_map, attr_prefix):
-        return {f'{attr_prefix}{attr_name}': attr
+    def __dict__(func_map):
+        return {f'{attr_name}': attr
                 for attr_name, attr in func_map}
 
-    return type(name, (object,), __dict__(_func_map, parent_prefix))
+    return type(name, (object,), __dict__(_func_map))
 
 
 UniqueEpochMixin = EpochMixin('Epoch')
 UniqueOpenEpochMixin = EpochMixin('Epoch', epoch_type='open')
 
 
-def QuantityMixin(name, quantity_type, column_prefix=None,
+def QuantityMixin(name, quantity_type,
                   value_nullable=True, index=False):
     """
     Mixin factory for common :code:`Quantity` types from
@@ -546,91 +489,58 @@ def QuantityMixin(name, quantity_type, column_prefix=None,
         - `upperuncertainty`
         - `confidencelevel`.
 
-    Note, that a `column_prefix` may be prepended.
-
     :param str name: Name of the class returned
     :param str quantity_type: Type of the quantity to be returned. Valid values
         are :code:`int`, :code:`real` or rather :code:`float` and :code:`time`.
-    :param column_prefix: Prefix used for DB columns. If :code:`None`, then
-        :code:`name` with an appended underscore :code:`_` is used. Capital
-        Letters are converted to lowercase.
-    :type column_prefix: str or None
-
-    The usage of :py:func:`QuantityMixin` is illustrated bellow:
-
-    .. code::
-
-        # define a ORM mapping using the Quantity mixin factory
-        class FooBar(QuantityMixin('foo', 'int'),
-                     QuantityMixin('bar', 'real'),
-                     ORMBase):
-
-            def __repr__(self):
-                return '<FooBar (foo_value=%d, bar_value=%f)>' % (
-                    self.foo_value, self.bar_value)
-
-
-        # create instance of "FooBar"
-        foobar = FooBar(foo_value=1, bar_value=2)
-
     """
 
-    if column_prefix is None:
-        column_prefix = f'{name}_'
-    if PREFIX:
-        column_prefix = f'{PREFIX}{column_prefix}'
-    column_prefix = column_prefix.lower()
+    def create_value(quantity_type):
 
-    # Name attribute differently to column key.
-    attr_prefix = f'{name}_'.lower()
-
-    def create_value(quantity_type, column_prefix):
-
-        def _make_value(sql_type, column_prefix):
+        def _make_value(sql_type):
 
             @declared_attr
             def _value(cls):
-                return Column(f'{column_prefix}value', sql_type,
+                return Column('value', sql_type,
                               nullable=value_nullable)
             return _value
 
         if 'int' == quantity_type:
-            return _make_value(Integer, column_prefix)
+            return _make_value(Integer)
         elif quantity_type in ('real', 'float'):
-            return _make_value(Float, column_prefix)
+            return _make_value(Float)
         elif 'time' == quantity_type:
-            return _make_value(DateTime, column_prefix)
+            return _make_value(DateTime)
 
         raise ValueError(f'Invalid quantity_type: {quantity_type}')
 
     @declared_attr
     def _uncertainty(cls):
-        return Column(f'{column_prefix}uncertainty', Float)
+        return Column('uncertainty', Float)
 
     @declared_attr
     def _lower_uncertainty(cls):
-        return Column(f'{column_prefix}loweruncertainty', Float)
+        return Column('loweruncertainty', Float)
 
     @declared_attr
     def _upper_uncertainty(cls):
-        return Column(f'{column_prefix}upperuncertainty', Float)
+        return Column('upperuncertainty', Float)
 
     @declared_attr
     def _confidence_level(cls):
-        return Column(f'{column_prefix}confidencelevel', Float)
+        return Column('confidencelevel', Float)
 
-    _func_map = (('value', create_value(quantity_type, column_prefix)),
+    _func_map = (('value', create_value(quantity_type)),
                  ('uncertainty', _uncertainty),
                  ('loweruncertainty', _lower_uncertainty),
                  ('upperuncertainty', _upper_uncertainty),
                  ('confidencelevel', _confidence_level))
 
-    def __dict__(func_map, attr_prefix):
+    def __dict__(func_map):
 
-        return {f'{attr_prefix}{attr_name}': attr
+        return {f'{attr_name}': attr
                 for attr_name, attr in func_map}
 
-    return type(name, (object,), __dict__(_func_map, attr_prefix))
+    return type(name, (object,), __dict__(_func_map))
 
 
 FloatQuantityMixin = functools.partial(QuantityMixin,
