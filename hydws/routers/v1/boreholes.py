@@ -1,9 +1,15 @@
 import base64
+import pprint
+import time
 import uuid
 from datetime import datetime
 from typing import List, Optional
 
+import numpy as np
+import orjson
+import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi.responses import ORJSONResponse
 from sqlalchemy.orm import Session
 from starlette.status import HTTP_204_NO_CONTENT
 
@@ -58,23 +64,56 @@ async def get_borehole(borehole_id: str,
         raise HTTPException(status_code=400,
                             detail="Borehole ID is not valid UUID.")
 
+    # db_result = crud.read_borehole_level(
+    #     borehole_id, db, level, starttime, endtime)
+    # return db_result
+
     if level == 'borehole':
         db_result = crud.read_borehole(borehole_id, db)
-    if level == 'section':
+    else:
         db_result = crud.read_borehole_sections(
             borehole_id, db, starttime, endtime)
 
-    # TODO: LEVEL HYDRAULICS
+    borehole = BoreholeSchema.from_orm(db_result).dict(exclude_none=True)
+
+    if level == 'hydraulic':
+        for section in borehole['sections']:
+            df = crud.read_hydraulics_df(section['publicid'], db)
+
+            df = df.dropna(axis=1, how='all')
+
+            df_real = df.drop(['_oid', '_boreholesection_oid',
+                              'fluidcomposition'], axis=1, errors='ignore')
+            df_single = \
+                df.fluidcomposition if 'fluidcomposition' in df else None
+
+            df_real = df.drop(['_oid', '_boreholesection_oid'], axis=1)
+            df_real.columns = pd.MultiIndex.from_tuples(
+                [tuple(col.split('_')) for col in df_real.columns],
+                names=['Names', 'Values'])
+            df_real = df_real.stack(level=1)
+
+            if df_single:
+                result = df_real.groupby(level=0) \
+                    .apply(lambda x: x.droplevel(0).to_dict()
+                           | df_single.loc[x.name].to_dict()) \
+                    .to_json(orient='records')
+            else:
+                result = df_real.groupby(level=0) \
+                    .apply(lambda x: x.droplevel(0).to_dict()) \
+                    .to_json(orient='records')
+
+            section['hydraulics'] = orjson.loads(result)
 
     if not db_result:
         raise HTTPException(status_code=404, detail="Borehole not found.")
 
-    return db_result
+    return ORJSONResponse(borehole)
 
 
-@router.post("/",
-             response_model=BoreholeSchema,
-             response_model_exclude_none=True)
+@ router.post("/",
+              response_model=BoreholeSchema,
+              response_model_exclude_none=True)
 async def post_borehole(
         borehole: BoreholeSchema, db: Session = Depends(get_db)):
     try:
@@ -90,9 +129,9 @@ async def post_borehole(
     return result
 
 
-@router.delete("/{borehole_id}",
-               status_code=HTTP_204_NO_CONTENT,
-               response_class=Response)
+@ router.delete("/{borehole_id}",
+                status_code=HTTP_204_NO_CONTENT,
+                response_class=Response)
 async def delete_borehole(borehole_id: str,
                           db: Session = Depends(get_db)) -> None:
     try:
@@ -107,9 +146,9 @@ async def delete_borehole(borehole_id: str,
         raise HTTPException(status_code=404, detail="No boreholes found.")
 
 
-@router.get("/{borehole_id}/sections/{section_id}/hydraulics",
-            response_model=List[HydraulicSampleSchema],
-            response_model_exclude_none=True)
+@ router.get("/{borehole_id}/sections/{section_id}/hydraulics",
+             response_model=List[HydraulicSampleSchema],
+             response_model_exclude_none=True)
 async def get_section_hydraulics(borehole_id: str,
                                  section_id: str,
                                  db: Session = Depends(get_db),
