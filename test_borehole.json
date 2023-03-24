@@ -1,0 +1,18 @@
+{
+    "publicid": "e4a54b02-08fc-4116-b0d2-e53d5a21c9a0",
+    "name": "ST2",
+    "location_name": "Bedretto",
+    "institution": "BedrettoLab",
+    "longitude": {
+        "value": 8.47706629603003
+    },
+    "latitude": {
+        "value": 46.51113250988,
+        "loweruncertainty": 2
+    },
+    "altitude": {
+        "value": 1486
+    },
+    "bedrockaltitude": {},
+    "measureddepth": {}
+}
