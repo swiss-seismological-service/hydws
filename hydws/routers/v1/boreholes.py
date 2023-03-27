@@ -17,7 +17,7 @@ from hydws.utils import real_values_to_json
 router = APIRouter(prefix='/boreholes', tags=['boreholes'])
 
 
-@router.get("/",
+@router.get("",
             response_model=List[BoreholeSchema],
             response_model_exclude_none=True)
 async def get_boreholes(db: Session = Depends(get_db),
@@ -64,8 +64,8 @@ async def get_borehole(borehole_id: str,
     if level == 'borehole':
         db_result = crud.read_borehole(borehole_id, db)
     else:
-        db_result = crud.read_borehole_sections(
-            borehole_id, db, starttime, endtime)
+        db_result = crud.read_borehole(
+            borehole_id, db, True, starttime, endtime)
 
     if not db_result:
         raise HTTPException(status_code=404, detail="Borehole not found.")
@@ -75,21 +75,19 @@ async def get_borehole(borehole_id: str,
     if level == 'hydraulic':
 
         defer_cols = [
-            HydraulicSample._oid,
             HydraulicSample._boreholesection_oid]
-
+        drop_cols = ['_oid']
         for section in borehole['sections']:
             df = crud.read_hydraulics_df(
                 section['publicid'], db, starttime, endtime, defer_cols)
-
-            result = real_values_to_json(df)
+            result = real_values_to_json(df, drop_cols)
 
             section['hydraulics'] = orjson.loads(result)
 
     return ORJSONResponse(borehole)
 
 
-@router.post("/",
+@router.post("",
              response_model=BoreholeSchema,
              response_model_exclude_none=True)
 async def post_borehole(

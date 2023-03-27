@@ -3,13 +3,13 @@ autopep8>=1.6.0
 fastapi[all]>=0.92.0
 flake8>=4.0.1
 gunicorn>=20.1.0
-pandas>=1.5.3
+pandas>=2.0.0rc1
 psycopg2>=2.9.3
 pytest>=7.0.1
 pytest-cov>=3.0.0
 pytest-dotenv>=0.5.2
 python-dotenv>=0.19.2
 requests>=2.27.1
-SQLAlchemy<2.0.0
+SQLAlchemy>=2.0.0
 typer>=0.7.0
 uvicorn>=0.17.5
