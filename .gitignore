@@ -4,6 +4,7 @@ node_modules/
 dist/
 test.py
 .env.prod
+example*.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
