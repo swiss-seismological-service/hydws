@@ -30,7 +30,7 @@ class Borehole(RealQuantityMixin('longitude',
 
     description = Column(String)
     name = Column(String)
-    location_name = Column(String)
+    location = Column(String)
     institution = Column(String)
 
     sections = relationship("BoreholeSection",

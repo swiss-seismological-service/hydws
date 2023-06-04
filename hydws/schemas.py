@@ -200,7 +200,7 @@ class BoreholeSchema(BaseModel):
     measureddepth: Optional[OptRealFloatValue]
     description: Optional[str]
     name: Optional[str]
-    location_name: Optional[str]
+    location: Optional[str]
     institution: Optional[str]
     sections: Optional[List[BoreholeSectionSchema]]
 
