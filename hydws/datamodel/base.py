@@ -6,8 +6,8 @@ from datetime import datetime
 from sqlalchemy import (Boolean, Column, DateTime, Float, Integer, String,
                         create_engine)
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.ext.declarative import declarative_base, declared_attr
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.schema import MetaData
 
 from config.config import get_settings

@@ -29,7 +29,7 @@ class Borehole(RealQuantityMixin('longitude',
     """
 
     description = Column(String)
-    name = Column(String)
+    name = Column(String, unique=True)
     location = Column(String)
     institution = Column(String)
 
