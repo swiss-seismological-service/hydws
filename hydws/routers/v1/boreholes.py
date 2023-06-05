@@ -158,7 +158,7 @@ async def get_section_hydraulics(borehole_id: str,
 
     if db_result_df.empty:
         return []
-
-    results = orjson.loads(real_values_to_json(db_result_df))
+    drop_cols = ['_oid']
+    results = orjson.loads(real_values_to_json(db_result_df, drop_cols))
 
     return ORJSONResponse(results)
