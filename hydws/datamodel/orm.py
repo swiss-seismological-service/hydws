@@ -72,7 +72,7 @@ class BoreholeSection(EpochMixin('Epoch', epoch_type='finite'),
     ORM representation of a borehole.
     """
 
-    name = Column(String)
+    name = Column(String, unique=True)
     topclosed = Column(Boolean)
     bottomclosed = Column(Boolean)
     sectiontype = Column(String)
@@ -93,7 +93,8 @@ class BoreholeSection(EpochMixin('Epoch', epoch_type='finite'),
                               passive_deletes=True)
 
 
-class HydraulicSample(TimeQuantityMixin('datetime', value_nullable=False),
+class HydraulicSample(TimeQuantityMixin('datetime', value_nullable=False,
+                                        primary_key=True),
                       RealQuantityMixin('bottomtemperature'),
                       RealQuantityMixin('bottomflow'),
                       RealQuantityMixin('bottompressure'),
@@ -125,3 +126,7 @@ class HydraulicSample(TimeQuantityMixin('datetime', value_nullable=False),
 
     def __hash__(self):
         return id(self)
+
+    __table_args__ = {
+        'postgresql_partition_by': 'RANGE (datetime_value)',
+    }

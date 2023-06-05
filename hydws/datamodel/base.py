@@ -1,8 +1,11 @@
+import psycopg2
+import asyncio
 import enum
 import functools
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from sqlalchemy import (Boolean, Column, DateTime, Float, Integer, String,
                         create_engine)
 from sqlalchemy.dialects.postgresql import UUID
@@ -36,7 +39,7 @@ class Base(object):
     @declared_attr
     def __tablename__(cls):
         return cls.__name__.lower()
-    _oid = Column(Integer, primary_key=True, nullable=False)
+    _oid = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
 
 
 ORMBase = declarative_base(cls=Base)
@@ -162,7 +165,7 @@ UniqueOpenEpochMixin = EpochMixin('Epoch', epoch_type='open')
 
 
 def QuantityMixin(name, quantity_type,
-                  value_nullable=True):
+                  value_nullable=True, primary_key=False):
     """
     Mixin factory for common :code:`Quantity` types from
     `QuakeML <https://quake.ethz.ch/quakeml/>`_.
@@ -185,22 +188,22 @@ def QuantityMixin(name, quantity_type,
     # Name attribute differently to column key.
     attr_prefix = f'{name}_'.lower()
 
-    def create_value(quantity_type, column_prefix):
+    def create_value(quantity_type, column_prefix, primary_key):
 
-        def _make_value(sql_type, column_prefix):
+        def _make_value(sql_type, column_prefix, primary_key):
 
             @declared_attr
             def _value(cls):
                 return Column(f'{column_prefix}value', sql_type,
-                              nullable=value_nullable)
+                              nullable=value_nullable, primary_key=primary_key)
             return _value
 
         if 'int' == quantity_type:
-            return _make_value(Integer, column_prefix)
+            return _make_value(Integer, column_prefix, primary_key)
         elif quantity_type in ('real', 'float'):
-            return _make_value(Float, column_prefix)
+            return _make_value(Float, column_prefix, primary_key)
         elif 'time' == quantity_type:
-            return _make_value(DateTime, column_prefix)
+            return _make_value(DateTime, column_prefix, primary_key)
 
         raise ValueError(f'Invalid quantity_type: {quantity_type}')
 
@@ -220,7 +223,8 @@ def QuantityMixin(name, quantity_type,
     def _confidence_level(cls):
         return Column(f'{column_prefix}confidencelevel', Float)
 
-    _func_map = (('value', create_value(quantity_type, column_prefix)),
+    _func_map = (('value',
+                  create_value(quantity_type, column_prefix, primary_key)),
                  ('uncertainty', _uncertainty),
                  ('loweruncertainty', _lower_uncertainty),
                  ('upperuncertainty', _upper_uncertainty),
@@ -241,3 +245,34 @@ IntegerQuantityMixin = functools.partial(QuantityMixin,
                                          quantity_type='int')
 TimeQuantityMixin = functools.partial(QuantityMixin,
                                       quantity_type='time')
+
+conn = engine.raw_connection()
+conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+cursor = conn.cursor()
+cursor.execute('LISTEN hydraulicsample;')
+
+
+def attach_partition(table, date):
+    f = '%Y-%m-%d'
+    start = datetime.strptime(date, '%Y_%m_%d')
+    end = (start + timedelta(days=1)).strftime(f)
+    start = start.strftime(f)
+    with conn.cursor() as cs:
+        try:
+            cs.execute(
+                'ALTER TABLE "%s" ATTACH PARTITION "%s_%s" '
+                'FOR VALUES FROM (\'%s\') TO (\'%s\');' %
+                (table, table, date, start, end))
+        except psycopg2.errors.WrongObjectType:
+            pass
+
+
+def handle_notify():
+    conn.poll()
+    for notify in conn.notifies:
+        attach_partition(notify.channel, notify.payload)
+    conn.notifies.clear()
+
+
+loop = asyncio.get_event_loop()
+loop.add_reader(conn, handle_notify)
