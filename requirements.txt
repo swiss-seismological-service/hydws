@@ -3,6 +3,7 @@ autopep8>=1.6.0
 fastapi[all]>=0.92.0
 flake8>=4.0.1
 gunicorn>=20.1.0
+orjson>=3.9.0
 pandas>=2.0.0rc1
 psycopg2>=2.9.3
 pytest>=7.0.1

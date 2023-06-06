@@ -1,10 +1,10 @@
-import psycopg2
 import asyncio
 import enum
 import functools
 import uuid
 from datetime import datetime, timedelta
 
+import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from sqlalchemy import (Boolean, Column, DateTime, Float, Integer, String,
                         create_engine)

@@ -46,4 +46,5 @@ COPY --chown=python:python . .
 
 EXPOSE 8000
 
-CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-c", "python:config.gunicorn", "hydws.main:app"]
+# CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-c", "python:config.gunicorn", "hydws.main:app"]
+CMD ["uvicorn", "hydws.main:app", "--port", "8000", "--workers", "1", "--timeout-keep-alive", "300", "--host", "0.0.0.0"]

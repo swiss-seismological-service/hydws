@@ -1,5 +1,5 @@
 
--- CREATE TABLE hydraulicsample_default PARTITION OF hydraulicsample DEFAULT;
+CREATE TABLE hydraulicsample_default PARTITION OF hydraulicsample DEFAULT;
 
 CREATE OR REPLACE FUNCTION partition_daily_function()
 RETURNS TRIGGER AS $$
@@ -21,6 +21,7 @@ THEN
 	RAISE NOTICE 'A partition has been created';
 	BEGIN
 		EXECUTE format(E'CREATE TABLE %I (LIKE hydraulicsample INCLUDING INDEXES)', partition_name);
+		EXECUTE format(E'ALTER TABLE %I OWNER TO %s', partition_name, TG_ARGV[0]);
 		EXECUTE format(E'NOTIFY hydraulicsample, %L', partition_date);
    	EXCEPTION
 		WHEN duplicate_table THEN
@@ -32,10 +33,3 @@ RETURN NULL;
 END;
 $$
 LANGUAGE plpgsql;
-
-CREATE OR REPLACE TRIGGER partition_daily_function
-   BEFORE INSERT
-   ON hydraulicsample
-   FOR EACH ROW
-   WHEN (pg_trigger_depth() < 1)
-EXECUTE FUNCTION partition_daily_function();
