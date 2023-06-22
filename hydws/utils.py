@@ -28,6 +28,10 @@ def real_values_to_json(df: pd.DataFrame, drop_cols: list[str] = None) -> str:
 
     df = df.stack(level=1)
 
+    if 'datetime' in df.columns:
+        df['datetime'] = pd.to_datetime(
+            df['datetime']).dt.strftime('%Y-%m-%dT%H:%M:%S')
+
     if df_not_real is not None:
         result = df.groupby(level=0) \
             .apply(lambda x: x.droplevel(0).to_dict()
