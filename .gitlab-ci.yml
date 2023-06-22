@@ -89,9 +89,9 @@ publish:
                   echo "$CI_SERVER_TLS_CA_FILE" > /etc/ssl/certs/ca-cert-gitlab.seismo.ethz.ch.crt || exit
                   dockerd-entrypoint.sh || exit
     script:
-        - echo "my registry - $CI_REGISTRY - my token $CI_BUILD_TOKEN - my user $CI_REGISTRY_USER"
+
         - docker build -t $TAG_COMMIT -t $TAG_LATEST .
-        - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
+        - docker login -u $CI_REGISTRY_USER -p $CI_JOB_TOKEN $CI_REGISTRY
         - docker push $TAG_COMMIT
         - docker push $TAG_LATEST
 
@@ -110,7 +110,7 @@ deploy:
         - chmod og= $SERVER_RSA
         - apk update && apk add openssh-client
 
-        - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@${CI_ENVIRONMENT_URL#*://} "docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY"
+        - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@${CI_ENVIRONMENT_URL#*://} "docker login -u $CI_REGISTRY_USER -p $CI_JOB_TOKEN $CI_REGISTRY"
         - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@${CI_ENVIRONMENT_URL#*://} "docker pull $TAG_COMMIT"
         - ssh -i $SERVER_RSA -o StrictHostKeyChecking=no $SERVER_USER@${CI_ENVIRONMENT_URL#*://} "mkdir -p db"
 
