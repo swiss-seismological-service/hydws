@@ -78,10 +78,10 @@ publish:
     tags:
         - deployment
     needs: ["py310-test-job"]
-    image: docker:24.0.2
+    image: docker:20.10.22
     stage: publish
     services:
-        - name: docker:24.0.2-dind
+        - name: docker:20.10.22-dind
           command:
               - /bin/sh
               - -c
