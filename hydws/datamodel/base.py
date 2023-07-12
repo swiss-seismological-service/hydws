@@ -29,7 +29,7 @@ def postgresql_url():
 settings = get_settings()
 SQLALCHEMY_DATABASE_URL = postgresql_url()
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+engine = create_engine(SQLALCHEMY_DATABASE_URL, pool_size=100, max_overflow=0)
 SessionLocal = sessionmaker(autocommit=False,
                             autoflush=False,
                             bind=engine)
