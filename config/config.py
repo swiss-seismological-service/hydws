@@ -1,9 +1,11 @@
 from functools import lru_cache
 
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file='.env', extra='ignore')
+
     POSTGRES_HOST: str
     PGPORT: str
 
@@ -11,8 +13,15 @@ class Settings(BaseSettings):
     DB_PASSWORD: str
     DB_NAME: str
 
-    class Config:
-        env_file = ".env"
+    ALLOW_ORIGINS: list
+    ALLOW_ORIGIN_REGEX: str
+
+    @property
+    def SQLALCHEMY_DATABASE_URL(self) -> str:
+        return f"postgresql+asyncpg://{self.DB_USER}:" \
+            f"{self.DB_PASSWORD}@" \
+            f"{self.POSTGRES_HOST}:" \
+            f"{self.PGPORT}/{self.DB_NAME}"
 
 
 @lru_cache()
