@@ -3,7 +3,7 @@ from pathlib import Path
 import requests
 import typer
 
-from hydws.datamodel.base import drop_db, init_db
+from hydws.database import drop_db, init_db
 from hydws.datamodel.orm import (Borehole, BoreholeSection,  # noqa
                                  HydraulicSample)
 

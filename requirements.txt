@@ -10,3 +10,4 @@ pytest-dotenv==0.5.2
 python-dotenv==1.0.1
 requests==2.31.0
 SQLAlchemy==2.0.28
+typer==0.9.0

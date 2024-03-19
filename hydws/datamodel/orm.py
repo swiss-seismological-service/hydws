@@ -1,10 +1,3 @@
-"""
-.. module:: orm
-   :synopsis: HYDWS datamodel ORM representation.
-
-.. moduleauthor:: Laura Sarson <laura.sarson@sed.ethz.ch>
-
-"""
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 

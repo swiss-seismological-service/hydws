@@ -1,44 +1,42 @@
-# import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-# from fastapi.logger import logger as fastapi_logger
-from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.cors import CORSMiddleware
 
-from hydws.datamodel.base import ORMBase, engine
+from config import get_settings
+from hydws.database import init_db, sessionmanager
 from hydws.routers.v1 import boreholes
 
-# gunicorn_error_logger = logging.getLogger("gunicorn.error")
-# gunicorn_logger = logging.getLogger("gunicorn")
-# uvicorn_access_logger = logging.getLogger("uvicorn.access")
-# uvicorn_access_logger.handlers = gunicorn_error_logger.handlers
 
-# fastapi_logger.handlers = gunicorn_error_logger.handlers
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Function that handles startup and shutdown events.
+    To understand more, read https://fastapi.tiangolo.com/advanced/events/
+    """
+    init_db()
 
-# if __name__ != "__main__":
-#     fastapi_logger.setLevel(gunicorn_logger.level)
-# else:
-#     fastapi_logger.setLevel(logging.DEBUG)
+    yield
 
-ORMBase.metadata.create_all(bind=engine)
+    if sessionmanager._engine is not None:
+        # Close the DB connection
+        await sessionmanager.close()
 
 app = FastAPI(
     docs_url="/hydws/docs",
+    lifespan=lifespan,
     redoc_url=None,
     openapi_url="/hydws/openapi.json")
+
 app.include_router(boreholes.router, prefix='/hydws/v1')
 
 
-origins = [
-    "http://localhost",
-    "http://localhost:8000",
-    "http://127.0.0.1:5000",
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_origin_regex='http.*://.*\\.ethz\\.ch',
+app = CORSMiddleware(
+    app=app,
+    allow_origins=get_settings().ALLOW_ORIGINS,
+    allow_origin_regex=get_settings().ALLOW_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )

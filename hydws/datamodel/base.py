@@ -1,38 +1,16 @@
-import asyncio
 import enum
 import functools
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
 
-import psycopg2
-from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
-from sqlalchemy import (Boolean, Column, DateTime, Float, Integer, String,
-                        create_engine)
+from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.orm import declarative_base, sessionmaker
-from sqlalchemy.schema import MetaData
+from sqlalchemy.orm import declarative_base
 
-from config.config import get_settings
-
-
-def postgresql_url():
-    settings = get_settings()
-    SQLALCHEMY_DATABASE_URL = (
-        f"postgresql://{settings.DB_USER}:"
-        f"{settings.DB_PASSWORD}@"
-        f"{settings.POSTGRES_HOST}:"
-        f"{settings.PGPORT}/{settings.DB_NAME}")
-    return SQLALCHEMY_DATABASE_URL
-
+from config import get_settings
 
 settings = get_settings()
-SQLALCHEMY_DATABASE_URL = postgresql_url()
-
-engine = create_engine(SQLALCHEMY_DATABASE_URL, pool_size=100, max_overflow=0)
-SessionLocal = sessionmaker(autocommit=False,
-                            autoflush=False,
-                            bind=engine)
 
 
 class Base(object):
@@ -43,21 +21,6 @@ class Base(object):
 
 
 ORMBase = declarative_base(cls=Base)
-
-
-def init_db():
-    """
-    Initializes the Database.
-    All DB modules need to be imported when calling this function.
-    """
-    ORMBase.metadata.create_all(engine)
-
-
-def drop_db():
-    """Drops all database Tables but leaves the DB itself in place"""
-    m = MetaData()
-    m.reflect(engine)
-    m.drop_all(engine)
 
 
 class CreationInfoMixin(object):
@@ -245,34 +208,3 @@ IntegerQuantityMixin = functools.partial(QuantityMixin,
                                          quantity_type='int')
 TimeQuantityMixin = functools.partial(QuantityMixin,
                                       quantity_type='time')
-
-conn = engine.raw_connection()
-conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-cursor = conn.cursor()
-cursor.execute('LISTEN hydraulicsample;')
-
-
-def attach_partition(table, date):
-    f = '%Y-%m-%d'
-    start = datetime.strptime(date, '%Y_%m_%d')
-    end = (start + timedelta(days=1)).strftime(f)
-    start = start.strftime(f)
-    with conn.cursor() as cs:
-        try:
-            cs.execute(
-                'ALTER TABLE "%s" ATTACH PARTITION "%s_%s" '
-                'FOR VALUES FROM (\'%s\') TO (\'%s\');' %
-                (table, table, date, start, end))
-        except psycopg2.errors.WrongObjectType:
-            pass
-
-
-def handle_notify():
-    conn.poll()
-    for notify in conn.notifies:
-        attach_partition(notify.channel, notify.payload)
-    conn.notifies.clear()
-
-
-loop = asyncio.get_event_loop()
-loop.add_reader(conn, handle_notify)
