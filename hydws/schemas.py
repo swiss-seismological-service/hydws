@@ -1,228 +1,216 @@
 import uuid
 from datetime import datetime
-from typing import Any, List, Optional, Type
+from typing import Callable, Generic, List, TypeVar
 
-from pydantic import BaseConfig, BaseModel, create_model, validator
-from pydantic.utils import GetterDict
-from sqlalchemy.inspection import inspect
+from pydantic import (BaseModel, ConfigDict, Field, computed_field,
+                      create_model, validator)
 
-BaseConfig.arbitrary_types_allowed = True
-BaseConfig.orm_mode = True
-BaseConfig.underscore_attrs_are_private = False
+base_config = ConfigDict(extra='allow',
+                         arbitrary_types_allowed=True,
+                         from_attributes=True,
+                         use_enum_values=False)
 
 
-def real_value_factory(
-        quantity_type: type,
-        default: Any) -> Type[BaseModel]:
+class Model(BaseModel):
+    model_config = base_config
+
+
+class CreationInfoSchema(Model):
+    author: str | None = None
+    agencyid: str | None = None
+    creationtime: datetime | None = None
+    version: str | None = None
+    copyrightowner: str | None = None
+    licence: str | None = None
+
+
+def creationinfo_factory(obj: Model) -> CreationInfoSchema:
+    return CreationInfoSchema(
+        author=obj.creationinfo_author,
+        agencyid=obj.creationinfo_agencyid,
+        creationtime=obj.creationinfo_creationtime,
+        version=obj.creationinfo_version,
+        copyrightowner=obj.creationinfo_copyrightowner,
+        licence=obj.creationinfo_licence)
+
+
+class CreationInfoMixin(Model):
+    creationinfo_author: str | None = Field(default=None, exclude=True)
+    creationinfo_agencyid: str | None = Field(default=None, exclude=True)
+    creationinfo_creationtime: datetime = Field(default=None, exclude=True)
+    creationinfo_version: str | None = Field(default=None, exclude=True)
+    creationinfo_copyrightowner: str | None = Field(default=None, exclude=True)
+    creationinfo_licence: str | None = Field(default=None, exclude=True)
+
+    @computed_field
+    @property
+    def creationinfo(self) -> CreationInfoSchema:
+        return creationinfo_factory(self)
+
+
+DataT = TypeVar('DataT')
+
+
+class RealFloatValueSchema(Model, Generic[DataT]):
+    value: DataT | None = None
+    uncertainty: float | None = None
+    loweruncertainty: float | None = None
+    upperuncertainty: float | None = None
+    confidencelevel: float | None = None
+
+
+def real_float_value_factory(name: str, real_type: TypeVar) -> Callable:
+    def create_schema(obj: Model) -> RealFloatValueSchema[real_type]:
+        return RealFloatValueSchema[real_type](
+            value=getattr(
+                obj, f'{name}_value'), uncertainty=getattr(
+                obj, f'{name}_uncertainty'), loweruncertainty=getattr(
+                obj, f'{name}_loweruncertainty'), upperuncertainty=getattr(
+                    obj, f'{name}_upperuncertainty'), confidencelevel=getattr(
+                        obj, f'{name}_confidencelevel'))
+    return create_schema
+
+
+def real_float_value_mixin(field_name: str, real_type: TypeVar) -> Model:
     _func_map = dict([
-        ('value', (quantity_type, default)),
-        ('uncertainty', (Optional[float], None)),
-        ('loweruncertainty', (Optional[float], None)),
-        ('upperuncertainty', (Optional[float], None)),
-        ('confidencelevel', (Optional[float], None))
+        (f'{field_name}_value',
+         (real_type | None, Field(default=None, exclude=True))),
+        (f'{field_name}_uncertainty',
+         (float | None, Field(default=None, exclude=True))),
+        (f'{field_name}_loweruncertainty',
+         (float | None, Field(default=None, exclude=True))),
+        (f'{field_name}_upperuncertainty',
+         (float | None, Field(default=None, exclude=True))),
+        (f'{field_name}_confidencelevel',
+         (float | None, Field(default=None, exclude=True))),
+        (field_name,
+         computed_field(real_float_value_factory(field_name, real_type)))
     ])
 
-    retval = create_model(
-        f'Real{quantity_type.__name__}',
-        __config__=BaseConfig,
-        **_func_map)
+    retval = create_model(field_name,
+                          __base__=Model,
+                          **_func_map)
+
     return retval
 
 
-def creationinfo_factory() -> Type[BaseModel]:
-    _func_map = dict([
-        ('author', (Optional[str], None)),
-        ('authoruri_resourceid', (Optional[str], None)),
-        ('authoruri_used', (Optional[str], None)),
-        ('agencyid', (Optional[str], None)),
-        ('agencyuri_resourceid', (Optional[str], None)),
-        ('agencyuri_used', (Optional[str], None)),
-        ('creationtime', (Optional[datetime], None)),
-        ('version', (Optional[str], None)),
-        ('copyrightowner', (Optional[str], None)),
-        ('copyrightowneruri_resourceid', (Optional[str], None)),
-        ('copyrightowneruri_used', (Optional[str], None)),
-        ('licence', (Optional[str], None)),
-    ])
-    retval = create_model(
-        'CreationInfo',
-        __config__=BaseConfig,
-        **_func_map)
-    return retval
+# def flatten_dict(name: str, real_object: dict):
+#     return_dict = {}
+#     for real, value in real_object.items():
+#         return_dict[f'{name}_{real}'] = value
+#     return return_dict
 
 
-class CreationInfo(creationinfo_factory()):
-    pass
+# def flatten_attributes(self_obj: object, schema_dict: dict):
+#     return_dict = {}
+#     for k, v in schema_dict.items():
+#         if isinstance(
+#             getattr(
+#                 self_obj,
+#                 k),
+#             (RealFloatValue,
+#              OptRealFloatValue,
+#              RealDatetimeValue,
+#              OptRealDatetimeValue)):
+#             return_dict.update(**flatten_dict(k, v))
+#         elif isinstance(v, (str, int, float, bool, datetime)):
+#             return_dict[k] = v
+#     return return_dict
 
 
-class RealFloatValue(real_value_factory(float, ...)):
-    pass
+class HydraulicSampleSchema(real_float_value_mixin('datetime', datetime),
+                            real_float_value_mixin('bottomtemperature', float),
+                            real_float_value_mixin('bottomflow', float),
+                            real_float_value_mixin('bottompressure', float),
+                            real_float_value_mixin('toptemperature', float),
+                            real_float_value_mixin('topflow', float),
+                            real_float_value_mixin('toppressure', float),
+                            real_float_value_mixin('fluiddensity', float),
+                            real_float_value_mixin('fluidviscosity', float),
+                            real_float_value_mixin('fluidph', float)):
+
+    fluidcomposition: str | None = None
+
+    # def flat_dict(self, exclude_unset=False, exclude_defaults=False):
+    #     schema_dict = self.dict(
+    #         exclude_unset=exclude_unset,
+    #         exclude_defaults=exclude_defaults)
+
+    #     return_dict = flatten_attributes(self, schema_dict)
+
+    #     return return_dict
 
 
-class OptRealFloatValue(real_value_factory(float, None)):
-    pass
-
-
-class RealDatetimeValue(real_value_factory(datetime, ...)):
-    pass
-
-
-class OptRealDatetimeValue(real_value_factory(datetime, None)):
-    pass
-
-
-class ValueGetter(GetterDict):
-    def get(self, key: str, default: Any) -> Any:
-        # if the key-col mapping is 1:1 just return the value
-        if hasattr(self._obj, key):
-            return getattr(self._obj, key, default)
-
-        # get this SQLAlchemy objects' column names.
-        inspected = inspect(type(self._obj))
-        cols = [c.name for c in inspected.columns]
-        cols += inspected.relationships.keys()
-
-        # else it's probably a sub value
-        # get all column names which are present for this key
-        elem = [k for k in cols if k.startswith(f'{key}_')]
-        if elem:
-            # create a dict for the sub value
-            return_dict = {}
-            for k in elem:
-                return_dict[k.partition(
-                    '_')[-1]] = getattr(self._obj, k, default)
-            return return_dict
-        else:
-            return default
-
-
-def flatten_dict(name: str, real_object: dict):
-    return_dict = {}
-    for real, value in real_object.items():
-        return_dict[f'{name}_{real}'] = value
-    return return_dict
-
-
-def flatten_attributes(self_obj: object, schema_dict: dict):
-    return_dict = {}
-    for k, v in schema_dict.items():
-        if isinstance(
-            getattr(
-                self_obj,
-                k),
-            (RealFloatValue,
-             OptRealFloatValue,
-             RealDatetimeValue,
-             OptRealDatetimeValue)):
-            return_dict.update(**flatten_dict(k, v))
-        elif isinstance(v, (str, int, float, bool, datetime)):
-            return_dict[k] = v
-    return return_dict
-
-
-class HydraulicSampleSchema(BaseModel):
-    datetime: RealDatetimeValue
-    bottomtemperature: Optional[OptRealFloatValue]
-    bottomflow: Optional[OptRealFloatValue]
-    bottompressure: Optional[OptRealFloatValue]
-    toptemperature: Optional[OptRealFloatValue]
-    topflow: Optional[OptRealFloatValue]
-    toppressure: Optional[OptRealFloatValue]
-    fluiddensity: Optional[OptRealFloatValue]
-    fluidviscosity: Optional[OptRealFloatValue]
-    fluidph: Optional[OptRealFloatValue]
-    fluidcomposition: Optional[str]
-
-    class Config:
-        getter_dict = ValueGetter
-
-    def flat_dict(self, exclude_unset=False, exclude_defaults=False):
-        schema_dict = self.dict(
-            exclude_unset=exclude_unset,
-            exclude_defaults=exclude_defaults)
-
-        return_dict = flatten_attributes(self, schema_dict)
-
-        return return_dict
-
-
-class BoreholeSectionSchema(BaseModel):
+class BoreholeSectionSchema(real_float_value_mixin('toplongitude', float),
+                            real_float_value_mixin('toplatitude', float),
+                            real_float_value_mixin('topaltitude', float),
+                            real_float_value_mixin('bottomlongitude', float),
+                            real_float_value_mixin('bottomlatitude', float),
+                            real_float_value_mixin('bottomaltitude', float),
+                            real_float_value_mixin('topmeasureddepth', float),
+                            real_float_value_mixin('bottommeasureddepth', float),
+                            real_float_value_mixin('holediameter', float),
+                            real_float_value_mixin('casingdiameter', float)):
     publicid: uuid.UUID
-    starttime: Optional[datetime]
-    endtime: Optional[datetime]
-    toplongitude: RealFloatValue
-    toplatitude: RealFloatValue
-    topaltitude: RealFloatValue
-    bottomlongitude: RealFloatValue
-    bottomlatitude: RealFloatValue
-    bottomaltitude: RealFloatValue
-    topmeasureddepth: Optional[OptRealFloatValue]
-    bottommeasureddepth: Optional[OptRealFloatValue]
-    holediameter: Optional[OptRealFloatValue]
-    casingdiameter: Optional[OptRealFloatValue]
+    starttime: datetime | None = None
+    endtime: datetime | None = None
     topclosed: bool
     bottomclosed: bool
-    sectiontype: Optional[str]
-    casingtype: Optional[str]
-    description: Optional[str]
-    name: Optional[str]
-    hydraulics: Optional[List[HydraulicSampleSchema]]
+    sectiontype: str | None = None
+    casingtype: str | None = None
+    description: str | None = None
+    name: str | None = None
+    hydraulics: List[HydraulicSampleSchema] | None = None
 
-    class Config:
-        getter_dict = ValueGetter
+    # def flat_dict(self, exclude_unset=False, exclude_defaults=False):
+    #     schema_dict = self.dict(
+    #         exclude_unset=exclude_unset,
+    #         exclude_defaults=exclude_defaults)
 
-    def flat_dict(self, exclude_unset=False, exclude_defaults=False):
-        schema_dict = self.dict(
-            exclude_unset=exclude_unset,
-            exclude_defaults=exclude_defaults)
+    #     return_dict = flatten_attributes(self, schema_dict)
 
-        return_dict = flatten_attributes(self, schema_dict)
+    #     if hasattr(self, 'hydraulics') and \
+    #             isinstance(self.hydraulics, list):
+    #         return_dict['hydraulics'] = \
+    #             [h.flat_dict() for h in self.hydraulics]
 
-        if hasattr(self, 'hydraulics') and \
-                isinstance(self.hydraulics, list):
-            return_dict['hydraulics'] = \
-                [h.flat_dict() for h in self.hydraulics]
+    #     return return_dict
 
-        return return_dict
-
-    @validator("publicid")
-    def validate_uuids(cls, value):
-        if value:
-            return str(value)
+    # @validator("publicid")
+    # def validate_uuids(cls, value):
+    #     if value:
+    #         return str(value)
 
 
-class BoreholeSchema(BaseModel):
+class BoreholeSchema(CreationInfoMixin,
+                     real_float_value_mixin('longitude', float),
+                     real_float_value_mixin('latitude', float),
+                     real_float_value_mixin('altitude', float),
+                     real_float_value_mixin('bedrockaltitude', float),
+                     real_float_value_mixin('measureddepth', float)):
     publicid: uuid.UUID
-    longitude: RealFloatValue
-    latitude: RealFloatValue
-    altitude: RealFloatValue
-    bedrockaltitude: Optional[OptRealFloatValue]
-    measureddepth: Optional[OptRealFloatValue]
-    description: Optional[str]
-    name: Optional[str]
-    location: Optional[str]
-    institution: Optional[str]
-    sections: Optional[List[BoreholeSectionSchema]]
+    description: str | None = None
+    name: str | None = None
+    location: str | None = None
+    institution: str | None = None
+    sections: List[BoreholeSectionSchema] | None = None
 
-    class Config:
-        getter_dict = ValueGetter
+    # def flat_dict(self, exclude_unset=False, exclude_defaults=False):
+    #     schema_dict = self.dict(
+    #         exclude={'sections': True},
+    #         exclude_unset=exclude_unset,
+    #         exclude_defaults=exclude_defaults)
 
-    def flat_dict(self, exclude_unset=False, exclude_defaults=False):
-        schema_dict = self.dict(
-            exclude={'sections': True},
-            exclude_unset=exclude_unset,
-            exclude_defaults=exclude_defaults)
+    #     return_dict = flatten_attributes(self, schema_dict)
 
-        return_dict = flatten_attributes(self, schema_dict)
+    #     if hasattr(self, 'sections') and \
+    #             isinstance(self.sections, list):
+    #         return_dict['sections'] = \
+    #             [s.flat_dict() for s in self.sections]
 
-        if hasattr(self, 'sections') and \
-                isinstance(self.sections, list):
-            return_dict['sections'] = \
-                [s.flat_dict() for s in self.sections]
+    #     return return_dict
 
-        return return_dict
-
-    @validator("publicid")
-    def validate_uuids(cls, value):
-        if value:
-            return str(value)
+    # @validator("publicid")
+    # def validate_uuids(cls, value):
+    #     if value:
+    #         return str(value)
