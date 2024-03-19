@@ -1,13 +1,12 @@
+import pandas as pd
 import contextlib
 from typing import Annotated, Any, AsyncIterator
 
 from fastapi import Depends
-from sqlalchemy import MetaData
 from sqlalchemy.ext.asyncio import (AsyncConnection, AsyncSession,
                                     async_sessionmaker, create_async_engine)
 
 from config import get_settings
-from hydws.datamodel.base import ORMBase
 
 
 class DatabaseSessionManager:
@@ -63,16 +62,16 @@ async def get_db():
 DBSessionDep = Annotated[AsyncSession, Depends(get_db)]
 
 
-def init_db():
+async def pandas_read_sql(stmt):
     """
-    Initializes the Database.
-    All DB modules need to be imported when calling this function.
+    wrapper around pandas read_sql to use sqlalchemy engine
+    and correctly close and dispose of the connections
+    afterwards.
     """
-    ORMBase.metadata.create_all(sessionmanager._engine)
+    def read_sql_query(con, s):
+        return pd.read_sql_query(s, con)
 
+    async with sessionmanager.connect() as con:
+        df = await con.run_sync(read_sql_query, stmt)
 
-def drop_db():
-    """Drops all database Tables but leaves the DB itself in place"""
-    m = MetaData()
-    m.reflect(sessionmanager._engine)
-    m.drop_all(sessionmanager._engine)
+    return df

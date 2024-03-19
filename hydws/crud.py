@@ -1,21 +1,23 @@
 from datetime import datetime
 from typing import List, Optional
 
-import pandas as pd
 from sqlalchemy import delete, insert, select
-from sqlalchemy.orm import Session, contains_eager, defer, joinedload
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import defer, joinedload
 
+from hydws.database import pandas_read_sql
 from hydws.datamodel.orm import Borehole, BoreholeSection, HydraulicSample
 from hydws.utils import update_section_epoch
 
 
-def read_boreholes(db: Session,
-                   starttime: Optional[datetime] = None,
-                   endtime: Optional[datetime] = None,
-                   minlatitude: Optional[float] = None,
-                   maxlatitude: Optional[float] = None,
-                   minlongitude: Optional[float] = None,
-                   maxlongitude: Optional[float] = None) -> List[Borehole]:
+async def read_boreholes(db: AsyncSession,
+                         starttime: Optional[datetime] = None,
+                         endtime: Optional[datetime] = None,
+                         minlatitude: Optional[float] = None,
+                         maxlatitude: Optional[float] = None,
+                         minlongitude: Optional[float] = None,
+                         maxlongitude: Optional[float] = None) \
+        -> List[Borehole]:
 
     statement = select(Borehole).options(joinedload(Borehole.sections))
 
@@ -34,37 +36,40 @@ def read_boreholes(db: Session,
     if maxlatitude:
         statement = statement.where(Borehole.latitude_value <= maxlatitude)
 
-    return db.execute(statement).unique().scalars().all()
+    result = await db.execute(statement)
+
+    return result.scalars().unique().all()
 
 
-def read_borehole(borehole_id: str,
-                  db: Session,
-                  sections: bool = False,
-                  starttime: datetime = None,
-                  endtime: datetime = None) -> Borehole:
+async def read_borehole(borehole_id: str,
+                        db: AsyncSession,
+                        sections: bool = False,
+                        starttime: datetime = None,
+                        endtime: datetime = None) -> Borehole:
 
-    statement = select(Borehole).where(Borehole.publicid == borehole_id)
+    statement = select(Borehole).where(Borehole.publicid == borehole_id) \
+        .join(BoreholeSection)
 
     if sections:
-        statement = statement.outerjoin(BoreholeSection) \
-            .options(contains_eager(Borehole.sections))
-
+        statement = statement.options(joinedload(Borehole.sections))
         if starttime:
             statement = statement.where(BoreholeSection.endtime > starttime)
         if endtime:
             statement = statement.where(BoreholeSection.starttime < endtime)
 
-    return db.execute(statement).unique().scalar_one_or_none()
+    result = await db.execute(statement)
+
+    return result.unique().scalar_one_or_none()
 
 
-def delete_borehole(publicid: str, db: Session):
+def delete_borehole(publicid: str, db: AsyncSession):
     stmt = delete(Borehole).where(Borehole.publicid == publicid)
     deleted = db.execute(stmt)
     db.commit()
     return deleted.rowcount
 
 
-def create_borehole(borehole: dict, db: Session):
+def create_borehole(borehole: dict, db: AsyncSession):
     borehole_db = read_borehole(borehole['publicid'], db)
 
     sections = borehole.pop('sections', None)
@@ -85,12 +90,12 @@ def create_borehole(borehole: dict, db: Session):
     return borehole_db
 
 
-def read_sections(db: Session) -> List[BoreholeSection]:
+def read_sections(db: AsyncSession) -> List[BoreholeSection]:
     statement = select(Borehole)
     return db.execute(statement).unique().scalars().all()
 
 
-def read_section(section_id: str, db: Session):
+def read_section(section_id: str, db: AsyncSession):
     statement = select(BoreholeSection)
     statement = statement.where(
         BoreholeSection.publicid == section_id)
@@ -99,7 +104,7 @@ def read_section(section_id: str, db: Session):
 
 def create_section(section: dict,
                    borehole_oid: int,
-                   db: Session):
+                   db: AsyncSession):
 
     section_db = read_section(section['publicid'], db)
 
@@ -124,7 +129,7 @@ def create_section(section: dict,
 
 
 def read_hydraulics(section_id: str,
-                    db: Session,
+                    db: AsyncSession,
                     starttime: datetime = None,
                     endtime: datetime = None) -> List[HydraulicSample]:
 
@@ -142,15 +147,13 @@ def read_hydraulics(section_id: str,
     return db.execute(statement).unique().scalars().all()
 
 
-def read_hydraulics_df(
-        section_id: str,
-        db: Session,
-        starttime: datetime = None,
-        endtime: datetime = None,
-        defer_cols: list = None) -> List[HydraulicSample]:
+async def read_hydraulics_df(section_id: str,
+                             starttime: datetime = None,
+                             endtime: datetime = None,
+                             defer_cols: list = None) -> List[HydraulicSample]:
 
     statement = select(HydraulicSample) \
-        .join(BoreholeSection) \
+        .outerjoin(BoreholeSection) \
         .where(BoreholeSection.publicid == section_id)
 
     if defer_cols:
@@ -163,13 +166,13 @@ def read_hydraulics_df(
         statement = statement.where(
             HydraulicSample.datetime_value <= endtime)
 
-    return pd.read_sql(statement, db.get_bind())
+    return await pandas_read_sql(statement)
 
 
 def create_hydraulics(
         hydraulics: List[dict],
         section_oid: int,
-        db: Session):
+        db: AsyncSession):
 
     datetimes = [h['datetime_value'] for h in hydraulics]
     start = min(datetimes)

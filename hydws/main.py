@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
 from config import get_settings
-from hydws.database import init_db, sessionmanager
+from hydws.database import sessionmanager
 from hydws.routers.v1 import boreholes
 
 
@@ -14,7 +14,6 @@ async def lifespan(app: FastAPI):
     Function that handles startup and shutdown events.
     To understand more, read https://fastapi.tiangolo.com/advanced/events/
     """
-    init_db()
 
     yield
 

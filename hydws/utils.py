@@ -26,7 +26,7 @@ def real_values_to_json(df: pd.DataFrame, drop_cols: list[str] = None) -> str:
         [tuple(col.split('_')) for col in df.columns],
         names=['Names', 'Values'])
 
-    df = df.stack(level=1)
+    df = df.stack(level=1, future_stack=True)
 
     if 'datetime' in df.columns:
         df['datetime'] = pd.to_datetime(
