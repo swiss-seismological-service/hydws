@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional
 
-from sqlalchemy import delete, insert, select
+from sqlalchemy import delete, insert, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import defer, joinedload
 
@@ -168,6 +168,12 @@ async def create_hydraulics(
     datetimes = [h['datetime_value'] for h in hydraulics]
     start = min(datetimes)
     end = max(datetimes)
+
+    statement = \
+        "call generate_partitioned_tables (DATE '{0}', DATE '{1}');".format(
+            datetime.strftime(start, '%Y-%m-%d'),
+            datetime.strftime(end + timedelta(days=1), '%Y-%m-%d'))
+    await db.execute(text(statement))
 
     statement = delete(HydraulicSample) \
         .where(HydraulicSample._boreholesection_oid == section_oid) \

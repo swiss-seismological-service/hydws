@@ -11,7 +11,7 @@ BEGIN
         raise exception '_begindate and _enddate cannot be null';
     end if;
     while loopdate <= _enddate LOOP
-        _sql := 'CREATE TABLE hydraulicsample_'
+        _sql := 'CREATE TABLE IF NOT EXISTS hydraulicsample_'
                     || to_char(loopdate, 'YYYYMMDD')
                     || ' partition of hydraulicsample for values from ('''
                     || loopdate
@@ -27,5 +27,5 @@ END
 $$
 LANGUAGE plpgsql;
 
-call generate_partitioned_tables (DATE '2022-01-01', DATE '2022-06-30');
-call generate_partitioned_tables (DATE '2019-04-01', DATE '2019-05-30');
+-- call generate_partitioned_tables (DATE '2022-01-01', DATE '2022-06-30');
+-- call generate_partitioned_tables (DATE '2019-04-01', DATE '2019-05-30');
