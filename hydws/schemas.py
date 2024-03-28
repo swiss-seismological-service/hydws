@@ -236,7 +236,7 @@ class BoreholeSectionJSONSchema(Model):
 
 
 class BoreholeJSONSchema(Model):
-    creationinfo: CreationInfoSchema
+    creationinfo: CreationInfoSchema | None = None
     longitude: RealValueSchema[float] | None = None
     latitude: RealValueSchema[float] | None = None
     altitude: RealValueSchema[float] | None = None

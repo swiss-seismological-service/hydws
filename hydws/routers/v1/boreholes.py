@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import List, Optional
 
 import orjson
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, HTTPException, Response
 from fastapi.responses import ORJSONResponse
 from starlette.status import HTTP_204_NO_CONTENT
 
@@ -107,7 +107,6 @@ async def post_borehole(
 
     flattened = borehole.flat_dict(exclude_unset=True)
     result = await crud.create_borehole(flattened, db)
-
     return result
 
 
@@ -128,43 +127,42 @@ async def delete_borehole(borehole_id: str,
         raise HTTPException(status_code=404, detail="No boreholes found.")
 
 
-# @router.get("/{borehole_id}/sections/{section_id}/hydraulics",
-#             response_model=List[HydraulicSampleSchema],
-#             response_model_exclude_none=True)
-# async def get_section_hydraulics(borehole_id: str,
-#                                  section_id: str,
-#                                  db: Session = Depends(get_db),
-#                                  starttime: Optional[datetime] = None,
-#                                  endtime: Optional[datetime] = None):
-#     """
-#     Returns section hydraulics.
-#     """
-#     try:
-#         borehole_id = uuid.UUID(borehole_id, version=4)
-#     except ValueError:
-#         raise HTTPException(status_code=400,
-#                             detail="Borehole ID is not valid UUID.")
+@router.get("/{borehole_id}/sections/{section_id}/hydraulics",
+            response_model=List[HydraulicSampleSchema],
+            response_model_exclude_none=True)
+async def get_section_hydraulics(borehole_id: str,
+                                 section_id: str,
+                                 db: DBSessionDep,
+                                 starttime: Optional[datetime] = None,
+                                 endtime: Optional[datetime] = None):
+    """
+    Returns section hydraulics.
+    """
+    try:
+        borehole_id = uuid.UUID(borehole_id, version=4)
+    except ValueError:
+        raise HTTPException(status_code=400,
+                            detail="Borehole ID is not valid UUID.")
 
-#     db_borehole = crud.read_borehole(borehole_id, db)
-#     if not db_borehole:
-#         raise HTTPException(status_code=404, detail="Borehole not found.")
+    db_borehole = await crud.read_borehole(borehole_id, db)
+    if not db_borehole:
+        raise HTTPException(status_code=404, detail="Borehole not found.")
 
-#     try:
-#         section_id = uuid.UUID(section_id, version=4)
-#     except ValueError:
-#         raise HTTPException(status_code=400,
-#                             detail="Section ID is not valid Base 64.")
+    try:
+        section_id = uuid.UUID(section_id, version=4)
+    except ValueError:
+        raise HTTPException(status_code=400,
+                            detail="Section ID is not valid UUID.")
 
-#     defer_cols = [
-#         HydraulicSample._oid,
-#         HydraulicSample._boreholesection_oid]
+    defer_cols = [HydraulicSample._oid,
+                  HydraulicSample._boreholesection_oid]
 
-#     db_result_df = crud.read_hydraulics_df(
-#         section_id, db, starttime, endtime, defer_cols)
+    db_result_df = await crud.read_hydraulics_df(
+        section_id, starttime, endtime, defer_cols)
 
-#     if db_result_df.empty:
-#         return []
-#     drop_cols = ['_oid']
-#     results = orjson.loads(real_values_to_json(db_result_df, drop_cols))
+    if db_result_df.empty:
+        return []
+    drop_cols = ['_oid']
+    results = orjson.loads(real_values_to_json(db_result_df, drop_cols))
 
-#     return ORJSONResponse(results)
+    return ORJSONResponse(results)
