@@ -74,7 +74,8 @@ class BoreholeSection(EpochMixin('Epoch', epoch_type='finite'),
 
     _borehole_oid = Column(
         Integer,
-        ForeignKey('borehole._oid', ondelete="CASCADE"))
+        ForeignKey('borehole._oid', ondelete="CASCADE"),
+        index=True)
 
     borehole = relationship("Borehole", back_populates="sections")
 
@@ -87,7 +88,7 @@ class BoreholeSection(EpochMixin('Epoch', epoch_type='finite'),
 
 
 class HydraulicSample(TimeQuantityMixin('datetime', value_nullable=False,
-                                        primary_key=True),
+                                        primary_key=True, index=True),
                       RealQuantityMixin('bottomtemperature'),
                       RealQuantityMixin('bottomflow'),
                       RealQuantityMixin('bottompressure'),
@@ -107,7 +108,8 @@ class HydraulicSample(TimeQuantityMixin('datetime', value_nullable=False,
 
     _boreholesection_oid = Column(
         Integer,
-        ForeignKey('boreholesection._oid', ondelete="CASCADE"))
+        ForeignKey('boreholesection._oid', ondelete="CASCADE"),
+        index=True)
     section = relationship("BoreholeSection", back_populates="hydraulics")
 
     def __ne__(self, other):

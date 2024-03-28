@@ -128,7 +128,7 @@ UniqueOpenEpochMixin = EpochMixin('Epoch', epoch_type='open')
 
 
 def QuantityMixin(name, quantity_type,
-                  value_nullable=True, primary_key=False):
+                  value_nullable=True, primary_key=False, index=False):
     """
     Mixin factory for common :code:`Quantity` types from
     `QuakeML <https://quake.ethz.ch/quakeml/>`_.
@@ -158,7 +158,8 @@ def QuantityMixin(name, quantity_type,
             @declared_attr
             def _value(cls):
                 return Column(f'{column_prefix}value', sql_type,
-                              nullable=value_nullable, primary_key=primary_key)
+                              nullable=value_nullable, primary_key=primary_key,
+                              index=index)
             return _value
 
         if 'int' == quantity_type:
