@@ -44,7 +44,7 @@ def real_values_to_json(df: pd.DataFrame, drop_cols: list[str] = None) -> str:
     return result
 
 
-def update_section_epoch(
+async def update_section_epoch(
         section_db: BoreholeSection,
         section_new: dict,
         db: Session) -> None:
@@ -72,20 +72,22 @@ def update_section_epoch(
             if start_new < section_db.starttime:
                 section_new['starttime'] = start_new
             else:
-                min_db = db.execute(
+                min_db = await db.execute(
                     select(func.min(
                         HydraulicSample.datetime_value)).where(
                         HydraulicSample._boreholesection_oid
-                        == section_db._oid)).scalar()
+                        == section_db._oid))
+                min_db = min_db.scalar()
                 section_new['starttime'] = min(start_new, min_db or start_new)
         if end_new:
             if end_new > section_db.endtime:
                 section_new['endtime'] = end_new
             else:
-                max_db = db.execute(
+                max_db = await db.execute(
                     select(func.max(
                         HydraulicSample.datetime_value)).where(
                         HydraulicSample._boreholesection_oid
-                        == section_db._oid)).scalar()
+                        == section_db._oid))
+                max_db = max_db.scalar()
                 section_new['endtime'] = max(end_new, max_db or end_new)
     return section_new

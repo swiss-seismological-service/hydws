@@ -11,7 +11,8 @@ from starlette.status import HTTP_204_NO_CONTENT
 from hydws import crud
 from hydws.database import DBSessionDep
 from hydws.datamodel.orm import HydraulicSample
-from hydws.schemas import BoreholeSchema, HydraulicSampleSchema
+from hydws.schemas import (BoreholeJSONSchema, BoreholeSchema,
+                           HydraulicSampleSchema)
 from hydws.utils import real_values_to_json
 
 router = APIRouter(prefix='/boreholes', tags=['boreholes'])
@@ -97,22 +98,17 @@ async def get_borehole(borehole_id: str,
     return ORJSONResponse(borehole)
 
 
-# @router.post("",
-#              response_model=BoreholeSchema,
-#              response_model_exclude_none=True)
-# async def post_borehole(
-#         borehole: BoreholeSchema, db: Session = Depends(get_db)):
-#     try:
-#         result = crud.create_borehole(
-#             borehole.flat_dict(exclude_unset=True), db)
-#     except KeyError as k:
-#         raise HTTPException(status_code=404, detail=str(k))
-#     except ValueError as v:
-#         raise HTTPException(status_code=422, detail=str(v))
-#     except BaseException as e:
-#         raise HTTPException(status_code=500, detail=str(e))
+@router.post("",
+             response_model=BoreholeSchema,
+             response_model_exclude_none=True)
+async def post_borehole(
+        borehole: BoreholeJSONSchema,
+        db: DBSessionDep,):
 
-#     return result
+    flattened = borehole.flat_dict(exclude_unset=True)
+    result = await crud.create_borehole(flattened, db)
+
+    return result
 
 
 # @router.delete("/{borehole_id}",

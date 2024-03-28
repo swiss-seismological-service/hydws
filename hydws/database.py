@@ -1,7 +1,7 @@
-import pandas as pd
 import contextlib
 from typing import Annotated, Any, AsyncIterator
 
+import pandas as pd
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import (AsyncConnection, AsyncSession,
                                     async_sessionmaker, create_async_engine)
@@ -14,7 +14,8 @@ class DatabaseSessionManager:
         self._engine = create_async_engine(
             host, pool_size=10, max_overflow=5, **engine_kwargs)
         self._sessionmaker = async_sessionmaker(
-            autocommit=False, autoflush=False, bind=self._engine)
+            autocommit=False, autoflush=False, bind=self._engine,
+            expire_on_commit=False)
 
     async def close(self):
         if self._engine is None:
