@@ -47,7 +47,7 @@ async def read_borehole(borehole_id: str,
                         starttime: datetime = None,
                         endtime: datetime = None) -> Borehole:
 
-    statement = select(Borehole).where(Borehole.publicid == str(borehole_id))
+    statement = select(Borehole).where(Borehole.publicid == borehole_id)
 
     if sections:
         statement = statement.join(BoreholeSection) \
@@ -62,10 +62,10 @@ async def read_borehole(borehole_id: str,
     return result.scalar()
 
 
-def delete_borehole(publicid: str, db: AsyncSession):
+async def delete_borehole(publicid: str, db: AsyncSession):
     stmt = delete(Borehole).where(Borehole.publicid == publicid)
-    deleted = db.execute(stmt)
-    db.commit()
+    deleted = await db.execute(stmt)
+    await db.commit()
     return deleted.rowcount
 
 

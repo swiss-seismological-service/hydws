@@ -103,7 +103,7 @@ async def get_borehole(borehole_id: str,
              response_model_exclude_none=True)
 async def post_borehole(
         borehole: BoreholeJSONSchema,
-        db: DBSessionDep,):
+        db: DBSessionDep):
 
     flattened = borehole.flat_dict(exclude_unset=True)
     result = await crud.create_borehole(flattened, db)
@@ -111,21 +111,21 @@ async def post_borehole(
     return result
 
 
-# @router.delete("/{borehole_id}",
-#                status_code=HTTP_204_NO_CONTENT,
-#                response_class=Response)
-# async def delete_borehole(borehole_id: str,
-#                           db: Session = Depends(get_db)) -> None:
-#     try:
-#         borehole_id = uuid.UUID(borehole_id, version=4)
-#     except ValueError:
-#         raise HTTPException(status_code=400,
-#                             detail="Borehole ID is not valid UUID.")
+@router.delete("/{borehole_id}",
+               status_code=HTTP_204_NO_CONTENT,
+               response_class=Response)
+async def delete_borehole(borehole_id: str,
+                          db: DBSessionDep) -> None:
+    try:
+        borehole_id = uuid.UUID(borehole_id, version=4)
+    except ValueError:
+        raise HTTPException(status_code=400,
+                            detail="Borehole ID is not valid UUID.")
 
-#     deleted = crud.delete_borehole(borehole_id, db)
+    deleted = await crud.delete_borehole(borehole_id, db)
 
-#     if deleted == 0:
-#         raise HTTPException(status_code=404, detail="No boreholes found.")
+    if deleted == 0:
+        raise HTTPException(status_code=404, detail="No boreholes found.")
 
 
 # @router.get("/{borehole_id}/sections/{section_id}/hydraulics",
