@@ -8,6 +8,8 @@ from hydws.datamodel.orm import BoreholeSection, HydraulicSample
 def real_values_to_json(df: pd.DataFrame, drop_cols: list[str] = None) -> str:
     df = df.drop(drop_cols, axis=1) if drop_cols else df
     df = df.dropna(axis=1, how='all')
+    numeric_columns = df.select_dtypes(include='number').columns
+    df[numeric_columns] = df[numeric_columns].fillna(0)
 
     realvalues = ['_value',
                   '_uncertainty',
