@@ -178,8 +178,8 @@ class HydraulicSampleJSONSchema(Model):
     bottompressure: RealValueSchema[float] | None = None
 
     toptemperature: RealValueSchema[float] | None = None
-    topflow: RealValueSchema[float] | None = None
-    toppressure: RealValueSchema[float] | None = None
+    topflow: RealValueSchema[float] = 0.0
+    toppressure: RealValueSchema[float] = 0.0
 
     fluiddensity: RealValueSchema[float] | None = None
     fluidviscosity: RealValueSchema[float] | None = None
