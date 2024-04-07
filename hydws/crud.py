@@ -110,6 +110,16 @@ async def read_section(section_id: str, db: AsyncSession):
     return result.scalar_one_or_none()
 
 
+async def read_section_oid(section_id: int, db: AsyncSession):
+
+    statement = select(BoreholeSection._oid)
+    statement = statement.where(
+        BoreholeSection.publicid == section_id)
+    result = await db.execute(statement)
+
+    return result.scalar_one_or_none()
+
+
 async def create_section(section: dict,
                          borehole_oid: int,
                          db: AsyncSession):
@@ -138,14 +148,13 @@ async def create_section(section: dict,
     return section_db
 
 
-async def read_hydraulics_df(section_id: str,
+async def read_hydraulics_df(section_oid: str,
                              starttime: datetime = None,
                              endtime: datetime = None,
                              defer_cols: list = None) -> List[HydraulicSample]:
 
     statement = select(HydraulicSample) \
-        .outerjoin(BoreholeSection) \
-        .where(BoreholeSection.publicid == section_id)
+        .where(HydraulicSample._boreholesection_oid == section_oid)
 
     if defer_cols:
         statement = statement.options(*[defer(col) for col in defer_cols])

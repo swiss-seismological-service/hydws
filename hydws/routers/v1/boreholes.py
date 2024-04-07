@@ -45,12 +45,14 @@ async def get_boreholes(db: DBSessionDep,
     return db_result
 
 
-async def hydraulics_to_json(section, **kwargs):
+async def hydraulics_to_json(section, db, **kwargs):
     defer_cols = [HydraulicSample._boreholesection_oid]
     drop_cols = ['_oid']
 
+    section_oid = await crud.read_section_oid(section['publicid'], db)
+
     df = await crud.read_hydraulics_df(
-        section['publicid'], **kwargs, defer_cols=defer_cols)
+        section_oid, **kwargs, defer_cols=defer_cols)
     result = real_values_to_json(df, drop_cols)
 
     section['hydraulics'] = orjson.loads(result)
@@ -90,7 +92,7 @@ async def get_borehole(borehole_id: str,
     if level == 'hydraulic':
         futures = []
         for section in borehole['sections']:
-            futures.append(hydraulics_to_json(section, starttime=starttime,
+            futures.append(hydraulics_to_json(section, db, starttime=starttime,
                                               endtime=endtime))
 
         borehole['sections'] = await asyncio.gather(*futures)
@@ -157,8 +159,10 @@ async def get_section_hydraulics(borehole_id: str,
     defer_cols = [HydraulicSample._oid,
                   HydraulicSample._boreholesection_oid]
 
+    section_oid = await crud.read_section_oid(section_id, db)
+
     db_result_df = await crud.read_hydraulics_df(
-        section_id, starttime, endtime, defer_cols)
+        section_oid, starttime, endtime, defer_cols)
 
     if db_result_df.empty:
         return []
