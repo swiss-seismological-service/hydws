@@ -14,12 +14,6 @@ def hydraulics_to_json(df: pd.DataFrame, drop_cols: list[str] = None) -> str:
     numeric_columns = df.select_dtypes(include='number').columns
     df[numeric_columns] = df[numeric_columns].fillna(0)
 
-    # temporary fix, make sure topflow and toppressure are available
-    if 'topflow_value' not in df.columns:
-        df['topflow_value'] = 0
-    if 'toppressure_value' not in df.columns:
-        df['toppressure_value'] = 0
-
     if 'datetime_value' in df.columns:
         df = df.sort_values(by='datetime_value')
         df['datetime_value'] = pd.to_datetime(
