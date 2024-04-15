@@ -3,7 +3,6 @@ import uuid
 from datetime import datetime
 from typing import List, Optional
 
-import orjson
 from fastapi import APIRouter, HTTPException, Response
 from fastapi.responses import ORJSONResponse
 from starlette.status import HTTP_204_NO_CONTENT
@@ -13,7 +12,7 @@ from hydws.database import DBSessionDep
 from hydws.datamodel.orm import HydraulicSample
 from hydws.schemas import (BoreholeJSONSchema, BoreholeSchema,
                            HydraulicSampleSchema)
-from hydws.utils import real_values_to_json
+from hydws.utils import hydraulics_to_json
 
 router = APIRouter(prefix='/boreholes', tags=['boreholes'])
 
@@ -45,7 +44,7 @@ async def get_boreholes(db: DBSessionDep,
     return db_result
 
 
-async def hydraulics_to_json(section, db, **kwargs):
+async def await_section_hydraulics(section, db, **kwargs):
     defer_cols = [HydraulicSample._boreholesection_oid]
     drop_cols = ['_oid']
 
@@ -53,9 +52,8 @@ async def hydraulics_to_json(section, db, **kwargs):
 
     df = await crud.read_hydraulics_df(
         section_oid, **kwargs, defer_cols=defer_cols)
-    result = real_values_to_json(df, drop_cols)
 
-    section['hydraulics'] = orjson.loads(result)
+    section['hydraulics'] = hydraulics_to_json(df, drop_cols)
 
     return section
 
@@ -92,8 +90,12 @@ async def get_borehole(borehole_id: str,
     if level == 'hydraulic':
         futures = []
         for section in borehole['sections']:
-            futures.append(hydraulics_to_json(section, db, starttime=starttime,
-                                              endtime=endtime))
+            futures.append(
+                await_section_hydraulics(
+                    section,
+                    db,
+                    starttime=starttime,
+                    endtime=endtime))
 
         borehole['sections'] = await asyncio.gather(*futures)
 
@@ -167,6 +169,7 @@ async def get_section_hydraulics(borehole_id: str,
     if db_result_df.empty:
         return []
     drop_cols = ['_oid']
-    results = orjson.loads(real_values_to_json(db_result_df, drop_cols))
+
+    results = hydraulics_to_json(db_result_df, drop_cols)
 
     return ORJSONResponse(results)

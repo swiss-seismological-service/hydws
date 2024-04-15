@@ -5,53 +5,43 @@ from sqlalchemy.orm import Session
 from hydws.datamodel.orm import BoreholeSection, HydraulicSample
 
 
-def real_values_to_json(df: pd.DataFrame, drop_cols: list[str] = None) -> str:
+def hydraulics_to_json(df: pd.DataFrame, drop_cols: list[str] = None) -> str:
+
+    # do some data cleaning
     df = df.drop(drop_cols, axis=1) if drop_cols else df
     df = df.dropna(axis=1, how='all')
 
     numeric_columns = df.select_dtypes(include='number').columns
     df[numeric_columns] = df[numeric_columns].fillna(0)
 
+    # temporary fix, make sure topflow and toppressure are available
     if 'topflow_value' not in df.columns:
         df['topflow_value'] = 0
     if 'toppressure_value' not in df.columns:
         df['toppressure_value'] = 0
 
-    df = df.sort_index()
+    if 'datetime_value' in df.columns:
+        df = df.sort_values(by='datetime_value')
+        df['datetime_value'] = pd.to_datetime(
+            df['datetime_value']).dt.strftime('%Y-%m-%dT%H:%M:%S')
 
-    realvalues = ['_value',
-                  '_uncertainty',
-                  '_loweruncertainty',
-                  '_upperuncertainty',
-                  '_confidencelevel']
+    # convert to nested dict by splitting column names which have a "_"
+    mylist = []
+    for row in df.itertuples(index=False):
+        result = {}
+        for key, value in row._asdict().items():
+            if '_' not in key:
+                result[key] = value
+                continue
+            parts = key.split('_')
+            current = result
+            for part in parts[:-1]:
+                current = current.setdefault(part, {})
+            current[parts[-1]] = value
 
-    not_real_cols = [col for col in df.columns if not
-                     any(rv in col for rv in realvalues)]
+        mylist.append(result)
 
-    df_not_real = df[not_real_cols] if not_real_cols else None
-
-    df = df.drop(not_real_cols, axis=1) if not_real_cols else df
-
-    df.columns = pd.MultiIndex.from_tuples(
-        [tuple(col.split('_')) for col in df.columns],
-        names=['Names', 'Values'])
-
-    df = df.stack(level=1, future_stack=True)
-
-    if 'datetime' in df.columns:
-        df['datetime'] = pd.to_datetime(
-            df['datetime']).dt.strftime('%Y-%m-%dT%H:%M:%S')
-
-    if df_not_real is not None:
-        result = df.groupby(level=0) \
-            .apply(lambda x: x.droplevel(0).to_dict()
-                   | df_not_real.loc[x.name].to_dict()) \
-            .to_json(orient='records')
-    else:
-        result = df.groupby(level=0) \
-            .apply(lambda x: x.droplevel(0).to_dict()) \
-            .to_json(orient='records')
-    return result
+    return mylist
 
 
 async def update_section_epoch(
