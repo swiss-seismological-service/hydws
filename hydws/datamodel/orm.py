@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import relationship
 
 from hydws.datamodel.base import (CreationInfoMixin, EpochMixin, ORMBase,
@@ -88,7 +88,7 @@ class BoreholeSection(EpochMixin('Epoch', epoch_type='finite'),
 
 
 class HydraulicSample(TimeQuantityMixin('datetime', value_nullable=False,
-                                        primary_key=True, index=True),
+                                        primary_key=True),
                       RealQuantityMixin('bottomtemperature'),
                       RealQuantityMixin('bottomflow'),
                       RealQuantityMixin('bottompressure'),
@@ -125,3 +125,7 @@ class HydraulicSample(TimeQuantityMixin('datetime', value_nullable=False,
     __table_args__ = {
         'postgresql_partition_by': 'RANGE (datetime_value)',
     }
+
+
+Index('idx_hydraulicsample_datetime_value', HydraulicSample.datetime_value,
+      postgresql_using='brin', postgresql_with={'pages_per_range': 32})
