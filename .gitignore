@@ -5,6 +5,7 @@ dist/
 test.py
 .env.prod
 example*.json
+.env.production
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
