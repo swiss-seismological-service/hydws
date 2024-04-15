@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Callable, Generic, List, TypeVar
 
 from pydantic import (BaseModel, ConfigDict, Field, computed_field,
-                      create_model, validator)
+                      create_model, field_validator)
 
 base_config = ConfigDict(extra='allow',
                          arbitrary_types_allowed=True,
@@ -127,8 +127,9 @@ class BoreholeSectionSchema(
     name: str | None = None
     hydraulics: List[HydraulicSampleSchema] | None = None
 
-    @validator("publicid")
-    def serialize_uuid(cls, value):
+    @field_validator("publicid")
+    @classmethod
+    def serialize_uuid(cls, value) -> uuid.UUID:
         if value:
             return uuid.UUID(str(value))
 
@@ -146,8 +147,9 @@ class BoreholeSchema(CreationInfoMixin,
     institution: str | None = None
     sections: List[BoreholeSectionSchema] | None = None
 
-    @validator("publicid")
-    def serialize_uuid(cls, value):
+    @field_validator("publicid")
+    @classmethod
+    def serialize_uuid(cls, value) -> uuid.UUID:
         if value:
             return uuid.UUID(str(value))
 
