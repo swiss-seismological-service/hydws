@@ -1,10 +1,11 @@
 import asyncio
 import uuid
 from datetime import datetime
-from typing import List, Optional
+from typing import Literal
 
+import pandas as pd
 from fastapi import APIRouter, HTTPException, Response
-from fastapi.responses import ORJSONResponse
+from fastapi.responses import ORJSONResponse, PlainTextResponse
 from starlette.status import HTTP_204_NO_CONTENT
 
 from hydws import crud
@@ -18,7 +19,7 @@ router = APIRouter(prefix='/boreholes', tags=['boreholes'])
 
 
 @router.get("",
-            response_model=List[BoreholeSchema],
+            response_model=list[BoreholeSchema],
             response_model_exclude_none=True)
 async def get_boreholes(db: DBSessionDep,
                         starttime: datetime | None = None,
@@ -61,20 +62,14 @@ async def await_section_hydraulics(section, db, **kwargs):
 @router.get("/{borehole_id}",
             response_model=BoreholeSchema,
             response_model_exclude_none=True)
-async def get_borehole(borehole_id: str,
+async def get_borehole(borehole_id: uuid.UUID,
                        db: DBSessionDep,
-                       level: Optional[str] = 'section',
-                       starttime: Optional[datetime] = None,
-                       endtime: Optional[datetime] = None):
+                       level: str | None = 'section',
+                       starttime: datetime | None = None,
+                       endtime: datetime | None = None):
     """
     Returns a borehole.
     """
-    try:
-        borehole_id = uuid.UUID(borehole_id, version=4)
-    except ValueError:
-        raise HTTPException(status_code=400,
-                            detail="Borehole ID is not valid UUID.")
-
     if level == 'borehole':
         db_result = await crud.read_borehole(borehole_id, db)
     else:
@@ -117,13 +112,8 @@ async def post_borehole(
 @router.delete("/{borehole_id}",
                status_code=HTTP_204_NO_CONTENT,
                response_class=Response)
-async def delete_borehole(borehole_id: str,
+async def delete_borehole(borehole_id: uuid.UUID,
                           db: DBSessionDep) -> None:
-    try:
-        borehole_id = uuid.UUID(borehole_id, version=4)
-    except ValueError:
-        raise HTTPException(status_code=400,
-                            detail="Borehole ID is not valid UUID.")
 
     deleted = await crud.delete_borehole(borehole_id, db)
 
@@ -131,32 +121,36 @@ async def delete_borehole(borehole_id: str,
         raise HTTPException(status_code=404, detail="No boreholes found.")
 
 
-@router.get("/{borehole_id}/sections/{section_id}/hydraulics",
-            response_model=List[HydraulicSampleSchema],
-            response_model_exclude_none=True)
-async def get_section_hydraulics(borehole_id: str,
-                                 section_id: str,
+def csv_response(data) -> PlainTextResponse:
+    numeric_columns = data.select_dtypes(include='number').columns
+    data[numeric_columns] = data[numeric_columns].fillna(0)
+
+    if 'datetime_value' in data.columns:
+        data = data.sort_values(by='datetime_value')
+        data['datetime_value'] = pd.to_datetime(
+            data['datetime_value']).dt.strftime('%Y-%m-%dT%H:%M:%S')
+
+    data = data.to_csv(index=False)
+    return PlainTextResponse(data, media_type='text/csv')
+
+
+@ router.get("/{borehole_id}/sections/{section_id}/hydraulics",
+             response_model=list[HydraulicSampleSchema],
+             response_model_exclude_none=True)
+async def get_section_hydraulics(borehole_id: uuid.UUID,
+                                 section_id: uuid.UUID,
                                  db: DBSessionDep,
-                                 starttime: Optional[datetime] = None,
-                                 endtime: Optional[datetime] = None):
+                                 starttime: datetime | None = None,
+                                 endtime: datetime | None = None,
+                                 format: Literal['csv', 'json'] = 'json',
+                                 ):
     """
     Returns section hydraulics.
     """
-    try:
-        borehole_id = uuid.UUID(borehole_id, version=4)
-    except ValueError:
-        raise HTTPException(status_code=400,
-                            detail="Borehole ID is not valid UUID.")
 
     db_borehole = await crud.read_borehole(borehole_id, db)
     if not db_borehole:
         raise HTTPException(status_code=404, detail="Borehole not found.")
-
-    try:
-        section_id = uuid.UUID(section_id, version=4)
-    except ValueError:
-        raise HTTPException(status_code=400,
-                            detail="Section ID is not valid UUID.")
 
     defer_cols = [HydraulicSample._oid,
                   HydraulicSample._boreholesection_oid]
@@ -166,10 +160,14 @@ async def get_section_hydraulics(borehole_id: str,
     db_result_df = await crud.read_hydraulics_df(
         section_oid, starttime, endtime, defer_cols)
 
+    db_result_df = db_result_df.dropna(axis=1, how='all').drop(columns=['_oid'])
+
+    if format == 'csv':
+        return csv_response(db_result_df)
+
     if db_result_df.empty:
         return []
-    drop_cols = ['_oid']
 
-    results = hydraulics_to_json(db_result_df, drop_cols)
+    results = hydraulics_to_json(db_result_df)
 
     return ORJSONResponse(results)
