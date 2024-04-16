@@ -26,6 +26,3 @@ BEGIN
 END
 $$
 LANGUAGE plpgsql;
-
--- call generate_partitioned_tables (DATE '2022-01-01', DATE '2022-06-30');
--- call generate_partitioned_tables (DATE '2019-04-01', DATE '2019-05-30');
