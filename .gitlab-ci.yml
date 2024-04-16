@@ -62,6 +62,7 @@ py310-test-job:
             coverage_report:
                 coverage_format: cobertura
                 path: coverage.xml
+    coverage: '/TOTAL.*\s+(\d+%)$/'
 
 variables:
     TAG_LATEST: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:latest
