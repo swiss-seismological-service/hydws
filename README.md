@@ -8,27 +8,20 @@ Instructions for installation and examples of usage may be found below.
 
 ## Installation
 
-A basic knowledge about [Docker](https://docs.docker.com/engine/) and how
-this kind of application containers work is required. For more information
-about operating system support (which includes Linux, macOS and specific
-versions of Windows) and on how to install Docker, please refer to the official
-[Docker website](https://www.docker.com/products/docker).
+Using [Docker](https://docs.docker.com/engine/) allows for an easy setup of the webservice, the database and the required dependencies. Manual installation is also possible, but requires some manual steps to prepare the database.
 
 **Configuration**:
 
-Before building and running the container adjust the variables defined within
-`.env` configuration file according to your needs. Make sure to pick a proper
+Before building and running the container, copy the file `.env.example` to `.env` and 
+adjust the variables defined within according to your needs. Make sure to pick a proper
 username and password for the internally used PostgreSQL database and write
 these down for later.
 
 **Deployment**:
 
 The container should be run using the provided `docker-compose.yml`
-configuration file. For local development please replace the `image` option with
-
-```
-build: .
-```
+configuration file. For local development please replace the 
+`image: ${TAG_COMMIT}` option with `build: .`
 
 Then you can just run:
 
@@ -40,14 +33,240 @@ $ docker-compose up -d
 
 ## Introduction
 
-HYDWS provides a REST API interface for serving borehole hydraulic sample data. This document specifies the URLs, query parameters and expected results.
+HYDWS provides a REST API interface for serving borehole hydraulic sample data. This document specifies the URLs, query parameters and expected results. An OpenAPI specification is also available by navigating to the `/hydws/docs` endpoint on a running instance.
 
 ## Response
 
-All responses are JSON. The response will reflect the hierarchical one to many relationship between borehole and borehole sections, and between borehole section and hydraulic samples.
-Both borehole and borehole section have a unique publicid which is required to make calls which specifies the borehole and/or borehole section. This publicid is to be encoded as base64 before being included in the request URI.
+All responses are primarily in JSON. The response will reflect the hierarchical one to many relationship between borehole and borehole sections, and between borehole section and hydraulic samples.
+Both borehole and borehole section have a unique publicid which is required to make calls which specifies the borehole and/or borehole section. This publicid needs to be a valid `UUID4` string.
 
 The standard HTTP response status codes are used.
+
+### GET /hydws/v1/boreholes
+
+List the available boreholes with their sections.
+
+Parameters:
+    * starttime: Boreholes returned if any borehole section has a starttime that falls within the section epoch time. format: YYYY-MM-DDTHH:MM:SS (UTC)  
+    * endtime: Boreholes returned if any borehole section has a endtime that falls within the section epoch time. format: YYYY-MM-DDTHH:MM:SS (UTC)  
+    * minlatitude: Boreholes returned where borehole (mouth) latitude is equal to or greater than this value. Unit: Degrees  
+    * minlongitude: Boreholes returned where borehole (mouth) longitude is equal to or greater than this value. Unit: Degrees  
+    * maxlatitude: Boreholes returned where borehole (mouth) latitude is equal to or less than this value. Unit: Degrees  
+    * maxlongitude: Boreholes returned where borehole (mouth) longitude is equal to or less than this value. Unit: Degrees  
+
+Response:
+```json
+[  
+    {  
+        "publicid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",  
+        "description": "string",  
+        "name": "string",  
+        "location": "string",  
+        "institution": "string",  
+        "measureddepth": {"value": 0},  
+        "bedrockaltitude": {"value": 0},  
+        "altitude": {"value": 0},  
+        "latitude": {"value": 0},  
+        "longitude": {"value": 0},  
+        "creationinfo": {  
+            "author": "string",  
+            "agencyid": "string",  
+            "creationtime": "2024-04-16T09:50:37.076Z",  
+            "version": "string",  
+            "copyrightowner": "string",  
+            "licence": "string"  
+        },  
+        "sections": [  
+            {  
+                "publicid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",  
+                "starttime": "2024-04-16T09:50:37.075Z",  
+                "endtime": "2024-04-16T09:50:37.075Z",  
+                "topclosed": true,  
+                "bottomclosed": true,  
+                "sectiontype": "string",  
+                "casingtype": "string",  
+                "description": "string",  
+                "name": "string",  
+                "hydraulics": [],  
+                "casingdiameter": {"value": 0},  
+                "holediameter": {"value": 0},  
+                "bottommeasureddepth": {"value": 0},  
+                "topmeasureddepth": {"value": 0},  
+                "bottomaltitude": {"value": 0},  
+                "bottomlatitude": {"value": 0},  
+                "bottomlongitude": {"value": 0},  
+                "topaltitude": {"value": 0},  
+                "toplatitude": {"value": 0},  
+                "toplongitude": {"value": 0 }  
+            }  
+        ]  
+    }  
+]  
+```
+
+
+### GET /hydws/v1/boreholes/:borehole_id
+
+Return results of borehole section with optional hydraulic results for the given `borehole_id` which is a UUID.
+
+Parameters:
+
+    * level: level of output results. [`borehole` | `section` | `hydraulic`] #default: section  
+    * starttime: Boreholes returned if any borehole section has a starttime that falls within the section epoch time. format: YYYY-MM-DDTHH:MM:SS (UTC)  
+    * endtime: Boreholes returned if any borehole section has a endtime that falls within the section epoch time. format: YYYY-MM-DDTHH:MM:SS (UTC)  
+
+
+Response:
+```json
+{
+    "publicid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "description": "string",
+    "name": "string",
+    "location": "string",
+    "institution": "string",
+    "measureddepth": {"value": 0},
+    "bedrockaltitude": {"value": 0},
+    "altitude": {"value": 0},
+    "latitude": {"value": 0},
+    "longitude": {"value": 0},
+    "creationinfo": {
+        "author": "string",
+        "agencyid": "string",
+        "creationtime": "2024-04-16T09:50:37.076Z",
+        "version": "string",
+        "copyrightowner": "string",
+        "licence": "string"
+    },
+    "sections": [
+        {
+            "publicid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "starttime": "2024-04-16T09:50:37.075Z",
+            "endtime": "2024-04-16T09:50:37.075Z",
+            "topclosed": true,
+            "bottomclosed": true,
+            "sectiontype": "string",
+            "casingtype": "string",
+            "description": "string",
+            "name": "string",
+            "casingdiameter": {"value": 0},
+            "holediameter": {"value": 0},
+            "bottommeasureddepth": {"value": 0},
+            "topmeasureddepth": {"value": 0},
+            "bottomaltitude": {"value": 0},
+            "bottomlatitude": {"value": 0},
+            "bottomlongitude": {"value": 0},
+            "topaltitude": {"value": 0},
+            "toplatitude": {"value": 0},
+            "toplongitude": {"value": 0},
+            "hydraulics": [
+                {
+                    "fluidcomposition": "string",
+                    "fluidph": {"value": 0},
+                    "fluidviscosity": {"value": 0},
+                    "fluiddensity": {"value": 0},
+                    "toppressure": {"value": 0},
+                    "topflow": {"value": 0},
+                    "toptemperature": {"value": 0},
+                    "bottompressure": {"value": 0},
+                    "bottomflow": {"value": 0},
+                    "bottomtemperature": {"value": 0},
+                    "datetime": {"value": "2024-04:50:37.076Z"}
+                }
+            ]
+        }
+    ]
+}
+```
+
+#### GET /hydws/v1/boreholes/:borehole_id/sections/:section_id/hydraulics
+
+Get hydraulic data for specific `borehole_id` and `section_id`, both of which are UUID's.
+
+Parameters:
+    * starttime: Returns HydraulicSamples which have a datetime value larger than this parameter. Format: YYYY-MM-DDTHH:MM:SS (UTC)  
+    * endtime: Returns HydraulicSamples which have a datetime value smaller than this parameter. Format: YYYY-MM-DDTHH:MM:SS (UTC)  
+    * format: Format of the output. [`json` | `csv`] #default: json  
+Response:
+
+```json
+[
+  {
+    "fluidcomposition": "string",
+    "fluidph": {
+      "value": 0,
+      "uncertainty": 0,
+      "loweruncertainty": 0,
+      "upperuncertainty": 0,
+      "confidencelevel": 0
+    },
+    "fluidviscosity": {
+      "value": 0,
+      "uncertainty": 0,
+      "loweruncertainty": 0,
+      "upperuncertainty": 0,
+      "confidencelevel": 0
+    },
+    "fluiddensity": {
+      "value": 0,
+      "uncertainty": 0,
+      "loweruncertainty": 0,
+      "upperuncertainty": 0,
+      "confidencelevel": 0
+    },
+    "toppressure": {
+      "value": 0,
+      "uncertainty": 0,
+      "loweruncertainty": 0,
+      "upperuncertainty": 0,
+      "confidencelevel": 0
+    },
+    "topflow": {
+      "value": 0,
+      "uncertainty": 0,
+      "loweruncertainty": 0,
+      "upperuncertainty": 0,
+      "confidencelevel": 0
+    },
+    "toptemperature": {
+      "value": 0,
+      "uncertainty": 0,
+      "loweruncertainty": 0,
+      "upperuncertainty": 0,
+      "confidencelevel": 0
+    },
+    "bottompressure": {
+      "value": 0,
+      "uncertainty": 0,
+      "loweruncertainty": 0,
+      "upperuncertainty": 0,
+      "confidencelevel": 0
+    },
+    "bottomflow": {
+      "value": 0,
+      "uncertainty": 0,
+      "loweruncertainty": 0,
+      "upperuncertainty": 0,
+      "confidencelevel": 0
+    },
+    "bottomtemperature": {
+      "value": 0,
+      "uncertainty": 0,
+      "loweruncertainty": 0,
+      "upperuncertainty": 0,
+      "confidencelevel": 0
+    },
+    "datetime": {
+      "value": "2024-04-16T09:50:37.076Z",
+      "uncertainty": 0,
+      "loweruncertainty": 0,
+      "upperuncertainty": 0,
+      "confidencelevel": 0
+    },
+    "additionalProp1": {}
+  }
+]
+```
+
 
 ### POST /hydws/v1/boreholes
 
@@ -59,234 +278,3 @@ Example using curl to upload a file:
 Where localhost would be changed to the name of the machine that the service is running on.
 
 A file may contain more than one borehole, as a comma seperated list using square parentheses.
-
-### GET /hydws/v1/boreholes
-
-List the available boreholes, optionally with sections.
-
-Parameters:
-
-    * level: level of output results. [`borehole` | `section` # default]
-    * starttime: Boreholes returned if any borehole section has a starttime that falls within the section epoch time. format: YYYY-MM-DD[THH:MM:SS] (UTC)
-    * endtime: Boreholes returned if any borehole section has a endtime that falls within the section epoch time. format: YYYY-MM-DD[THH:MM:SS] (UTC)
-
-<!-- * minlatitude: Boreholes returned where borehole latitude is equal to or greater than this value. Unit: Degrees
-* minlongitude: Boreholes returned where borehole longitude is equal to or greater than this value. Unit: Degrees
-* maxlatitude: Boreholes returned where borehole latitude is equal to or less than this value. Unit: Degrees
-* maxlongitude: Boreholes returned where borehole longitude is equal to or less than this value. Unit: Degrees -->
-
-Response:
-
-    [
-      {
-        "publicid": "9f86d14a-205f-4162-9271-45e2b9471b09",
-        "longitude": {
-          "value": -21.807
-        },
-        "latitude": {
-          "value": 64.1735
-        },
-        "altitude": {
-          "value": 20
-        },
-        "depth": {
-          "value": 1832
-        },
-        "bedrockdepth": {
-          "value": 300
-        }
-      }
-    ]
-
-Notes: Altitude is the altitude of the well head with respect to sea level. Depth is increasing in the downward direction, so is always positively measured with respect to the well head.
-
-### GET /hydws/v1/boreholes/:borehole_id
-
-Return results of borehole section with optional hydraulic results for the given `borehole_id` which is a UUID.
-
-Parameters:
-
-    Depending on the ‘level’ parameter chosen, different query parameters are allowed.
-    ‘level=borehole’: No query parameters allowed.
-    ‘level=section’: Query parameters are allowed that have a tick in the s column.
-    ‘level=hydraulic’: Query parameters are allowed that have a tick in the h column.
-
-    Some of these parameters refer to properties on borehole sections, and some on hydraulic samples which are children of borehole sections.
-    Hydraulic samples will only be returned if the borehole section that they belong to has not been filtered out.
-
-    Time parameters
-    As both borehole sections and hydraulic samples have datetime values, both of these will be filtered by the same query parameter. Borehole sections have a datetime epoch which describes the time that the section is valid or active. When a section of a borehole changes (say, a new casing is put into the section) then a new section is created, and the epoch endtime of the old section is updated.
-    Hydraulic sample datetime is simply the time that the sample was taken, in UTC.
-
-    Parameters:
-
-    * level: level of output results. [`borehole` | `section` # default]
-    * starttime: Boreholes returned if any borehole section has a starttime that falls within the section epoch time. format: YYYY-MM-DD[THH:MM:SS] (UTC)
-    * endtime: Boreholes returned if any borehole section has a endtime that falls within the section epoch time. format: YYYY-MM-DD[THH:MM:SS] (UTC)
-
-<!-- Those parameters with a tick in the s column will filter borehole sections on section properties. -->
-
-<!-- Hydraulic sample filtering is done with the parameters that only have a tick in the ‘h’ column and not the ‘s’ column. Starttime/endtime is the exception to the rule, as both sections and hydraulic samples have datetime values. -->
-
-<!-- | Parameter name       | Description                                                                                                                                                                                        | s         | h                                                                                                     |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | ----------------------------------------------------------------------------------------------------- | --- | --- |
-| level                | String: ‘borehole’                                                                                                                                                                                 | ‘section’ | ‘hydraulic’ #default: section Return boreholes, optionally with sections, optionally with hydraulics. |     |     |
-| starttime            | Hydraulic samples are returned if their datetime is less or equal to starttime, borehole sections are returned if their datetime falls within the section epoch time YYYY-MM-DD[THH:MM:SS] (UTC)   | &check;   | &check;                                                                                               |
-| endtime              | Hydraulic samples are returned if their datetime is greater or equal to endtime, borehole sections are returned if their datetime falls within the section epoch time. YYYY-MM-DD[THH:MM:SS] (UTC) | &check;   | &check;                                                                                               |
-| minbottomtemperature | Float [Kelvin]: Include hydraulic sample results where temperature at bottom of borehole section is equal to or greater than this                                                                  |           | &check;                                                                                               |
-| maxbottomtemperature | Float [Kelvin]: Include hydraulic sample results where temperature at bottom of borehole section is equal to or less than this                                                                     |           | &check;                                                                                               |
-| mintoptemperature    | Float [Kelvin]: Include hydraulic sample results where temperature at top of borehole section is equal to or greater than this                                                                     |           | &check;                                                                                               |
-| maxtoptemperature    | Float [Kelvin]: Include hydraulic sample results where temperature at top of borehole section is equal to or less than this                                                                        |           | &check;                                                                                               |
-| minbottomflow        | Float [m^3 per second]: Include hydraulic sample results where flow at bottom of borehole section is equal to or greater than this                                                                 |           | &check;                                                                                               |
-| maxbottomflow        | Float [m^3 per second]: Include hydraulic sample results where flow at bottom of borehole section is equal to or less than this                                                                    |           | &check;                                                                                               |
-| mintopflow           | Float [m^3 per second]: Include hydraulic sample results where flow at top of borehole section is equal to or greater than this                                                                    |           | &check;                                                                                               |
-| maxtopflow           | Float [m^3 per second]: Include hydraulic sample results where flow at top of borehole section is equal to or less than this                                                                       |           | &check;                                                                                               |
-| minbottompressure    | Float [Pascal]: Include hydraulic sample results where pressure at bottom of borehole section is equal to or greater than this                                                                     |           | &check;                                                                                               |
-| maxbottompressure    | Float [Pascal]: Include hydraulic sample results where pressure at bottom of borehole section is equal to or less than thi                                                                         |           | &check;                                                                                               |
-| mintoppressure       | Float [Pascal]: Include hydraulic sample results where pressure at top of borehole section is equal to or greater than this                                                                        |           | &check;                                                                                               |
-| maxtoppressure       | Float [Pascal]: Include hydraulic sample results where pressure at top of borehole section is equal to or less than this                                                                           |           | &check;                                                                                               |
-| minfluiddensity      | Float [kg per m^3]: Include hydraulic sample results where fluid density in borehole section is equal to or greater than this                                                                      |           | &check;                                                                                               |
-| maxfluiddensity      | Float [kg per m^3]: Include hydraulic sample results where fluid density in borehole section is equal to or less than this                                                                         |           | &check;                                                                                               |
-| minfluidviscosity    | Float [Centipoise]: Include hydraulic sample results where fluid viscosity in borehole section is equal to or greater than this                                                                    |           | &check;                                                                                               |
-| maxfluidviscosity    | Float [Centipoise]: Include hydraulic sample results where fluid viscosity in borehole section is equal to or less than this                                                                       |           | &check;                                                                                               |
-| minfluidph           | Float: [pH] Include hydraulic sample results where fluid ph in borehole section is equal to or greater than this                                                                                   |           | &check;                                                                                               |
-| maxfluidph           | Float [pH]: Include hydraulic sample results where fluid ph in borehole section is equal to or less than this                                                                                      |           | &check;                                                                                               |
-| limit                | Integer: Limit on hydraulic samples                                                                                                                                                                |           | &check;                                                                                               |
-| offset               | Integer: Offset on hydraulics samples                                                                                                                                                              |           | &check;                                                                                               |
-| mincasingdiameter    | Float [Meter]: Include borehole sections results where casing diameter in borehole section is equal to or greater than this                                                                        | &check;   | &check;                                                                                               |
-| maxcasingdiameter    | Float [Meter]: Include borehole sections results where casing diameter in borehole section is equal to or less than this                                                                           | &check;   | &check;                                                                                               |
-| minholediameter      | Float [Meter]: Include borehole sections results where hole diameter in borehole section is equal to or greater than this                                                                          | &check;   | &check;                                                                                               |
-| maxholediameter      | Float [Meter]: Include borehole sections results where hole diameter in borehole section is equal to or less than this                                                                             | &check;   | &check;                                                                                               |
-| mintopdepth          | Float [Meter]: Include borehole section results where depth of the top of borehole section is equal to or greater than this                                                                        | &check;   | &check;                                                                                               |
-| maxtopdepth          | Float [Meter]: Include borehole section results where depth of the top of borehole section is equal to or less than this                                                                           | &check;   | &check;                                                                                               |
-| minbottomdepth       | Float [Meter]: Include borehole section results where depth of the bottom of borehole section is equal to or greater than this                                                                     | &check;   | &check;                                                                                               |
-| maxbottomdepth       | Float [Meter]: Include borehole section results where depth of the bottom of borehole section is equal to or less than this                                                                        | &check;   | &check;                                                                                               |
-| topclosed            | Boolean: Include borehole section results which equal topclosed                                                                                                                                    | &check;   | &check;                                                                                               |
-| bottomclosed         | Boolean: Include borehole sections result which equal bottomclosed                                                                                                                                 | &check;   | &check;                                                                                               |
-| casingtype           | String: Include borehole sections result which equal casingtype exactly                                                                                                                            | &check;   | &check;                                                                                               |
-| sectiontype          | String: Include borehole sections result which equal sectiontype exactly                                                                                                                           | &check;   | &check;                                                                                               | -->
-
-Response:
-
-    {
-      "publicid": "9f86d14a-205f-4162-9271-45e2b9471b09",
-      "longitude": {
-        "value": -21.807
-      },
-      "latitude": {
-        "value": 64.1735
-      },
-      "altitude": {
-        "value": 20
-      },
-      "depth": {
-        "value": 1832
-      },
-      "sections": [
-        {
-          "publicid": "23a37ea6-1ca9-43ab-81fc-40c2ea239cb7",
-          "starttime": "2001-12-31T00:00:00",
-          "toplongitude": {
-            "value": -21.8025
-          },
-          "bottomlongitude": {
-            "value": -21.8008
-          },
-          "toplatitude": {
-            "value": 64.1765
-          },
-          "bottomlatitude": {
-            "value": 64.18
-          },
-          "topdepth": {
-            "value": 908
-          },
-          "bottomdepth": {
-            "value": 1832
-          },
-          "holediameter": {
-            "value": 0.216
-          },
-          "casingdiameter": {
-            "value": 0.225
-          },
-          "topclosed": false,
-          "bottomclosed": false,
-          "hydraulics": [
-            {
-              "datetime": {
-                "value": "2019-10-05T01:00:00"
-              },
-              "topflow": {
-                "value": 0.021
-              }
-            },
-            {
-              "datetime": {
-                "value": "2019-10-05T02:00:00"
-              },
-              "topflow": {
-                "value": 0.009
-              }
-            },
-            {
-              "datetime": {
-                "value": "2019-10-05T02:59:00"
-              },
-              "topflow": {
-                "value": 0.021
-              }
-            }
-          ]
-        }
-      ]
-    }
-
-#### GET /hydws/v1/boreholes/:borehole_id/sections/:section_id/hydraulics
-
-Get hydraulic data for specific `borehole_id` and `section_id`, both of which are UUID's.
-
-Parameters:
-
-    * starttime: Boreholes returned if any borehole section has a starttime that falls within the section epoch time. Format: YYYY-MM-DD[THH:MM:SS] (UTC)
-    * endtime: Boreholes returned if any borehole section has a endtime that falls within the section epoch time. Format: YYYY-MM-DD[THH:MM:SS] (UTC)
-
-<!-- * mincasingdiameter: Include borehole sections results where casing diameter in borehole section is equal to or greater than this.  Units: m
-* maxcasingdiameter: Include borehole sections results where casing diameter in borehole section is equal to or less than this.  Units: m
-* minholediameter: Include borehole sections results where hole diameter in borehole section is equal to or greater than this.  Units: m
-* maxholediameter: Include borehole sections results where hole diameter in borehole section is equal to or less than this.  Units: m
-* mintopdepth: Include borehole section results where depth of the top of borehole section is equal to or greater than this. Units: m
-* maxtopdepth: Include borehole section results where depth of the top of borehole section is equal to or less than this. Units: m
-* minbottomdepth: Include borehole section results where depth of the bottom of borehole section is equal to or greater than this. Units: m
-* maxbottomdepth: Include borehole section results where depth of the bottom of borehole section is equal to or less than this. Units: m
-* topclosed: Include borehole section results which equal topclosed [`true` | `false`]
-* bottomclosed: Include borehole sections result which equal bottomclosed [`true` | `false`]
-* casingtype: Include borehole sections result which equal `casingtype` exactly
-* sectiontype: Include borehole sections result which equal `sectiontype` exactly -->
-
-Response:
-
-    [
-      {
-        "datetime": {
-          "value": "2019-10-04T08:00:00"
-        },
-        "topflow": {
-          "value": 0
-        },
-        "bottompressure":{
-          "value": 0
-        }
-      },
-      {
-        "datetime": {
-          "value": "2019-10-04T08:01:00"
-        },
-        "topflow": {
-          "value": 0
-        },
-        "bottompressure":{
-          "value": 0
-        }
-      }
-    ]
