@@ -64,7 +64,9 @@ async def await_section_hydraulics(section, db, **kwargs):
             response_model_exclude_none=True)
 async def get_borehole(borehole_id: uuid.UUID,
                        db: DBSessionDep,
-                       level: str | None = 'section',
+                       level: Literal['borehole',
+                                      'section',
+                                      'hydraulic'] = 'section',
                        starttime: datetime | None = None,
                        endtime: datetime | None = None):
     """
