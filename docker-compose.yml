@@ -28,8 +28,8 @@ services:
   webservice:
     env_file:
       - '.env'
-    #build: .
-    image: ${TAG_COMMIT}
+    build: .
+    # image: ${TAG_COMMIT}
     depends_on:
       postgres:
         condition: service_healthy

@@ -85,3 +85,7 @@ async def update_section_epoch(
                 max_db = max_db.scalar()
                 section_new['endtime'] = max(end_new, max_db or end_new)
     return section_new
+
+
+def merge_hydraulics(existing, new):
+    pass

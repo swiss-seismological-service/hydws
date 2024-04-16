@@ -1,0 +1,43 @@
+{
+    "publicid": "caf65646-8093-4aaf-989c-1c837f497667",
+    "longitude": {
+        "value": -112.89638854692598
+    },
+    "latitude": {
+        "value": 38.50402239072762
+    },
+    "altitude": {
+        "value": 0.038027779
+    },
+    "name": "16A-32",
+    "sections": [
+        {
+            "publicid": "37801a57-90b9-4fb5-83d7-506ee9166acf",
+            "name": "16A-32/section_03",
+            "hydraulics": [
+                {
+                    "datetime": {
+                        "value": "2022-04-21T11:58:17"
+                    },
+                    "topflow": {
+                        "value": 0.0
+                    },
+                    "toppressure": {
+                        "value": 99953.2964792058
+                    }
+                },
+                {
+                    "datetime": {
+                        "value": "2022-04-21T13:24:04"
+                    },
+                    "topflow": {
+                        "value": 0.0
+                    },
+                    "toppressure": {
+                        "value": 91624.4296690464
+                    }
+                }
+            ]
+        }
+    ]
+}
