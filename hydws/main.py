@@ -6,7 +6,7 @@ from starlette.middleware.cors import CORSMiddleware
 from config import get_settings
 from hydws.database import sessionmanager
 from hydws.datamodel.base import ORMBase
-from hydws.routers.v1 import boreholes
+from hydws.routers import boreholes
 
 
 @asynccontextmanager
