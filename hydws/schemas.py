@@ -214,8 +214,8 @@ class BoreholeSectionJSONSchema(Model):
     publicid: str
     starttime: datetime | None = None
     endtime: datetime | None = None
-    topclosed: bool = False
-    bottomclosed: bool = False
+    topclosed: bool | None = None
+    bottomclosed: bool | None = None
     sectiontype: str | None = None
     casingtype: str | None = None
     description: str | None = None
@@ -246,7 +246,7 @@ class BoreholeJSONSchema(Model):
     measureddepth: RealValueSchema[float] | None = None
     publicid: str
     description: str | None = None
-    name: str | None = None
+    name: str
     location: str | None = None
     institution: str | None = None
     sections: List[BoreholeSectionJSONSchema] | None = None

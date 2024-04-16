@@ -22,7 +22,7 @@ class Borehole(RealQuantityMixin('longitude',
     """
 
     description = Column(String)
-    name = Column(String, unique=True)
+    name = Column(String, nullable=False, unique=True)
     location = Column(String)
     institution = Column(String)
 
@@ -65,7 +65,7 @@ class BoreholeSection(EpochMixin('Epoch', epoch_type='finite'),
     ORM representation of a borehole.
     """
 
-    name = Column(String, unique=True)
+    name = Column(String, nullable=False, unique=True)
     topclosed = Column(Boolean)
     bottomclosed = Column(Boolean)
     sectiontype = Column(String)
