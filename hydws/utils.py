@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -87,5 +88,39 @@ async def update_section_epoch(
     return section_new
 
 
-def merge_hydraulics(existing, new):
-    pass
+def merge_hydraulics(existing, new, limit=60):
+    """
+    Merge two hydraulic dataframes, filling gaps up to a certain limit.
+
+    :param existing: The existing hydraulic dataframe.
+    :param new: The new hydraulic dataframe.
+    :param limit: The maximum gap to fill in seconds.
+    :return: The merged dataframe.
+    """
+
+    df = existing.merge(
+        new,
+        how='outer',
+        left_index=True,
+        right_index=True)
+
+    jd_max_gap_fill = limit / (3600 * 24)
+
+    df['jd'] = df.index.to_julian_date()
+
+    for col in df.columns:
+        df['ffill'] = df[col].ffill()
+
+        df['jd_nan'] = np.where(~df[col].isna(),
+                                df['jd'],
+                                np.nan)
+
+        df['jd_gap'] = df['jd_nan'].bfill() - df['jd_nan'].ffill()
+
+        df[col] = np.where(df['jd_gap'] <= jd_max_gap_fill,
+                           df['ffill'],
+                           np.nan)
+
+    df = df.drop(columns=['ffill', 'jd', 'jd_nan', 'jd_gap'])
+
+    return df

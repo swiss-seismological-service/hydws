@@ -1,7 +1,9 @@
+import io
+
 import pandas as pd
 from numpy.testing import assert_equal
 
-from hydws.utils import hydraulics_to_json
+from hydws.utils import hydraulics_to_json, merge_hydraulics
 
 
 def test_real_values_to_json():
@@ -79,33 +81,136 @@ def test_real_values_to_json():
     assert hydraulics_to_json(empty_df) == []
 
 
-CSV_DATA_1 = """datetime_value,toppressure_value,topflow_value
-2021-01-01T00:00:00,1.0,1.0
-2021-01-01T00:01:00,2.0,2.0
-2021-01-01T00:02:00,3.0,3.0
-2021-01-01T00:03:00,4.0,4.0
-2021-01-01T00:04:00,5.0,5.0
-2021-01-01T00:05:00,6.0,6.0
-2021-01-01T00:06:00,7.0,7.0
-2021-01-01T00:07:00,8.0,8.0
-2021-01-01T00:08:00,9.0,9.0
-2021-01-01T00:09:00,10.0,10.0
+CSV_DATA_1 = """datetime_value,toppressure_value
+2021-01-01T00:00:00,1.0
+2021-01-01T00:01:00,2.0
+2021-01-01T00:02:00,3.0
+2021-01-01T00:03:00,4.0
+2021-01-01T00:04:00,5.0
+2021-01-01T00:05:00,6.0
+2021-01-01T00:06:00,7.0
+2021-01-01T00:07:00,8.0
+2021-01-01T00:08:00,9.0
+2021-01-01T00:09:00,10.0
 """
 
-CSV_DATA_2 = """datetime_value,toppressure_value,topflow_value
-2021-01-01T00:00:00,11.0,11.0
-2021-01-01T00:00:30,12.0,12.0
-2021-01-01T00:01:00,13.0,13.0
-2021-01-01T00:01:30,14.0,14.0
-2021-01-01T00:02:00,15.0,15.0
-2021-01-01T00:02:30,16.0,16.0
-2021-01-01T00:03:00,17.0,17.0
-2021-01-01T00:03:30,18.0,18.0
-2021-01-01T00:04:00,19.0,19.0
-2021-01-01T00:04:30,20.0,20.0
-2021-01-01T00:05:00,21.0,21.0
+CSV_DATA_2 = """datetime_value,topflow_value
+2021-01-01T00:00:00,11.0
+2021-01-01T00:00:30,12.0
+2021-01-01T00:01:00,13.0
+2021-01-01T00:01:30,14.0
+2021-01-01T00:02:00,15.0
+2021-01-01T00:02:30,16.0
+2021-01-01T00:03:00,17.0
+2021-01-01T00:03:30,18.0
+2021-01-01T00:04:00,19.0
+2021-01-01T00:04:30,20.0
+2021-01-01T00:05:00,21.0
 """
 
+CSV_DATA_3 = """datetime_value,topflow_value
+2021-01-01T00:00:00,11.0
+2021-01-01T00:00:30,12.0
+2021-01-01T00:01:00,13.0
+2021-01-01T00:01:30,14.0
+2021-01-01T00:03:30,18.0
+2021-01-01T00:04:30,20.0
+2021-01-01T00:05:00,21.0
+"""
 
-def test_merge_hydraulics():
-    pass
+CSV_DATA_4 = """datetime_value,topflow_value
+2021-01-01T00:03:00,4.0
+2021-01-01T00:04:00,5.0
+2021-01-01T00:05:00,6.0
+2021-01-01T00:06:00,7.0
+2021-01-01T00:07:00,8.0
+2021-01-01T00:08:00,9.0
+2021-01-01T00:09:00,10.0
+2021-01-01T00:10:00,1.0
+2021-01-01T00:11:00,2.0
+2021-01-01T00:12:00,3.0
+2021-01-01T00:13:00,4.0
+"""
+
+RESULT_1 = """datetime_value,toppressure_value,topflow_value
+2021-01-01T00:00:00,1.0,11.0
+2021-01-01T00:00:30,1.0,12.0
+2021-01-01T00:01:00,2.0,13.0
+2021-01-01T00:01:30,2.0,14.0
+2021-01-01T00:02:00,3.0,15.0
+2021-01-01T00:02:30,3.0,16.0
+2021-01-01T00:03:00,4.0,17.0
+2021-01-01T00:03:30,4.0,18.0
+2021-01-01T00:04:00,5.0,19.0
+2021-01-01T00:04:30,5.0,20.0
+2021-01-01T00:05:00,6.0,21.0
+2021-01-01T00:06:00,7.0,NaN
+2021-01-01T00:07:00,8.0,NaN
+2021-01-01T00:08:00,9.0,NaN
+2021-01-01T00:09:00,10.0,NaN
+"""
+
+RESULT_2 = """datetime_value,toppressure_value,topflow_value
+2021-01-01T00:00:00,1.0,11.0
+2021-01-01T00:00:30,1.0,12.0
+2021-01-01T00:01:00,2.0,13.0
+2021-01-01T00:01:30,2.0,14.0
+2021-01-01T00:02:00,3.0,NaN
+2021-01-01T00:03:00,4.0,NaN
+2021-01-01T00:03:30,4.0,18.0
+2021-01-01T00:04:00,5.0,18.0
+2021-01-01T00:04:30,5.0,20.0
+2021-01-01T00:05:00,6.0,21.0
+2021-01-01T00:06:00,7.0,NaN
+2021-01-01T00:07:00,8.0,NaN
+2021-01-01T00:08:00,9.0,NaN
+2021-01-01T00:09:00,10.0,NaN
+"""
+
+RESULT_3 = """datetime_value,toppressure_value,topflow_value
+2021-01-01 00:00:00,1.0,NaN
+2021-01-01 00:01:00,2.0,NaN
+2021-01-01 00:02:00,3.0,NaN
+2021-01-01 00:03:00,4.0,4.0
+2021-01-01 00:04:00,5.0,5.0
+2021-01-01 00:05:00,6.0,6.0
+2021-01-01 00:06:00,7.0,7.0
+2021-01-01 00:07:00,8.0,8.0
+2021-01-01 00:08:00,9.0,9.0
+2021-01-01 00:09:00,10.0,10.0
+2021-01-01 00:10:00,NaN,1.0
+2021-01-01 00:11:00,NaN,2.0
+2021-01-01 00:12:00,NaN,3.0
+2021-01-01 00:13:00,NaN,4.0
+"""
+
+df1 = pd.read_csv(io.StringIO(CSV_DATA_1),
+                  index_col='datetime_value', parse_dates=True)
+df2 = pd.read_csv(io.StringIO(CSV_DATA_2),
+                  index_col='datetime_value', parse_dates=True)
+df3 = pd.read_csv(io.StringIO(CSV_DATA_3),
+                  index_col='datetime_value', parse_dates=True)
+df4 = pd.read_csv(io.StringIO(CSV_DATA_4),
+                  index_col='datetime_value', parse_dates=True)
+
+result1 = pd.read_csv(io.StringIO(RESULT_1),
+                      index_col='datetime_value', parse_dates=True)
+result2 = pd.read_csv(io.StringIO(RESULT_2),
+                      index_col='datetime_value', parse_dates=True)
+result3 = pd.read_csv(io.StringIO(RESULT_3),
+                      index_col='datetime_value', parse_dates=True)
+
+
+def test_merge_hydraulics_simple():
+    merged = merge_hydraulics(df1, df2)
+    pd.testing.assert_frame_equal(merged, result1)
+
+
+def test_merge_hydraulics_gap():
+    merged = merge_hydraulics(df1, df3)
+    pd.testing.assert_frame_equal(merged, result2)
+
+
+def test_merge_hydraulics_overlapping():
+    merged = merge_hydraulics(df1, df4)
+    pd.testing.assert_frame_equal(merged, result3)
