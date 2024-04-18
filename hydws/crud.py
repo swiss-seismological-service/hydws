@@ -1,13 +1,14 @@
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-from sqlalchemy import delete, insert, select, text
+from sqlalchemy import delete, func, insert, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import defer, joinedload
 
 from hydws.database import pandas_read_sql
 from hydws.datamodel.orm import Borehole, BoreholeSection, HydraulicSample
-from hydws.utils import update_section_epoch
+from hydws.utils import (flattened_hydraulics_to_df, merge_hydraulics,
+                         update_section_epoch)
 
 
 async def read_boreholes(db: AsyncSession,
@@ -69,7 +70,10 @@ async def delete_borehole(publicid: str, db: AsyncSession):
     return deleted.rowcount
 
 
-async def create_borehole(borehole: dict, db: AsyncSession):
+async def create_borehole(borehole: dict,
+                          db: AsyncSession,
+                          merge: bool = False,
+                          merge_limit: int = 60):
     sections = borehole.pop('sections', None)
 
     borehole_db = await read_borehole(borehole['publicid'], db)
@@ -85,19 +89,15 @@ async def create_borehole(borehole: dict, db: AsyncSession):
 
     if sections:
         for section in sections:
-            await create_section(section, borehole_db._oid, db)
+            await create_section(section,
+                                 borehole_db._oid,
+                                 db,
+                                 merge,
+                                 merge_limit)
     else:
         await db.commit()
 
     return borehole_db
-
-
-async def read_sections(db: AsyncSession) -> List[BoreholeSection]:
-
-    statement = select(Borehole)
-    result = await db.execute(statement)
-
-    return result.unique().scalars()
 
 
 async def read_section(section_id: str, db: AsyncSession):
@@ -122,7 +122,9 @@ async def read_section_oid(section_id: int, db: AsyncSession):
 
 async def create_section(section: dict,
                          borehole_oid: int,
-                         db: AsyncSession):
+                         db: AsyncSession,
+                         merge: bool = False,
+                         merge_limit: int = 60):
 
     section_db = await read_section(section['publicid'], db)
 
@@ -141,7 +143,11 @@ async def create_section(section: dict,
     await db.flush()
 
     if hydraulics:
-        await create_hydraulics(hydraulics, section_db._oid, db)
+        await create_hydraulics(hydraulics,
+                                section_db._oid,
+                                db,
+                                merge,
+                                merge_limit)
     else:
         await db.commit()
 
@@ -169,30 +175,68 @@ async def read_hydraulics_df(section_oid: str,
     return await pandas_read_sql(statement)
 
 
-async def create_hydraulics(
-        hydraulics: List[dict],
-        section_oid: int,
-        db: AsyncSession):
+async def create_hydraulics(hydraulics: List[dict],
+                            section_oid: int,
+                            db: AsyncSession,
+                            merge: bool = False,
+                            merge_limit: int = 60):
+    """
+    Create hydraulic samples in the database.
 
+    :param hydraulics: The hydraulic samples.
+    :param section_oid: The section oid.
+    :param db: The database session.
+    :param merge: Merge the new data with the existing data.
+    :param merge_limit: The merge limit.
+    """
+    # get daterange of new hydraulics
     datetimes = [h['datetime_value'] for h in hydraulics]
     start = min(datetimes)
     end = max(datetimes)
 
+    # make sure there are partitions for the required daterange
     statement = \
         "call generate_partitioned_tables (DATE '{0}', DATE '{1}');".format(
             datetime.strftime(start, '%Y-%m-%d'),
             datetime.strftime(end + timedelta(days=1), '%Y-%m-%d'))
     await db.execute(text(statement))
 
-    statement = delete(HydraulicSample) \
-        .where(HydraulicSample._boreholesection_oid == section_oid) \
-        .where(HydraulicSample.datetime_value > start) \
-        .where(HydraulicSample.datetime_value < end) \
-        .execution_options(synchronize_session=False)
+    # check whether there are already samples in the database for that time
+    count = await db.scalar(
+        select(func.count(HydraulicSample._oid))
+        .where(HydraulicSample._boreholesection_oid == section_oid)
+        .where(HydraulicSample.datetime_value >= start)
+        .where(HydraulicSample.datetime_value <= end))
 
-    await db.execute(statement)
+    # merge the new data with the existing data
+    if merge and count > 0:
+        hydraulics_old = await read_hydraulics_df(section_oid,
+                                                  start,
+                                                  end)
 
-    await db.execute(insert(HydraulicSample)
-                     .values(_boreholesection_oid=section_oid),
-                     hydraulics)
+        # transform the samples to consistent dataframes
+        hydraulics_old = flattened_hydraulics_to_df(hydraulics_old)
+        hydraulics = flattened_hydraulics_to_df(hydraulics)
+
+        # merge the dataframes
+        hydraulics = merge_hydraulics(hydraulics_old, hydraulics, merge_limit)
+
+        # transform the dataframe back to a list of dictionaries for insertion
+        hydraulics = hydraulics.reset_index()
+        hydraulics = hydraulics.to_dict(orient='records')
+
+    # delete the old samples
+    if count > 0:
+        await db.execute(
+            delete(HydraulicSample)
+            .where(HydraulicSample._boreholesection_oid == section_oid)
+            .where(HydraulicSample.datetime_value >= start)
+            .where(HydraulicSample.datetime_value <= end)
+            .execution_options(synchronize_session=False))
+
+    # insert the new samples
+    await db.execute(
+        insert(HydraulicSample)
+        .values(_boreholesection_oid=section_oid), hydraulics)
+
     await db.commit()
