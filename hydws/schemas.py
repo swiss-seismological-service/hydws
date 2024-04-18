@@ -119,12 +119,12 @@ class BoreholeSectionSchema(
     publicid: uuid.UUID
     starttime: datetime | None = None
     endtime: datetime | None = None
-    topclosed: bool
-    bottomclosed: bool
+    topclosed: bool | None = None
+    bottomclosed: bool | None = None
     sectiontype: str | None = None
     casingtype: str | None = None
     description: str | None = None
-    name: str | None = None
+    name: str
     hydraulics: List[HydraulicSampleSchema] | None = None
 
     @field_validator("publicid")
@@ -142,7 +142,7 @@ class BoreholeSchema(CreationInfoMixin,
                      real_float_value_mixin('measureddepth', float)):
     publicid: uuid.UUID
     description: str | None = None
-    name: str | None = None
+    name: str
     location: str | None = None
     institution: str | None = None
     sections: List[BoreholeSectionSchema] | None = None
