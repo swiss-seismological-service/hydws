@@ -6,8 +6,17 @@ from sqlalchemy.orm import Session
 from hydws.datamodel.orm import BoreholeSection, HydraulicSample
 
 
-def hydraulics_to_json(df: pd.DataFrame, drop_cols: list[str] = None) -> str:
+def hydraulics_to_json(
+        df: pd.DataFrame,
+        drop_cols: list[str] = None) -> list[dict]:
+    """
+    Convert a hydraulic dataframe to a list of dictionaries,
+    including nested RealValues.
 
+    :param df: The hydraulic dataframe.
+    :param drop_cols: The columns to drop.
+    :return: The list of dictionaries.
+    """
     # do some data cleaning
     df = df.drop(drop_cols, axis=1) if drop_cols else df
     df = df.dropna(axis=1, how='all')
@@ -15,10 +24,18 @@ def hydraulics_to_json(df: pd.DataFrame, drop_cols: list[str] = None) -> str:
     numeric_columns = df.select_dtypes(include='number').columns
     df[numeric_columns] = df[numeric_columns].fillna(0)
 
-    if 'datetime_value' in df.columns:
+    if df.empty:
+        return []
+
+    if 'datetime_value' not in df.columns:
+        df = df.reset_index()
+
+    try:
         df = df.sort_values(by='datetime_value')
         df['datetime_value'] = pd.to_datetime(
             df['datetime_value']).dt.strftime('%Y-%m-%dT%H:%M:%S')
+    except BaseException:
+        raise ValueError('datetime_value column not found hydraulic samples.')
 
     # convert to nested dict by splitting column names which have a "_"
     mylist = []
@@ -43,7 +60,13 @@ async def update_section_epoch(
         section_db: BoreholeSection,
         section_new: dict,
         db: Session) -> None:
+    """
+    Update the starttime and endtime of a section based on the new data.
 
+    :param section_db: The existing section.
+    :param section_new: The new section data.
+    :param db: The database session.
+    """
     start_new = section_new.get('starttime', None)
     end_new = section_new.get('endtime', None)
     hydraulics = section_new.get('hydraulics', None)
@@ -88,6 +111,46 @@ async def update_section_epoch(
     return section_new
 
 
+def flattened_hydraulics_to_df(data: dict | pd.DataFrame) -> pd.DataFrame:
+    """
+    Set index, drop columns, and sort the hydraulic dataframe.
+
+    :param data: The hydraulic data.
+    :return: The formatted dataframe.
+    """
+
+    if isinstance(data, list):
+        data = pd.DataFrame.from_records(data)
+
+    data.set_index('datetime_value', inplace=True, drop=True)
+    data.drop(columns=['_oid', '_boreholesection_oid'],
+              inplace=True,
+              errors='ignore')
+    data = data.mask(
+        data.eq('None')).dropna(how='all', axis=1)
+    data = data.sort_index()
+    return data
+
+
+def overwrite_hydraulic_columns(existing: pd.DataFrame, new: pd.DataFrame):
+    """
+    Remove columns from the existing dataframe that are present in the new one.
+
+    :param existing: The existing hydraulic dataframe.
+    :param new: The new hydraulic dataframe.
+    :return: The existing dataframe with the columns removed.
+    """
+    existing_columns = set(col.split('_')[0] for col in existing.columns)
+    new_columns = set(col.split('_')[0] for col in new.columns)
+
+    to_delete = list(existing_columns.intersection(new_columns))
+    if to_delete:
+        return existing.drop(
+            existing.filter(regex='|'.join(to_delete)).columns, axis=1)
+    else:
+        return existing
+
+
 def merge_hydraulics(existing, new, limit=60):
     """
     Merge two hydraulic dataframes, filling gaps up to a certain limit.
@@ -97,6 +160,10 @@ def merge_hydraulics(existing, new, limit=60):
     :param limit: The maximum gap to fill in seconds.
     :return: The merged dataframe.
     """
+    existing = overwrite_hydraulic_columns(existing, new)
+
+    if existing.empty:
+        return new
 
     df = existing.merge(
         new,
@@ -104,24 +171,23 @@ def merge_hydraulics(existing, new, limit=60):
         left_index=True,
         right_index=True)
 
+    # depending on the replaced columns, some rows may be all NaN
+    df.dropna(how='all', axis=0, inplace=True)
+
     # +0.1 to avoid rounding errors
     jd_max_gap_fill = (limit + 0.1) / (3600 * 24)
 
+    # forward fill gaps up to jd_max_gap_fill
     df['jd'] = df.index.to_julian_date()
-
     for col in df.columns:
         df['ffill'] = df[col].ffill()
-
         df['jd_nan'] = np.where(~df[col].isna(),
                                 df['jd'],
                                 np.nan)
-
         df['jd_gap'] = df['jd_nan'].bfill() - df['jd_nan'].ffill()
-
         df[col] = np.where(df['jd_gap'] <= jd_max_gap_fill,
                            df['ffill'],
                            np.nan)
-
     df = df.drop(columns=['ffill', 'jd', 'jd_nan', 'jd_gap'])
 
     return df
