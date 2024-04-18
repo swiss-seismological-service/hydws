@@ -21,9 +21,6 @@ def hydraulics_to_json(
     df = df.drop(drop_cols, axis=1) if drop_cols else df
     df = df.dropna(axis=1, how='all')
 
-    numeric_columns = df.select_dtypes(include='number').columns
-    df[numeric_columns] = df[numeric_columns].fillna(0)
-
     if df.empty:
         return []
 
@@ -42,6 +39,8 @@ def hydraulics_to_json(
     for row in df.itertuples(index=False):
         result = {}
         for key, value in row._asdict().items():
+            if value != value:
+                continue
             if '_' not in key:
                 result[key] = value
                 continue

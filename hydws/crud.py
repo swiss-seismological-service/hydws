@@ -222,8 +222,12 @@ async def create_hydraulics(hydraulics: List[dict],
         hydraulics = merge_hydraulics(hydraulics_old, hydraulics, merge_limit)
 
         # transform the dataframe back to a list of dictionaries for insertion
-        hydraulics = hydraulics.reset_index()
-        hydraulics = hydraulics.to_dict(orient='records')
+        hydraulics = hydraulics.reset_index().to_dict(orient='records')
+
+    # remove none and nan values
+    hydraulics = \
+        [{k: v for k, v in v1.items() if v == v and v is not None}
+            for v1 in hydraulics]
 
     # delete the old samples
     if count > 0:
