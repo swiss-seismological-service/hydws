@@ -104,7 +104,8 @@ def merge_hydraulics(existing, new, limit=60):
         left_index=True,
         right_index=True)
 
-    jd_max_gap_fill = limit / (3600 * 24)
+    # +0.1 to avoid rounding errors
+    jd_max_gap_fill = (limit + 0.1) / (3600 * 24)
 
     df['jd'] = df.index.to_julian_date()
 

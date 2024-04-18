@@ -132,6 +132,16 @@ CSV_DATA_4 = """datetime_value,topflow_value
 2021-01-01T00:13:00,4.0
 """
 
+CSV_DATA_5 = """datetime_value,topflow_value
+2021-01-01T00:00:00,11.0
+2021-01-01T00:05:00,12.0
+2021-01-01T00:10:00,13.0
+2021-01-01T00:15:00,14.0
+2021-01-01T00:20:00,15.0
+2021-01-01T00:25:00,16.0
+2021-01-01T00:30:00,17.0
+"""
+
 RESULT_1 = """datetime_value,toppressure_value,topflow_value
 2021-01-01T00:00:00,1.0,11.0
 2021-01-01T00:00:30,1.0,12.0
@@ -184,6 +194,42 @@ RESULT_3 = """datetime_value,toppressure_value,topflow_value
 2021-01-01 00:13:00,NaN,4.0
 """
 
+RESULT_4 = """datetime_value,toppressure_value,topflow_value
+2021-01-01T00:00:00,1.0,11.0
+2021-01-01T00:01:00,2.0,11.0
+2021-01-01T00:02:00,3.0,11.0
+2021-01-01T00:03:00,4.0,11.0
+2021-01-01T00:04:00,5.0,11.0
+2021-01-01T00:05:00,6.0,12.0
+2021-01-01T00:06:00,7.0,12.0
+2021-01-01T00:07:00,8.0,12.0
+2021-01-01T00:08:00,9.0,12.0
+2021-01-01T00:09:00,10.0,12.0
+2021-01-01T00:10:00,NaN,13.0
+2021-01-01T00:15:00,NaN,14.0
+2021-01-01T00:20:00,NaN,15.0
+2021-01-01T00:25:00,NaN,16.0
+2021-01-01T00:30:00,NaN,17.0
+"""
+
+RESULT_5 = """datetime_value,toppressure_value,topflow_value
+2021-01-01T00:00:00,1.0,11.0
+2021-01-01T00:01:00,2.0,NaN
+2021-01-01T00:02:00,3.0,NaN
+2021-01-01T00:03:00,4.0,NaN
+2021-01-01T00:04:00,5.0,NaN
+2021-01-01T00:05:00,6.0,12.0
+2021-01-01T00:06:00,7.0,NaN
+2021-01-01T00:07:00,8.0,NaN
+2021-01-01T00:08:00,9.0,NaN
+2021-01-01T00:09:00,10.0,NaN
+2021-01-01T00:10:00,NaN,13.0
+2021-01-01T00:15:00,NaN,14.0
+2021-01-01T00:20:00,NaN,15.0
+2021-01-01T00:25:00,NaN,16.0
+2021-01-01T00:30:00,NaN,17.0
+"""
+
 df1 = pd.read_csv(io.StringIO(CSV_DATA_1),
                   index_col='datetime_value', parse_dates=True)
 df2 = pd.read_csv(io.StringIO(CSV_DATA_2),
@@ -192,12 +238,17 @@ df3 = pd.read_csv(io.StringIO(CSV_DATA_3),
                   index_col='datetime_value', parse_dates=True)
 df4 = pd.read_csv(io.StringIO(CSV_DATA_4),
                   index_col='datetime_value', parse_dates=True)
-
+df5 = pd.read_csv(io.StringIO(CSV_DATA_5),
+                  index_col='datetime_value', parse_dates=True)
 result1 = pd.read_csv(io.StringIO(RESULT_1),
                       index_col='datetime_value', parse_dates=True)
 result2 = pd.read_csv(io.StringIO(RESULT_2),
                       index_col='datetime_value', parse_dates=True)
 result3 = pd.read_csv(io.StringIO(RESULT_3),
+                      index_col='datetime_value', parse_dates=True)
+result4 = pd.read_csv(io.StringIO(RESULT_4),
+                      index_col='datetime_value', parse_dates=True)
+result5 = pd.read_csv(io.StringIO(RESULT_5),
                       index_col='datetime_value', parse_dates=True)
 
 
@@ -214,3 +265,11 @@ def test_merge_hydraulics_gap():
 def test_merge_hydraulics_overlapping():
     merged = merge_hydraulics(df1, df4)
     pd.testing.assert_frame_equal(merged, result3)
+
+
+def test_merge_hydraulics_large():
+    merged_1 = merge_hydraulics(df1, df5, limit=300)
+    merged_2 = merge_hydraulics(df1, df5, limit=299)
+
+    pd.testing.assert_frame_equal(merged_1, result4)
+    pd.testing.assert_frame_equal(merged_2, result5)
