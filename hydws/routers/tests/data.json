@@ -13,31 +13,7 @@
     "sections": [
         {
             "publicid": "37801a57-90b9-4fb5-83d7-506ee9166acf",
-            "name": "16A-32/section_03",
-            "hydraulics": [
-                {
-                    "datetime": {
-                        "value": "2022-04-21T11:58:17"
-                    },
-                    "topflow": {
-                        "value": 0.0
-                    },
-                    "toppressure": {
-                        "value": 99953.2964792058
-                    }
-                },
-                {
-                    "datetime": {
-                        "value": "2022-04-21T13:24:04"
-                    },
-                    "topflow": {
-                        "value": 0.0
-                    },
-                    "toppressure": {
-                        "value": 91624.4296690464
-                    }
-                }
-            ]
+            "name": "16A-32/section_03"
         }
     ]
 }

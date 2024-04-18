@@ -104,10 +104,15 @@ async def get_borehole(borehole_id: uuid.UUID,
              response_model_exclude_none=True)
 async def post_borehole(
         borehole: BoreholeJSONSchema,
-        db: DBSessionDep):
+        db: DBSessionDep,
+        merge: bool = False,
+        merge_limit: int = 60):
 
     flattened = borehole.flat_dict(exclude_unset=True)
-    result = await crud.create_borehole(flattened, db)
+    result = await crud.create_borehole(flattened,
+                                        db,
+                                        merge,
+                                        merge_limit)
     return result
 
 
