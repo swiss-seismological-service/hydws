@@ -55,7 +55,6 @@ py310-test-job:
     before_script:
         - cp $ENV .env
         - pip install tox
-        - uvicorn hydws.main:app
     script:
         - tox -e py310-tests
     artifacts:
