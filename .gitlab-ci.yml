@@ -54,8 +54,12 @@ py310-test-job:
         - postgres:latest
     before_script:
         - cp $ENV .env
+        - apt-get update
+        - apt-get install postgresql-client -y
+        - export PGPASSWORD=$POSTGRES_PASSWORD
         - pip install tox
     script:
+        - psql -d $DB_NAME -U $DB_USER --host postgres -f db/create_partitions.sql
         - tox -e py310-tests
     artifacts:
         reports:
