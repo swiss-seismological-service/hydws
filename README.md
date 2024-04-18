@@ -278,3 +278,74 @@ Example using curl to upload a file:
 Where localhost would be changed to the name of the machine that the service is running on.
 
 A file may contain more than one borehole, as a comma seperated list using square parentheses.
+
+#### Hydraulic Merges vs Overwrites
+
+Borehole and Section metadata will always be merged with existing data. Keys have to be explicitly overwritten by the user if they are to be updated or removed.  
+
+Hydraulic data will per default overwrite all existing data for the same BoreholeSection and period. Meaning that if the new hydraulic data contains samples for eg. 1 Week, **all** the existing data for that week will be deleted and replaced with the new data. This is also the case if the existing data contains a different kind of measurements (eg. flow vs pressure data).
+
+It is possible, to explicitly merge merge different kinds of measurements by passing the `merge=True` query parameter with the POST request. POSTing eg. Flow data with `merge=True` will overwrite all existing flow data, but keep the existing pressure data for the same period.  
+
+The challenge with this approach is, that the timestamps don't have to match exactly and/or the sample frequency can be different. The additional parameter `merge_limit` can be used to control the behaviour in this situation. By default, the merge limit is 60s. This means, that all measurements of the same kind, are considered to be continous if their timestamps are within 60s of each other. 
+
+The merge strategy explained with an example: (see below for accompanying data example)  
+`toppressure_value` is recorded with one measurement every 60s, `topflow_value` measurements for the same timespan are merged into this existing dataset, but are recorded at 30s intervals. If the merge limit is set to 60s, the `toppressure` measurements are considered to be continous (<=60s) and will be upsampled to match the 30s interval of the `topflow` measurements (by forward filling). If the merge limit is set to 30s, the toppressure measurements will be considered to have gaps and will be kept as is, resulting in every 2nd `HydraulicSample` (row entry) not containing a `toppressure_value`.
+
+Careful though: In the example above, the `toppressure` measurements are upsampled to match the `topflow` measurements. This means that their value will be inserted into the new rows created by `topflow`. If the timestamps are not aligned though, then the `toppressure` entries will still have their own samples, and the inverse happens also (since topflow is also considered continuous at 30s intervals). In this case the resulting number of rows will not be twice the number as before (since the sampling rate is twice as high), but will be 3 time the number of rows as before.
+
+```
+datetime,             toppressure
+2021-01-01 00:00:00   1
+2021-01-01 00:01:00   2
+2021-01-01 00:02:00   3
+
+datetime,             topflow
+2021-01-01 00:00:00   10
+2021-01-01 00:00:30   20
+2021-01-01 00:01:00   30
+2021-01-01 00:01:30   40
+2021-01-01 00:02:00   50
+```
+
+results in:
+
+```
+datetime,             toppressure  topflow
+2021-01-01 00:00:00   1            10
+2021-01-01 00:00:30   1            20
+2021-01-01 00:01:00   2            30
+2021-01-01 00:01:30   2            40
+2021-01-01 00:02:00   3            50
+```
+
+but merging topflow values which dont align:
+
+```
+datetime,             topflow
+2021-01-01 00:00:15   10
+2021-01-01 00:00:45   20
+2021-01-01 00:01:15   30
+2021-01-01 00:01:45   40
+2021-01-01 00:02:15   50
+```
+
+Results in three times the number of rows
+
+```
+datetime,             toppressure  topflow
+2021-01-01 00:00:00   1            
+2021-01-01 00:00:15   1            10
+2021-01-01 00:00:30   1            10
+2021-01-01 00:00:45   1            20
+2021-01-01 00:01:00   2            20
+2021-01-01 00:01:15   2            30
+2021-01-01 00:01:30   2            30
+2021-01-01 00:01:45   2            40
+2021-01-01 00:02:00   3            40
+2021-01-01 00:02:15                50
+```
+
+
+
+
