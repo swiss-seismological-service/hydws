@@ -6,6 +6,17 @@ REST webservice allowing access to hydraulic data.
 
 Instructions for installation and examples of usage may be found below.
 
+## Quickly Accessing Data
+
+If you are using Python, use the [hydws-client](https://gitlab.seismo.ethz.ch/indu/hydws-client) library to access the data. Alternatively you can simply request the data directly (eg. curl or browser). The resulting data is accessed per default in JSON format, **hydraulics data of a single section can also be accessed in CSV format.**
+
+Use the following example to get started quickly using curl or a simple web browser: 
+1. Navigate to /hydws/v1/boreholes and copy the `publicid` of the `borehole`, and the `section` you are interested in.
+2. Navigating to /hydws/v1/boreholes/`borehole_publicid`/section/`section_publicid`/hydraulics would return ALL the hydraulic data for that section.
+3. Navigating to /hydws/v1/boreholes/`borehole_publicid`/section/`section_publicid`/hydraulics?starttime=2021-01-01T00:00:00&endtime=2021-01-02T00:00:00 would return the hydraulic data for that section between the specified times.
+4. Adding `&format=csv` to the end of the URL returns the data in CSV format.
+
+
 ## Installation
 
 Using [Docker](https://docs.docker.com/engine/) allows for an easy setup of the webservice, the database and the required dependencies. Manual installation is also possible, but requires some manual steps to prepare the database.
