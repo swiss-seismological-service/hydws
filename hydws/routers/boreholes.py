@@ -167,7 +167,10 @@ async def get_section_hydraulics(borehole_id: uuid.UUID,
     db_result_df = await crud.read_hydraulics_df(
         section_oid, starttime, endtime, defer_cols)
 
-    db_result_df = db_result_df.dropna(axis=1, how='all').drop(columns=['_oid'])
+    db_result_df = db_result_df.dropna(axis=1, how='all')
+
+    if '_oid' in db_result_df.columns:
+        db_result_df = db_result_df.drop(columns=['_oid'])
 
     if format == 'csv':
         return csv_response(db_result_df)
