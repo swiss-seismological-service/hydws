@@ -200,6 +200,7 @@ async def create_hydraulics(hydraulics: List[dict],
             datetime.strftime(start, '%Y-%m-%d'),
             datetime.strftime(end + timedelta(days=1), '%Y-%m-%d'))
     await db.execute(text(statement))
+    await db.commit()  # I have no idea why this is needed, but it is!!!!
 
     # check whether there are already samples in the database for that time
     count = await db.scalar(
