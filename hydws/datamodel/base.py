@@ -3,7 +3,8 @@ import functools
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String
+from sqlalchemy import (BigInteger, Boolean, Column, DateTime, Float, Integer,
+                        String)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import declarative_base
@@ -17,7 +18,11 @@ class Base(object):
     @declared_attr
     def __tablename__(cls):
         return cls.__name__.lower()
-    _oid = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    _oid = Column(
+        BigInteger,
+        primary_key=True,
+        nullable=False,
+        autoincrement=True)
 
 
 ORMBase = declarative_base(cls=Base)

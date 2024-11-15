@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Index, Integer, String
+from sqlalchemy import BigInteger, Boolean, Column, ForeignKey, Index, String
 from sqlalchemy.orm import relationship
 
 from hydws.datamodel.base import (CreationInfoMixin, EpochMixin, ORMBase,
@@ -73,7 +73,7 @@ class BoreholeSection(EpochMixin('Epoch', epoch_type='finite'),
     description = Column(String)
 
     _borehole_oid = Column(
-        Integer,
+        BigInteger,
         ForeignKey('borehole._oid', ondelete="CASCADE"),
         index=True)
 
@@ -107,7 +107,7 @@ class HydraulicSample(TimeQuantityMixin('datetime', value_nullable=False,
     fluidcomposition = Column(String)
 
     _boreholesection_oid = Column(
-        Integer,
+        BigInteger,
         ForeignKey('boreholesection._oid', ondelete="CASCADE"),
         index=True)
     section = relationship("BoreholeSection", back_populates="hydraulics")

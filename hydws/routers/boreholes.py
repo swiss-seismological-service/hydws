@@ -141,9 +141,9 @@ def csv_response(data) -> PlainTextResponse:
     return PlainTextResponse(data, media_type='text/csv')
 
 
-@ router.get("/{borehole_id}/sections/{section_id}/hydraulics",
-             response_model=list[HydraulicSampleSchema],
-             response_model_exclude_none=True)
+@router.get("/{borehole_id}/sections/{section_id}/hydraulics",
+            response_model=list[HydraulicSampleSchema],
+            response_model_exclude_none=True)
 async def get_section_hydraulics(borehole_id: uuid.UUID,
                                  section_id: uuid.UUID,
                                  db: DBSessionDep,
