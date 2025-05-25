@@ -63,16 +63,11 @@ async def get_db():
 DBSessionDep = Annotated[AsyncSession, Depends(get_db)]
 
 
-async def pandas_read_sql(stmt):
+async def pandas_read_sql(stmt, session):
     """
-    wrapper around pandas read_sql to use sqlalchemy engine
-    and correctly close and dispose of the connections
-    afterwards.
+    Get a pandas dataframe from a SQL statement.
     """
-    def read_sql_query(con, s):
-        return pd.read_sql_query(s, con)
-
-    async with sessionmanager.connect() as con:
-        df = await con.run_sync(read_sql_query, stmt)
-
-    return df
+    result = await session.execute(stmt)
+    rows = result.fetchall()
+    columns = result.keys()
+    return pd.DataFrame(rows, columns=columns)

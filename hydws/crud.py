@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from sqlalchemy import delete, func, insert, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import defer, joinedload
+from sqlalchemy.orm import joinedload
 
 from hydws.database import pandas_read_sql
 from hydws.datamodel.orm import Borehole, BoreholeSection, HydraulicSample
@@ -155,15 +155,17 @@ async def create_section(section: dict,
 
 
 async def read_hydraulics_df(section_oid: str,
+                             db,
                              starttime: datetime = None,
                              endtime: datetime = None,
                              defer_cols: list = None) -> List[HydraulicSample]:
-
-    statement = select(HydraulicSample) \
-        .where(HydraulicSample._boreholesection_oid == section_oid)
+    cols = HydraulicSample.__table__.c
 
     if defer_cols:
-        statement = statement.options(*[defer(col) for col in defer_cols])
+        cols = [col for col in cols if col not in defer_cols]
+
+    statement = select(*cols) \
+        .where(HydraulicSample._boreholesection_oid == section_oid)
 
     if starttime:
         statement = statement.where(
@@ -172,7 +174,7 @@ async def read_hydraulics_df(section_oid: str,
         statement = statement.where(
             HydraulicSample.datetime_value <= endtime)
 
-    return await pandas_read_sql(statement)
+    return await pandas_read_sql(statement, db)
 
 
 async def create_hydraulics(hydraulics: List[dict],
@@ -212,6 +214,7 @@ async def create_hydraulics(hydraulics: List[dict],
     # merge the new data with the existing data
     if merge and count > 0:
         hydraulics_old = await read_hydraulics_df(section_oid,
+                                                  db,
                                                   start,
                                                   end)
 

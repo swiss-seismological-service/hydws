@@ -52,7 +52,7 @@ async def await_section_hydraulics(section, db, **kwargs):
     section_oid = await crud.read_section_oid(section['publicid'], db)
 
     df = await crud.read_hydraulics_df(
-        section_oid, **kwargs, defer_cols=defer_cols)
+        section_oid, db, **kwargs, defer_cols=defer_cols)
 
     section['hydraulics'] = hydraulics_to_json(df, drop_cols)
 
@@ -165,7 +165,7 @@ async def get_section_hydraulics(borehole_id: uuid.UUID,
     section_oid = await crud.read_section_oid(section_id, db)
 
     db_result_df = await crud.read_hydraulics_df(
-        section_oid, starttime, endtime, defer_cols)
+        section_oid, db, starttime, endtime, defer_cols)
 
     db_result_df = db_result_df.dropna(axis=1, how='all')
 
