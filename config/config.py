@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file='.env', extra='ignore')
 
     POSTGRES_HOST: str
-    PGPORT: str
+    POSTGRES_PORT: str
 
     DB_USER: str
     DB_PASSWORD: str
@@ -21,7 +21,7 @@ class Settings(BaseSettings):
         return f"postgresql+asyncpg://{self.DB_USER}:" \
             f"{self.DB_PASSWORD}@" \
             f"{self.POSTGRES_HOST}:" \
-            f"{self.PGPORT}/{self.DB_NAME}"
+            f"{self.POSTGRES_PORT}/{self.DB_NAME}"
 
 
 @lru_cache()

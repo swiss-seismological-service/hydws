@@ -14,7 +14,7 @@ services:
       - ./db/create_partitions.sql:/etc/postgresql/create_partitions.sql
     command: postgres -c config_file=/etc/postgresql/postgresql.conf
     ports:
-      - ${PGPORT:-5432}:5432
+      - ${POSTGRES_PORT:-5432}:5432
     healthcheck:
       test: [ "CMD", "pg_isready", "-q", "-d", "${DB_NAME}", "-U", "${DB_USER}" ]
       timeout: 45s
