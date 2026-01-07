@@ -5,7 +5,6 @@ from starlette.middleware.cors import CORSMiddleware
 
 from config import get_settings
 from hydws.database import sessionmanager
-from hydws.datamodel.base import ORMBase
 from hydws.routers import boreholes
 
 
@@ -15,15 +14,9 @@ async def lifespan(app: FastAPI):
     Function that handles startup and shutdown events.
     To understand more, read https://fastapi.tiangolo.com/advanced/events/
     """
-
-    if sessionmanager._engine:
-        async with sessionmanager.connect() as con:
-            await con.run_sync(ORMBase.metadata.create_all)
-
     yield
 
     if sessionmanager._engine is not None:
-        # Close the DB connection
         await sessionmanager.close()
 
 app = FastAPI(

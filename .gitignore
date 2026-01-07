@@ -6,6 +6,9 @@ test.py
 example*.json
 .env.*
 !.env.example
+.claude
+CLAUDE.md
+*.dump
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
