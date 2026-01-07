@@ -47,4 +47,4 @@ ENV PYTHONUNBUFFERED="true" \
 
 EXPOSE 8000
 
-CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-c", "python:config.gunicorn", "hydws.main:app"]
+CMD ["bash", "-c", "alembic upgrade head && gunicorn -k uvicorn.workers.UvicornWorker -c python:config.gunicorn hydws.main:app"]
