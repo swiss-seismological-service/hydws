@@ -24,7 +24,7 @@ def execute_sql_file(filename: str) -> None:
     if sql_file.exists():
         with open(sql_file, 'r') as f:
             sql_content = f.read()
-        op.execute(sql_content)
+        op.execute(sa.text(sql_content))
         print(f"Executed SQL file: {filename}")
     else:
         raise FileNotFoundError(f"SQL file not found: {sql_file}")
