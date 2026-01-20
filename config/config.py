@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     ALLOW_ORIGINS: list
     ALLOW_ORIGIN_REGEX: str
 
+    API_KEY: str = ""  # Empty = protection disabled
+
     @property
     def SQLALCHEMY_DATABASE_URL(self) -> str:
         return f"postgresql+asyncpg://{self.DB_USER}:" \

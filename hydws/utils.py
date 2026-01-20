@@ -1,8 +1,12 @@
+from typing import Annotated
+
 import numpy as np
 import pandas as pd
+from fastapi import Header, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from config.config import get_settings
 from hydws.datamodel.orm import BoreholeSection, HydraulicSample
 
 
@@ -190,3 +194,15 @@ def merge_hydraulics(existing, new, limit=60):
     df = df.drop(columns=['ffill', 'jd', 'jd_nan', 'jd_gap'])
 
     return df
+
+
+def verify_api_key(x_api_key: Annotated[str | None, Header()] = None):
+    """
+    Verify the API key from the X-API-Key header.
+    If API_KEY is not set in config, protection is disabled.
+    """
+    settings = get_settings()
+    if not settings.API_KEY:
+        return  # Protection disabled
+    if x_api_key != settings.API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid or missing API key")

@@ -4,15 +4,21 @@ from copy import deepcopy
 
 import pytest
 
+from config.config import get_settings
+
+AUTH_HEADERS = {"X-API-Key": get_settings().API_KEY}
+
 
 @pytest.mark.anyio
 async def test_post(test_client):
     response = await test_client.post("/hydws/v1/boreholes",
-                                      json=data_2)
+                                      json=data_2,
+                                      headers=AUTH_HEADERS)
     assert response.status_code == 200
 
     response = await test_client.post("/hydws/v1/boreholes",
-                                      json=data_1)
+                                      json=data_1,
+                                      headers=AUTH_HEADERS)
     assert response.status_code == 200
 
     response = await test_client.get(f'/hydws/v1/boreholes/{data["publicid"]}',
@@ -23,7 +29,8 @@ async def test_post(test_client):
         data_1['sections'][0]['hydraulics']
 
     response = await test_client.delete(
-        f"/hydws/v1/boreholes/{data['publicid']}")
+        f"/hydws/v1/boreholes/{data['publicid']}",
+        headers=AUTH_HEADERS)
     assert response.status_code == 204
 
     response = await test_client.get("/hydws/v1/boreholes")
@@ -35,12 +42,14 @@ async def test_post(test_client):
 async def test_merge(test_client):
     response = await test_client.post("/hydws/v1/boreholes",
                                       json=data_1,
-                                      params={'merge': True})
+                                      params={'merge': True},
+                                      headers=AUTH_HEADERS)
     assert response.status_code == 200
 
     response = await test_client.post("/hydws/v1/boreholes",
                                       json=data_2,
-                                      params={'merge': True})
+                                      params={'merge': True},
+                                      headers=AUTH_HEADERS)
     assert response.status_code == 200
 
     response = await test_client.get(f'/hydws/v1/boreholes/{data["publicid"]}',
@@ -50,7 +59,8 @@ async def test_merge(test_client):
         data_3['sections'][0]['hydraulics']
 
     response = await test_client.delete(
-        f"/hydws/v1/boreholes/{data['publicid']}")
+        f"/hydws/v1/boreholes/{data['publicid']}",
+        headers=AUTH_HEADERS)
 
     assert response.status_code == 204
 
