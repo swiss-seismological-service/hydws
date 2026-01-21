@@ -78,8 +78,7 @@ async def get_borehole(borehole_id: uuid.UUID,
     if level == 'borehole':
         db_result = await crud.read_borehole(borehole_id, db)
     else:
-        db_result = await crud.read_borehole(
-            borehole_id, db, True, starttime, endtime)
+        db_result = await crud.read_borehole(borehole_id, db, sections=True)
 
     if not db_result:
         logger.info("Borehole not found: %s", borehole_id)
