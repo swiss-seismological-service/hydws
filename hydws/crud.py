@@ -70,6 +70,24 @@ async def delete_borehole(publicid: str, db: AsyncSession):
     return deleted.rowcount
 
 
+async def delete_hydraulics(
+    section_oid: int,
+    db: AsyncSession,
+    starttime: datetime = None,
+    endtime: datetime = None
+) -> int:
+    stmt = delete(HydraulicSample) \
+        .where(HydraulicSample._boreholesection_oid == section_oid) \
+        .execution_options(synchronize_session=False)
+    if starttime:
+        stmt = stmt.where(HydraulicSample.datetime_value >= starttime)
+    if endtime:
+        stmt = stmt.where(HydraulicSample.datetime_value <= endtime)
+    result = await db.execute(stmt)
+    await db.commit()
+    return result.rowcount
+
+
 async def create_borehole(borehole: dict,
                           db: AsyncSession,
                           merge: bool = False,

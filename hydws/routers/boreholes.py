@@ -189,3 +189,30 @@ async def get_section_hydraulics(borehole_id: uuid.UUID,
     results = hydraulics_to_json(db_result_df)
 
     return ORJSONResponse(results)
+
+
+@router.delete("/{borehole_id}/sections/{section_id}/hydraulics",
+               status_code=HTTP_204_NO_CONTENT,
+               response_class=Response,
+               dependencies=[Depends(verify_api_key)])
+async def delete_section_hydraulics(
+    borehole_id: uuid.UUID,
+    section_id: uuid.UUID,
+    db: DBSessionDep,
+    starttime: datetime | None = None,
+    endtime: datetime | None = None
+) -> None:
+    """
+    Delete hydraulic samples for a section.
+    """
+    db_borehole = await crud.read_borehole(borehole_id, db)
+    if not db_borehole:
+        logger.info("Borehole not found: %s", borehole_id)
+        raise HTTPException(status_code=404, detail="Borehole not found.")
+
+    section_oid = await crud.read_section_oid(section_id, db)
+    if section_oid is None:
+        logger.info("Section not found: %s", section_id)
+        raise HTTPException(status_code=404, detail="Section not found.")
+
+    await crud.delete_hydraulics(section_oid, db, starttime, endtime)

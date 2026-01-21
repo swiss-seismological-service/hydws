@@ -52,7 +52,8 @@ class CreationInfoMixin(Model):
 DataT = TypeVar('DataT')
 
 
-class RealValueSchema(Model, Generic[DataT]):
+class RealValueSchema(BaseModel, Generic[DataT]):
+    model_config = ConfigDict(slots=True)
     value: DataT | None = None
     uncertainty: float | None = None
     loweruncertainty: float | None = None

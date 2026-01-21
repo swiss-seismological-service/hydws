@@ -199,3 +199,81 @@ data_2['sections'][0]['hydraulics'] = HYDRAULICS_2
 
 data_3 = deepcopy(data)
 data_3['sections'][0]['hydraulics'] = HYDRAULICS_3
+
+
+async def test_delete_section_hydraulics(test_client):
+    response = await test_client.post("/hydws/v1/boreholes",
+                                      json=data_1,
+                                      headers=AUTH_HEADERS)
+    assert response.status_code == 200
+
+    borehole_id = data["publicid"]
+    section_id = data["sections"][0]["publicid"]
+
+    response = await test_client.get(
+        f'/hydws/v1/boreholes/{borehole_id}/sections/{section_id}/hydraulics')
+    assert response.status_code == 200
+    assert len(response.json()) == 8
+
+    response = await test_client.delete(
+        f"/hydws/v1/boreholes/{borehole_id}/sections/{section_id}/hydraulics",
+        params={
+            'starttime': '2021-01-01T00:00:00',
+            'endtime': '2021-01-01T00:05:00'
+        },
+        headers=AUTH_HEADERS)
+    assert response.status_code == 204
+
+    response = await test_client.get(
+        f'/hydws/v1/boreholes/{borehole_id}/sections/{section_id}/hydraulics')
+    assert response.status_code == 200
+    remaining = response.json()
+    assert len(remaining) == 4
+    for h in remaining:
+        assert h['datetime']['value'] >= '2021-01-01T00:06:00'
+
+    response = await test_client.delete(
+        f"/hydws/v1/boreholes/{borehole_id}/sections/{section_id}/hydraulics",
+        headers=AUTH_HEADERS)
+    assert response.status_code == 204
+
+    response = await test_client.get(
+        f'/hydws/v1/boreholes/{borehole_id}/sections/{section_id}/hydraulics')
+    assert response.status_code == 200
+    assert response.json() == []
+
+    response = await test_client.delete(
+        f"/hydws/v1/boreholes/{borehole_id}",
+        headers=AUTH_HEADERS)
+    assert response.status_code == 204
+
+
+async def test_delete_section_hydraulics_not_found(test_client):
+    fake_borehole_id = "00000000-0000-0000-0000-000000000000"
+    fake_section_id = "00000000-0000-0000-0000-000000000001"
+
+    response = await test_client.delete(
+        f"/hydws/v1/boreholes/{fake_borehole_id}/"
+        f"sections/{fake_section_id}/hydraulics",
+        headers=AUTH_HEADERS)
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Borehole not found."
+
+    response = await test_client.post("/hydws/v1/boreholes",
+                                      json=data_1,
+                                      headers=AUTH_HEADERS)
+    assert response.status_code == 200
+
+    borehole_id = data["publicid"]
+
+    response = await test_client.delete(
+        f"/hydws/v1/boreholes/{borehole_id}"
+        f"/sections/{fake_section_id}/hydraulics",
+        headers=AUTH_HEADERS)
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Section not found."
+
+    response = await test_client.delete(
+        f"/hydws/v1/boreholes/{borehole_id}",
+        headers=AUTH_HEADERS)
+    assert response.status_code == 204

@@ -380,3 +380,17 @@ Example using curl:
 `curl -i -X DELETE -H "X-API-Key: your-secret-api-key" "localhost:8080/hydws/v1/boreholes/3fa85f64-5717-4562-b3fc-2c963f66afa6"`
 
 Response: `204 No Content` on success.
+
+### DELETE /hydws/v1/boreholes/:borehole_id/sections/:section_id/hydraulics
+
+Delete hydraulic samples for a section. Supports optional time range filtering.
+
+Query parameters:
+- `starttime` (optional): Delete samples >= this datetime
+- `endtime` (optional): Delete samples <= this datetime
+
+Example using curl:
+
+`curl -i -X DELETE -H "X-API-Key: your-secret-api-key" "localhost:8080/hydws/v1/boreholes/3fa85f64-5717-4562-b3fc-2c963f66afa6/sections/4fa85f64-5717-4562-b3fc-2c963f66afa7/hydraulics?starttime=2021-01-01T00:00:00&endtime=2021-01-02T00:00:00"`
+
+Response: `204 No Content` on success.
