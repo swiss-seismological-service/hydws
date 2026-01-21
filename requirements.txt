@@ -29,7 +29,7 @@ markdown-it-py==4.0.0
 MarkupSafe==3.0.3
 mccabe==0.7.0
 mdurl==0.1.2
-numpy==2.4.1
+numpy<2.4.0
 orjson==3.11.5
 packaging==25.0
 pandas==2.3.3
