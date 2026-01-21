@@ -38,15 +38,17 @@ jobs:
       - name: Run tests
         run: |
           flake8
-          pytest --cov=hydws --cov-report=xml hydws/tests/
+          pytest --cov=hydws --cov-report=xml
         env:
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           DB_NAME: hydws
+          DB_USER: db_user
+          DB_PASSWORD: db_password
           ALLOW_ORIGINS: '["http://localhost"]'
-          ALLOW_ORIGIN_REGEX: ''
+          ALLOW_ORIGIN_REGEX: ""
       - name: Store coverage report
         if: matrix.python-version == '3.13'
         uses: actions/upload-artifact@v4
