@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     ALLOW_ORIGIN_REGEX: str
 
     API_KEY: str = ""  # Empty = protection disabled
+    LOG_LEVEL: str = "INFO"
 
     @property
     def SQLALCHEMY_DATABASE_URL(self) -> str:

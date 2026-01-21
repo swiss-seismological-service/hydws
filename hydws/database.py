@@ -1,4 +1,5 @@
 import contextlib
+import logging
 from typing import Annotated, Any, AsyncIterator
 
 import pandas as pd
@@ -7,6 +8,8 @@ from sqlalchemy.ext.asyncio import (AsyncConnection, AsyncSession,
                                     async_sessionmaker, create_async_engine)
 
 from config import get_settings
+
+logger = logging.getLogger(__name__)
 
 
 class DatabaseSessionManager:
@@ -34,6 +37,7 @@ class DatabaseSessionManager:
             try:
                 yield connection
             except Exception:
+                logger.error("Database transaction failed", exc_info=True)
                 await connection.rollback()
                 raise
 
@@ -46,6 +50,7 @@ class DatabaseSessionManager:
         try:
             yield session
         except Exception:
+            logger.error("Database transaction failed", exc_info=True)
             await session.rollback()
             raise
         finally:

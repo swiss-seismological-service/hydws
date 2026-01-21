@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import uuid
 from datetime import datetime
 from typing import Literal
@@ -14,6 +15,8 @@ from hydws.datamodel.orm import HydraulicSample
 from hydws.schemas import (BoreholeJSONSchema, BoreholeSchema,
                            HydraulicSampleSchema)
 from hydws.utils import hydraulics_to_json, verify_api_key
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix='/boreholes', tags=['boreholes'])
 
@@ -40,6 +43,7 @@ async def get_boreholes(db: DBSessionDep,
                                           maxlongitude)
 
     if not db_result:
+        logger.info("No boreholes found")
         raise HTTPException(status_code=404, detail="No boreholes found.")
 
     return db_result
@@ -79,6 +83,7 @@ async def get_borehole(borehole_id: uuid.UUID,
             borehole_id, db, True, starttime, endtime)
 
     if not db_result:
+        logger.info("Borehole not found: %s", borehole_id)
         raise HTTPException(status_code=404, detail="Borehole not found.")
 
     borehole = BoreholeSchema.model_validate(db_result) \
@@ -127,6 +132,7 @@ async def delete_borehole(borehole_id: uuid.UUID,
     deleted = await crud.delete_borehole(borehole_id, db)
 
     if deleted == 0:
+        logger.info("Borehole not found for deletion: %s", borehole_id)
         raise HTTPException(status_code=404, detail="No boreholes found.")
 
 
@@ -159,6 +165,7 @@ async def get_section_hydraulics(borehole_id: uuid.UUID,
 
     db_borehole = await crud.read_borehole(borehole_id, db)
     if not db_borehole:
+        logger.info("Borehole not found: %s", borehole_id)
         raise HTTPException(status_code=404, detail="Borehole not found.")
 
     defer_cols = [HydraulicSample._oid,
