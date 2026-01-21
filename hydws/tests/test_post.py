@@ -2,8 +2,6 @@ import json
 import os
 from copy import deepcopy
 
-import pytest
-
 from config.config import get_settings
 
 AUTH_HEADERS = {"X-API-Key": get_settings().API_KEY}

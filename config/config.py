@@ -24,11 +24,16 @@ class Settings(BaseSettings):
 
     @property
     def SQLALCHEMY_DATABASE_URL(self) -> str:
-        db_name = f"{self.DB_NAME}_test" if self.TESTING else self.DB_NAME
-        return f"postgresql+asyncpg://{self.DB_USER}:" \
-            f"{self.DB_PASSWORD}@" \
-            f"{self.POSTGRES_HOST}:" \
-            f"{self.POSTGRES_PORT}/{db_name}"
+        if self.TESTING:
+            db_name = f"{self.DB_NAME}_test"
+            user = self.POSTGRES_USER
+            password = self.POSTGRES_PASSWORD
+        else:
+            db_name = self.DB_NAME
+            user = self.DB_USER
+            password = self.DB_PASSWORD
+        return f"postgresql+asyncpg://{user}:{password}@" \
+            f"{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{db_name}"
 
 
 @lru_cache()

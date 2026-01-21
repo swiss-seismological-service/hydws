@@ -27,16 +27,6 @@ async def setup_test_database():
     await conn.execute(f'CREATE DATABASE {db_name}')
     await conn.close()
 
-    conn = await asyncpg.connect(
-        user=settings.POSTGRES_USER,
-        password=settings.POSTGRES_PASSWORD,
-        host=settings.POSTGRES_HOST,
-        port=int(settings.POSTGRES_PORT),
-        database=db_name
-    )
-    await conn.execute(f'GRANT ALL ON SCHEMA public TO {settings.DB_USER}')
-    await conn.close()
-
     env = os.environ.copy()
     env['TESTING'] = '1'
     subprocess.run(["alembic", "upgrade", "head"], check=True, env=env)

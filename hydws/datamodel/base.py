@@ -39,8 +39,9 @@ class CreationInfoMixin(object):
     creationinfo_agencyid = Column(String)
     creationinfo_agencyuri_resourceid = Column(String)
     creationinfo_agencyuri_used = Column(Boolean)
-    creationinfo_creationtime = Column(DateTime,
-                                       default=lambda: datetime.now(UTC).replace(tzinfo=None))
+    creationinfo_creationtime = \
+        Column(DateTime,
+               default=lambda: datetime.now(UTC).replace(tzinfo=None))
     creationinfo_version = Column(String)
     creationinfo_copyrightowner = Column(String)
     creationinfo_copyrightowneruri_resourceid = Column(String)
