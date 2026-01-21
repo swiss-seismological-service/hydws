@@ -14,32 +14,41 @@ If you are using Python, use the [hydws-client](https://gitlab.seismo.ethz.ch/in
 Use the following example to get started quickly using curl or a simple web browser:
 
 1. Navigate to /hydws/v1/boreholes and copy the `publicid` of the `borehole`, and the `section` you are interested in.
-2. Navigating to /hydws/v1/boreholes/`borehole_publicid`/section/`section_publicid`/hydraulics would return ALL the hydraulic data for that section.
-3. Navigating to /hydws/v1/boreholes/`borehole_publicid`/section/`section_publicid`/hydraulics?starttime=2021-01-01T00:00:00&endtime=2021-01-02T00:00:00 would return the hydraulic data for that section between the specified times.
+2. Navigating to /hydws/v1/boreholes/`borehole_publicid`/sections/`section_publicid`/hydraulics would return ALL the hydraulic data for that section.
+3. Navigating to /hydws/v1/boreholes/`borehole_publicid`/sections/`section_publicid`/hydraulics?starttime=2021-01-01T00:00:00&endtime=2021-01-02T00:00:00 would return the hydraulic data for that section between the specified times.
 4. Adding `&format=csv` to the end of the URL returns the data in CSV format.
+5. Navigate to /hydws/docs for interactive API documentation (Swagger UI).
 
 ## Installation
 
-Using [Docker](https://docs.docker.com/engine/) allows for an easy setup of the webservice, the database and the required dependencies. Manual installation is also possible, but requires some manual steps to prepare the database.
+Using [Docker Compose](https://docs.docker.com/compose/) allows for an easy setup of the webservice, the database and the required dependencies.
 
-**Configuration**:
+**1. Configuration**
 
-Before building and running the container, copy the file `.env.example` to `.env` and
-adjust the variables defined within according to your needs. Make sure to pick a proper
-username and password for the internally used PostgreSQL database and write
-these down for later.
-
-**Deployment**:
-
-The container should be run using the provided `docker-compose.yml`
-configuration file. For local development please replace the
-`image: ${TAG_COMMIT}` option with `build: .`
-
-Then you can just run:
+Copy the file `.env.example` to `.env` and adjust the variables:
 
 ```
-$ docker-compose up -d
+cp .env.example .env
 ```
+
+Environment variables:
+
+| Variable | Description |
+|----------|-------------|
+| `POSTGRES_USER`, `POSTGRES_PASSWORD` | PostgreSQL superuser credentials (used for initial DB setup) |
+| `DB_USER`, `DB_PASSWORD`, `DB_NAME` | Application database credentials |
+| `API_KEY` | Secret key for POST/DELETE endpoint authentication (leave empty to disable) |
+| `ALLOW_ORIGINS`, `ALLOW_ORIGIN_REGEX` | CORS configuration |
+| `WEB_CONCURRENCY`, `PYTHON_MAX_THREADS` | Performance tuning |
+| `DOCKER_WEB_PORT` | Port to expose the service (default: 8000) |
+
+**2. Start Services**
+
+```
+docker-compose up -d
+```
+
+The service will be available at `http://localhost:8000` (or the port configured in `DOCKER_WEB_PORT`).
 
 # HYDWS REST API
 
@@ -298,7 +307,7 @@ Response:
 Post data to be saved in the database. The data should be of the same json format as is output by the webservice.
 Example using curl to upload a file:
 
-`curl -i -X POST -H "Content-Type: application/json" -H "X-API-Key: your-secret-api-key" --data @/absolute_path_to_file/borehole_file.json "localhost:8080/hydws/v1/boreholes"`
+`curl -i -X POST -H "Content-Type: application/json" -H "X-API-Key: your-secret-api-key" --data @/absolute_path_to_file/borehole_file.json "localhost:8000/hydws/v1/boreholes"`
 
 Where localhost would be changed to the name of the machine that the service is running on.
 
@@ -377,7 +386,7 @@ Delete a borehole and all its associated sections and hydraulic samples.
 
 Example using curl:
 
-`curl -i -X DELETE -H "X-API-Key: your-secret-api-key" "localhost:8080/hydws/v1/boreholes/3fa85f64-5717-4562-b3fc-2c963f66afa6"`
+`curl -i -X DELETE -H "X-API-Key: your-secret-api-key" "localhost:8000/hydws/v1/boreholes/3fa85f64-5717-4562-b3fc-2c963f66afa6"`
 
 Response: `204 No Content` on success.
 
@@ -391,6 +400,81 @@ Query parameters:
 
 Example using curl:
 
-`curl -i -X DELETE -H "X-API-Key: your-secret-api-key" "localhost:8080/hydws/v1/boreholes/3fa85f64-5717-4562-b3fc-2c963f66afa6/sections/4fa85f64-5717-4562-b3fc-2c963f66afa7/hydraulics?starttime=2021-01-01T00:00:00&endtime=2021-01-02T00:00:00"`
+`curl -i -X DELETE -H "X-API-Key: your-secret-api-key" "localhost:8000/hydws/v1/boreholes/3fa85f64-5717-4562-b3fc-2c963f66afa6/sections/4fa85f64-5717-4562-b3fc-2c963f66afa7/hydraulics?starttime=2021-01-01T00:00:00&endtime=2021-01-02T00:00:00"`
 
 Response: `204 No Content` on success.
+
+# Development
+
+## Setup
+
+Use Docker Compose to run the database, then run the webservice locally.
+
+**1. Configure environment**
+
+Copy `.env.example` to `.env` and set `POSTGRES_HOST=localhost`.
+
+**2. Start the database**
+
+```
+docker-compose up -d postgres
+```
+
+**3. Set up Python environment**
+
+```bash
+python -m venv env
+source env/bin/activate
+pip install -r requirements.txt
+```
+
+**4. Start the development server**
+
+```bash
+uvicorn hydws.main:app --reload
+```
+
+## Running Tests
+
+```bash
+pytest hydws/tests/
+```
+
+Run with coverage:
+
+```bash
+pytest --cov=hydws hydws/tests/
+```
+
+## Building from Source
+
+To test the Docker image locally, edit `docker-compose.yml` and replace:
+```yaml
+image: ghcr.io/swiss-seismological-service/hydws:1.3.0
+# build: .
+```
+with:
+```yaml
+# image: ghcr.io/swiss-seismological-service/hydws:1.3.0
+build: .
+```
+
+Then run `docker-compose up -d --build`.
+
+## Database Migrations
+
+Database migrations are managed with [Alembic](https://alembic.sqlalchemy.org/). Migrations run automatically on webservice startup. To run them manually:
+
+```bash
+alembic upgrade head
+```
+
+## Table Partitioning
+
+The `hydraulicsample` table uses PostgreSQL range partitioning. The webservice creates partitions automatically when data is ingested via the API.
+
+If you need to insert data directly via SQL, you must first create partitions for the relevant date range:
+
+```sql
+CALL generate_partitioned_tables('2025-01-01', '2025-12-31');
+```
