@@ -10,13 +10,6 @@ from config import get_settings
 from hydws.database import sessionmanager
 from hydws.main import app
 
-pytest_plugins = ['anyio']
-
-
-@pytest.fixture(scope="session")
-def anyio_backend():
-    return "asyncio"
-
 
 @pytest.fixture(scope="session")
 async def setup_test_database():
@@ -32,6 +25,16 @@ async def setup_test_database():
     )
     await conn.execute(f'DROP DATABASE IF EXISTS {db_name}')
     await conn.execute(f'CREATE DATABASE {db_name}')
+    await conn.close()
+
+    conn = await asyncpg.connect(
+        user=settings.POSTGRES_USER,
+        password=settings.POSTGRES_PASSWORD,
+        host=settings.POSTGRES_HOST,
+        port=int(settings.POSTGRES_PORT),
+        database=db_name
+    )
+    await conn.execute(f'GRANT ALL ON SCHEMA public TO {settings.DB_USER}')
     await conn.close()
 
     env = os.environ.copy()
@@ -50,7 +53,7 @@ async def setup_test_database():
         await sessionmanager.close()
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 async def test_client(setup_test_database):
     async with AsyncClient(
         transport=ASGITransport(app=app),

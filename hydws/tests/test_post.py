@@ -9,7 +9,6 @@ from config.config import get_settings
 AUTH_HEADERS = {"X-API-Key": get_settings().API_KEY}
 
 
-@pytest.mark.anyio
 async def test_post(test_client):
     response = await test_client.post("/hydws/v1/boreholes",
                                       json=data_2,
@@ -38,7 +37,6 @@ async def test_post(test_client):
     assert response.status_code == 404
 
 
-@pytest.mark.anyio
 async def test_merge(test_client):
     response = await test_client.post("/hydws/v1/boreholes",
                                       json=data_1,

@@ -1,7 +1,7 @@
 import enum
 import functools
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import (BigInteger, Boolean, Column, DateTime, Float, Integer,
                         String)
@@ -40,7 +40,7 @@ class CreationInfoMixin(object):
     creationinfo_agencyuri_resourceid = Column(String)
     creationinfo_agencyuri_used = Column(Boolean)
     creationinfo_creationtime = Column(DateTime,
-                                       default=datetime.utcnow())
+                                       default=lambda: datetime.now(UTC).replace(tzinfo=None))
     creationinfo_version = Column(String)
     creationinfo_copyrightowner = Column(String)
     creationinfo_copyrightowneruri_resourceid = Column(String)
