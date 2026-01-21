@@ -4,7 +4,7 @@ services:
     env_file:
       - .env
     restart: ${DOCKER_RESTART_POLICY:-unless-stopped}
-    stop_grace_period: '3s'
+    stop_grace_period: "3s"
     shm_size: 512MB
     volumes:
       - pg_data:/var/lib/postgresql
@@ -14,28 +14,45 @@ services:
     ports:
       - ${POSTGRES_PORT:-5432}:5432
     healthcheck:
-      test: [ "CMD", "pg_isready", "-q", "-d", "${DB_NAME}", "-U", "${DB_USER}" ]
-      timeout: 45s
-      interval: 5s
-      retries: 20
+      test: ["CMD-SHELL", "pg_isready -h localhost -U $${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
-        - backend
+      - backend
 
   webservice:
-    env_file:
-      - .env
+    environment:
+      - DB_NAME
+      - DB_USER
+      - DB_PASSWORD
+      - ALLOW_ORIGINS
+      - ALLOW_ORIGIN_REGEX
+      - POSTGRES_PORT=5432
+      - POSTGRES_HOST=postgres
+      - WEB_CONCURRENCY
+      - PYTHON_MAX_THREADS
     build: .
-    # image: ${TAG_COMMIT}
     depends_on:
       postgres:
         condition: service_healthy
     restart: ${DOCKER_RESTART_POLICY:-unless-stopped}
-    stop_grace_period: '3s'
+    stop_grace_period: "3s"
     tty: true
     ports:
       - ${DOCKER_WEB_PORT:-8000}:8000
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'python -c "import urllib.request; urllib.request.urlopen(''http://localhost:$${DOCKER_WEB_PORT:-8000}/hydws/docs'', timeout=5)"',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     networks:
-        - backend
+      - backend
 
 volumes:
   pg_data: {}
