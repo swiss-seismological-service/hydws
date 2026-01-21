@@ -12,8 +12,7 @@ from starlette.status import HTTP_204_NO_CONTENT
 from hydws import crud
 from hydws.database import DBSessionDep
 from hydws.datamodel.orm import HydraulicSample
-from hydws.schemas import (BoreholeJSONSchema, BoreholeSchema,
-                           HydraulicSampleSchema)
+from hydws.schemas import BoreholeSchema, HydraulicSampleSchema
 from hydws.utils import hydraulics_to_json, verify_api_key
 
 logger = logging.getLogger(__name__)
@@ -109,7 +108,7 @@ async def get_borehole(borehole_id: uuid.UUID,
              response_model_exclude_none=True,
              dependencies=[Depends(verify_api_key)])
 async def post_borehole(
-        borehole: BoreholeJSONSchema,
+        borehole: BoreholeSchema,
         db: DBSessionDep,
         merge: bool = False,
         merge_limit: int = 60):
