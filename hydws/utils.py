@@ -205,4 +205,5 @@ def verify_api_key(x_api_key: Annotated[str | None, Header()] = None):
     if not settings.API_KEY:
         return  # Protection disabled
     if x_api_key != settings.API_KEY:
-        raise HTTPException(status_code=401, detail="Invalid or missing API key")
+        raise HTTPException(
+            status_code=401, detail="Invalid or missing API key")

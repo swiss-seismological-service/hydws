@@ -37,7 +37,8 @@ def creationinfo_factory(obj: Model) -> CreationInfoSchema:
 class CreationInfoMixin(Model):
     creationinfo_author: str | None = Field(default=None, exclude=True)
     creationinfo_agencyid: str | None = Field(default=None, exclude=True)
-    creationinfo_creationtime: datetime | None = Field(default=None, exclude=True)
+    creationinfo_creationtime: datetime | None = Field(
+        default=None, exclude=True)
     creationinfo_version: str | None = Field(default=None, exclude=True)
     creationinfo_copyrightowner: str | None = Field(default=None, exclude=True)
     creationinfo_license: str | None = Field(default=None, exclude=True)
