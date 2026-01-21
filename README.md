@@ -54,6 +54,20 @@ Both borehole and borehole section have a unique publicid which is required to m
 
 The standard HTTP response status codes are used.
 
+## Authentication
+
+The POST and DELETE endpoints are protected by API key authentication. GET endpoints are public and do not require authentication.
+
+To authenticate, include the `X-API-Key` header in your request:
+
+```
+X-API-Key: your-secret-api-key
+```
+
+The API key is configured via the `API_KEY` environment variable. If `API_KEY` is not set or empty, authentication is disabled and all requests are allowed.
+
+Requests with an invalid or missing API key will receive a `401 Unauthorized` response.
+
 ### GET /hydws/v1/boreholes
 
 List the available boreholes with their sections.
@@ -284,7 +298,7 @@ Response:
 Post data to be saved in the database. The data should be of the same json format as is output by the webservice.
 Example using curl to upload a file:
 
-`curl -i -X POST -H "Content-Type: application/json" --data @/absolute_path_to_file/borehole_file.json "localhost:8080/hydws/v1/boreholes"`
+`curl -i -X POST -H "Content-Type: application/json" -H "X-API-Key: your-secret-api-key" --data @/absolute_path_to_file/borehole_file.json "localhost:8080/hydws/v1/boreholes"`
 
 Where localhost would be changed to the name of the machine that the service is running on.
 
@@ -356,3 +370,13 @@ datetime,             toppressure  topflow
 2021-01-01 00:02:00   3            40
 2021-01-01 00:02:15                50
 ```
+
+### DELETE /hydws/v1/boreholes/:borehole_id
+
+Delete a borehole and all its associated sections and hydraulic samples.
+
+Example using curl:
+
+`curl -i -X DELETE -H "X-API-Key: your-secret-api-key" "localhost:8080/hydws/v1/boreholes/3fa85f64-5717-4562-b3fc-2c963f66afa6"`
+
+Response: `204 No Content` on success.
