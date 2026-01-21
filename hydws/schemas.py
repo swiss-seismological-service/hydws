@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Callable, Generic, List, TypeVar
+from typing import Callable, Generic, List, Type, TypeVar
 
 from pydantic import (BaseModel, ConfigDict, Field, computed_field,
                       create_model, field_validator)
@@ -21,7 +21,7 @@ class CreationInfoSchema(Model):
     creationtime: datetime | None = None
     version: str | None = None
     copyrightowner: str | None = None
-    licence: str | None = None
+    license: str | None = None
 
 
 def creationinfo_factory(obj: Model) -> CreationInfoSchema:
@@ -31,16 +31,16 @@ def creationinfo_factory(obj: Model) -> CreationInfoSchema:
         creationtime=obj.creationinfo_creationtime,
         version=obj.creationinfo_version,
         copyrightowner=obj.creationinfo_copyrightowner,
-        licence=obj.creationinfo_licence)
+        license=obj.creationinfo_license)
 
 
 class CreationInfoMixin(Model):
     creationinfo_author: str | None = Field(default=None, exclude=True)
     creationinfo_agencyid: str | None = Field(default=None, exclude=True)
-    creationinfo_creationtime: datetime = Field(default=None, exclude=True)
+    creationinfo_creationtime: datetime | None = Field(default=None, exclude=True)
     creationinfo_version: str | None = Field(default=None, exclude=True)
     creationinfo_copyrightowner: str | None = Field(default=None, exclude=True)
-    creationinfo_licence: str | None = Field(default=None, exclude=True)
+    creationinfo_license: str | None = Field(default=None, exclude=True)
 
     @computed_field
     @property
@@ -59,8 +59,8 @@ class RealValueSchema(Model, Generic[DataT]):
     confidencelevel: float | None = None
 
 
-def real_float_value_factory(name: str, real_type: TypeVar) -> Callable:
-    def create_schema(obj: Model) -> RealValueSchema[real_type]:
+def real_float_value_factory(name: str, real_type: Type) -> Callable:
+    def create_schema(obj: Model) -> RealValueSchema:
         return RealValueSchema[real_type](
             value=getattr(obj, f'{name}_value'),
             uncertainty=getattr(obj, f'{name}_uncertainty'),
@@ -70,25 +70,34 @@ def real_float_value_factory(name: str, real_type: TypeVar) -> Callable:
     return create_schema
 
 
-def real_float_value_mixin(field_name: str, real_type: TypeVar) -> Model:
-    _func_map = dict([
-        (f'{field_name}_value',
-         (real_type | None, Field(default=None, exclude=True))),
-        (f'{field_name}_uncertainty',
-         (float | None, Field(default=None, exclude=True))),
-        (f'{field_name}_loweruncertainty',
-         (float | None, Field(default=None, exclude=True))),
-        (f'{field_name}_upperuncertainty',
-         (float | None, Field(default=None, exclude=True))),
-        (f'{field_name}_confidencelevel',
-         (float | None, Field(default=None, exclude=True))),
-        (field_name,
-         computed_field(real_float_value_factory(field_name, real_type)))
-    ])
+def real_float_value_mixin(field_name: str, real_type: Type) -> type[Model]:
+    field_definitions = {
+        f'{field_name}_value':
+            (real_type | None, Field(default=None, exclude=True)),
+        f'{field_name}_uncertainty':
+            (float | None, Field(default=None, exclude=True)),
+        f'{field_name}_loweruncertainty':
+            (float | None, Field(default=None, exclude=True)),
+        f'{field_name}_upperuncertainty':
+            (float | None, Field(default=None, exclude=True)),
+        f'{field_name}_confidencelevel':
+            (float | None, Field(default=None, exclude=True)),
+    }
 
-    retval = create_model(field_name, __base__=Model, **_func_map)
+    computed_fields = {
+        field_name: computed_field(
+            property(real_float_value_factory(field_name, real_type)),
+            return_type=RealValueSchema[real_type]
+        )
+    }
 
-    return retval
+    base_model = type(
+        f'{field_name}BaseMixin',
+        (Model,),
+        computed_fields,
+    )
+
+    return create_model(field_name, __base__=base_model, **field_definitions)
 
 
 class HydraulicSampleSchema(real_float_value_mixin('datetime', datetime),
@@ -129,9 +138,10 @@ class BoreholeSectionSchema(
 
     @field_validator("publicid")
     @classmethod
-    def serialize_uuid(cls, value) -> uuid.UUID:
+    def serialize_uuid(cls, value) -> uuid.UUID | None:
         if value:
             return uuid.UUID(str(value))
+        return None
 
 
 class BoreholeSchema(CreationInfoMixin,
@@ -149,9 +159,10 @@ class BoreholeSchema(CreationInfoMixin,
 
     @field_validator("publicid")
     @classmethod
-    def serialize_uuid(cls, value) -> uuid.UUID:
+    def serialize_uuid(cls, value) -> uuid.UUID | None:
         if value:
             return uuid.UUID(str(value))
+        return None
 
 
 def flatten_dict(name: str, real_object: dict):
