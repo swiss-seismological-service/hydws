@@ -32,6 +32,7 @@ services:
       - POSTGRES_HOST=postgres
       - WEB_CONCURRENCY
       - PYTHON_MAX_THREADS
+      - API_KEY
     image: ghcr.io/swiss-seismological-service/hydws:1.3.1
     # build: .
     depends_on:
