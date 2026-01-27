@@ -33,22 +33,40 @@ cp .env.example .env
 
 Environment variables:
 
-| Variable | Description |
-|----------|-------------|
-| `POSTGRES_USER`, `POSTGRES_PASSWORD` | PostgreSQL superuser credentials (used for initial DB setup) |
-| `DB_USER`, `DB_PASSWORD`, `DB_NAME` | Application database credentials |
-| `API_KEY` | Secret key for POST/DELETE endpoint authentication (leave empty to disable) |
-| `ALLOW_ORIGINS`, `ALLOW_ORIGIN_REGEX` | CORS configuration |
-| `WEB_CONCURRENCY`, `PYTHON_MAX_THREADS` | Performance tuning |
-| `DOCKER_WEB_PORT` | Port to expose the service (default: 8000) |
+| Variable                                | Description                                                                 |
+| --------------------------------------- | --------------------------------------------------------------------------- |
+| `POSTGRES_USER`, `POSTGRES_PASSWORD`    | PostgreSQL superuser credentials (used for initial DB setup)                |
+| `DB_USER`, `DB_PASSWORD`, `DB_NAME`     | Application database credentials                                            |
+| `API_KEY`                               | Secret key for POST/DELETE endpoint authentication (leave empty to disable) |
+| `ALLOW_ORIGINS`, `ALLOW_ORIGIN_REGEX`   | CORS configuration                                                          |
+| `WEB_CONCURRENCY`, `PYTHON_MAX_THREADS` | Performance tuning                                                          |
+| `DOCKER_WEB_PORT`                       | Port to expose the service (default: 8000)                                  |
 
 **2. Start Services**
 
 ```
-docker-compose up -d
+docker compose up -d
 ```
 
 The service will be available at `http://localhost:8000` (or the port configured in `DOCKER_WEB_PORT`).
+
+**3. Update Services**
+
+To update the services to the latest version, after pulling the latest version of the docker compose file, run:
+
+```
+docker compose up -d
+```
+
+**4. Delete Services**
+To stop and remove the services, run:
+
+```
+docker compose down -v
+```
+
+Adding the flag `-v` will also remove the database volume, deleting all stored data.
+
 
 # HYDWS REST API
 
@@ -417,7 +435,7 @@ Copy `.env.example` to `.env` and set `POSTGRES_HOST=localhost`.
 **2. Start the database**
 
 ```
-docker-compose up -d postgres
+docker compose up -d postgres
 ```
 
 **3. Set up Python environment**
@@ -459,7 +477,7 @@ with:
 build: .
 ```
 
-Then run `docker-compose up -d --build`.
+Then run `docker compose up -d --build`.
 
 ## Database Migrations
 
@@ -478,3 +496,56 @@ If you need to insert data directly via SQL, you must first create partitions fo
 ```sql
 CALL generate_partitioned_tables('2025-01-01', '2025-12-31');
 ```
+
+## Deleting and migrating data
+
+Deleting and migrating data should only be done when absolutely necessary. Nevertheless, here is a rough outline of how to do it.
+
+Make sure you have installed the correct version of the [PostgreSQL client libraries and binaries](https://www.postgresql.org/download/linux/ubuntu/) for your database version.
+
+```bash
+# Replace with your actual database credentials
+export PGPASSWORD=your_postgres_password
+
+# Dump the data
+pg_dump -h localhost --port 5432 -U postgres -d hydws --data-only -Fc -f data_backup.dump
+
+# Create the partition tables manually, possibly you will need to split the command if the range is too large
+psql -U postgres -h localhost -d hydws -p 5430 -c "CALL generate_partitioned_tables('2021-01-01', '2023-01-01');"
+
+# Restore the data in a new database
+pg_restore -h localhost -U postgres -d hydws -p 5432 --data-only --disable-triggers -j 4 data_backup.dump
+```
+
+Optimally you will now delete the empty partitions that were created but not filled with data during the restore.  
+For this, first create a bash script `delete_empty_partitions.sh` with the following content:
+
+```bash
+#!/bin/bash
+
+partitions=$(psql -U postgres -h localhost -p 5432 -d hydws -t -A -c "
+SELECT pt.relname
+FROM pg_class pt
+JOIN pg_inherits pi ON pt.oid = pi.inhrelid
+JOIN pg_class parent ON pi.inhparent = parent.oid
+WHERE parent.relname = 'hydraulicsample'
+ORDER BY pt.relname;
+")
+
+# Check each one and drop if empty
+for p in $partitions; do
+    count=$(psql -U postgres -h localhost -p 5432 -d hydws -t -A -c "SELECT COUNT(*) FROM $p")
+    if [ "$count" -eq 0 ]; then
+        echo "Dropping empty partition: $p"
+        psql -U postgres -h localhost -p 5432 -d hydws -c "DROP TABLE $p"
+    fi
+done
+```
+
+Make the script executable with `chmod +x delete_empty_partitions.sh` and run it:
+```bash
+./delete_empty_partitions.sh
+```
+
+This will drop all empty partitions from the hydraulicsample table.
+
