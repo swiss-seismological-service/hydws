@@ -518,7 +518,7 @@ pg_restore -h localhost -U postgres -d hydws -p 5432 --data-only --disable-trigg
 ```
 
 Optimally you will now delete the empty partitions that were created but not filled with data during the restore.  
-For this, first create a bash script `delete_empty_partitions.sh` with the following content:
+For this, first create a bash script `delete_empty_partitions.sh` with the following content, replacing the connection parameters as needed:
 
 ```bash
 #!/bin/bash

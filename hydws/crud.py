@@ -88,6 +88,17 @@ async def delete_hydraulics(
     return result.rowcount
 
 
+async def delete_section(publicid: str, db: AsyncSession) -> int:
+    """Delete a borehole section by publicid.
+
+    Hydraulic samples are cascade-deleted at the database level.
+    """
+    stmt = delete(BoreholeSection).where(BoreholeSection.publicid == publicid)
+    deleted = await db.execute(stmt)
+    await db.commit()
+    return deleted.rowcount
+
+
 async def create_borehole(borehole: dict,
                           db: AsyncSession,
                           merge: bool = False,

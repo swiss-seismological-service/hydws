@@ -277,3 +277,50 @@ async def test_delete_section_hydraulics_not_found(test_client):
         f"/hydws/v1/boreholes/{borehole_id}",
         headers=AUTH_HEADERS)
     assert response.status_code == 204
+
+
+async def test_delete_section(test_client):
+    """Test successful deletion of a borehole section."""
+    response = await test_client.post("/hydws/v1/boreholes",
+                                      json=data_1,
+                                      headers=AUTH_HEADERS)
+    assert response.status_code == 200
+
+    borehole_id = data["publicid"]
+    section_id = data["sections"][0]["publicid"]
+
+    # Delete the section
+    response = await test_client.delete(
+        f"/hydws/v1/boreholes/{borehole_id}/sections/{section_id}",
+        headers=AUTH_HEADERS)
+    assert response.status_code == 204
+
+    # Verify section is gone (hydraulics endpoint returns empty list)
+    response = await test_client.get(
+        f'/hydws/v1/boreholes/{borehole_id}/sections/{section_id}/hydraulics')
+    assert response.status_code == 200
+    assert response.json() == []
+
+    # Verify deleting the same section again returns 404
+    response = await test_client.delete(
+        f"/hydws/v1/boreholes/{borehole_id}/sections/{section_id}",
+        headers=AUTH_HEADERS)
+    assert response.status_code == 404
+
+    # Clean up - delete borehole
+    response = await test_client.delete(
+        f"/hydws/v1/boreholes/{borehole_id}",
+        headers=AUTH_HEADERS)
+
+
+async def test_delete_section_not_found(test_client):
+    """Test 404 responses for non-existent borehole/section."""
+    fake_borehole_id = "00000000-0000-0000-0000-000000000000"
+    fake_section_id = "00000000-0000-0000-0000-000000000001"
+
+    # Test: borehole doesn't exist
+    response = await test_client.delete(
+        f"/hydws/v1/boreholes/{fake_borehole_id}/sections/{fake_section_id}",
+        headers=AUTH_HEADERS)
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Borehole not found."

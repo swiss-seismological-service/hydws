@@ -215,3 +215,32 @@ async def delete_section_hydraulics(
         raise HTTPException(status_code=404, detail="Section not found.")
 
     await crud.delete_hydraulics(section_oid, db, starttime, endtime)
+
+
+@router.delete("/{borehole_id}/sections/{section_id}",
+               status_code=HTTP_204_NO_CONTENT,
+               response_class=Response,
+               dependencies=[Depends(verify_api_key)])
+async def delete_section(
+    borehole_id: uuid.UUID,
+    section_id: uuid.UUID,
+    db: DBSessionDep
+) -> None:
+    """Delete a borehole section and all its hydraulic samples."""
+    db_borehole = await crud.read_borehole(borehole_id, db)
+    if not db_borehole:
+        logger.info("Borehole not found: %s", borehole_id)
+        raise HTTPException(status_code=404, detail="Borehole not found.")
+
+    db_section = await crud.read_section(section_id, db)
+    if db_section is None:
+        logger.info("Section not found: %s", section_id)
+        raise HTTPException(status_code=404, detail="Section not found.")
+
+    # Verify section belongs to the borehole
+    if db_section._borehole_oid != db_borehole._oid:
+        logger.info("Section %s does not belong to borehole %s",
+                    section_id, borehole_id)
+        raise HTTPException(status_code=404, detail="Section not found.")
+
+    await crud.delete_section(section_id, db)
