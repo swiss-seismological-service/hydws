@@ -549,3 +549,14 @@ Make the script executable with `chmod +x delete_empty_partitions.sh` and run it
 
 This will drop all empty partitions from the hydraulicsample table.
 
+### Publishing a new Version
+Publishing a new version will push a new Docker image of the webservice to the github container registry.
+
+All you need to do, is to create a new git tag with the version number, e.g. `v1.2.3`, and push the tag to github.
+
+```bash
+git tag v1.2.3
+git push --tags
+```
+
+This will automatically trigger the github actions to build and publish the new version.
